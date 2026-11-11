@@ -255,11 +255,20 @@
     let base = baseOrganic ? org : rows.filter(v => !v.isNew);
     if (!base.length) base = rows;
     const med = median(base.map(v => v.views)) || 1;
-    rows.forEach(v => { v.x_med = v.views / med; });
-    const n = base.length, byV = [...base].sort((a, b) => b.views - a.views), cut = Math.max(1, Math.round(n * 0.2));
-    const top = new Set(byV.slice(0, cut).map(v => v.id)), bot = n >= 5 ? new Set(byV.slice(-cut).map(v => v.id)) : new Set();
-    const win = new Set(base.filter(v => v.x_med >= 2 || (top.has(v.id) && v.x_med >= 1.3)).map(v => v.id));
-    const flop = new Set(base.filter(v => n >= 5 && (v.x_med <= 0.4 || (bot.has(v.id) && v.x_med <= 0.7))).map(v => v.id));
+    // Mức chuẩn cuốn chiếu: mỗi clip so với median ~20 clip organic đăng gần nó nhất (trước + sau), tránh thiên lệch khi kênh đang lên/xuống.
+    // Kênh dưới 10 clip organic thì dùng median chung.
+    const ROLL = 20, MIN_BASE = 10;
+    const baseByTs = base.filter(v => v.ts).sort((a, b) => a.ts - b.ts);
+    const rollMed = v => {
+      if (!v.ts || baseByTs.length < MIN_BASE) return med;
+      const pick = baseByTs.filter(x => x.id !== v.id).sort((a, b) => Math.abs(a.ts - v.ts) - Math.abs(b.ts - v.ts)).slice(0, ROLL);
+      return median(pick.map(x => x.views)) || med;
+    };
+    rows.forEach(v => { v.base_views = rollMed(v); v.x_med = v.views / v.base_views; });
+    const n = base.length, byX = [...base].sort((a, b) => b.x_med - a.x_med), cut = Math.max(1, Math.round(n * 0.1));
+    const top = new Set(byX.slice(0, cut).map(v => v.id));
+    const win = new Set(base.filter(v => v.x_med >= 3 || (top.has(v.id) && v.x_med >= 2)).map(v => v.id));
+    const flop = new Set(base.filter(v => n >= 5 && v.x_med <= 0.4).map(v => v.id));
     const ers = base.filter(v => v.er != null).map(v => v.er).sort((a, b) => a - b);
     const erCut = ers.length >= 5 ? ers[Math.floor(ers.length * 0.8)] : null;
     const medShare = median(base.filter(v => v.share_r != null).map(v => v.share_r));
@@ -267,7 +276,7 @@
     for (const v of rows) {
       if (v.isNew) { v.label = "MỚI"; v.er_high = false; continue; }
       if (v.kind !== "ORGANIC" && baseOrganic) { v.label = v.kind; v.er_high = false; continue; }
-      if (baseIds.has(v.id) && v.x_med >= 5 && (!followers || v.views >= followers) && (v.share_r == null || medShare == null || v.share_r >= medShare)) { viral.add(v.id); v.label = "VIRAL"; }
+      if (baseIds.has(v.id) && v.x_med >= 5 && (!followers || v.views >= followers) && (v.share_r == null || medShare == null || v.share_r >= medShare)) { viral.add(v.id); v.label = "VIRAL"; v.super = v.x_med >= 10 || (followers > 0 && v.views >= 5 * followers); }
       else v.label = win.has(v.id) ? "WIN" : flop.has(v.id) ? "FLOP" : "ỔN";
       v.er_high = erCut != null && v.er != null && v.er >= erCut && v.label !== "WIN" && v.label !== "VIRAL";
     }
@@ -307,7 +316,7 @@
     const tl = rows.filter(v => !v.pinned), ts = tl.map(v => v.ts).filter(Boolean), span = ts.length > 1 ? (Math.max(...ts) - Math.min(...ts)) / 86400 : 0;
     const views = rows.map(v => v.views);
     const summary = {
-      n: rows.length, base_n: n, base_organic: baseOrganic, med_views: med,
+      n: rows.length, base_n: n, thin_base: n < MIN_BASE, super_viral: rows.filter(v => v.super).length, base_organic: baseOrganic, med_views: med,
       mean_views: views.reduce((a, b) => a + b, 0) / views.length, max_views: Math.max(...views), min_views: Math.min(...views),
       med_er: median(base.filter(v => v.er != null).map(v => v.er)), med_share: medShare,
       med_save: median(base.filter(v => v.save_r != null).map(v => v.save_r)),
@@ -380,8 +389,10 @@
       `- ${s.viral} clip VIRAL · ${s.win} clip WIN · ${s.flop} clip FLOP · ${s.new} clip MỚI (chưa đủ ${NEW_DAYS} ngày) · ${s.with_transcript}/${s.deep} clip đọc comment có phụ đề · ${n_(s.comments_got)} comment của khán giả đã lấy${s.own_cmts ? ` (bỏ ${s.own_cmts} comment của chính kênh)` : ""}`,
       "", "**Cách gắn nhãn** (đã tính sẵn, không cần tính lại):",
       "- `×TV` = view của clip chia view trung vị của kênh. 1,0× là mức bình thường của kênh này.",
-      "- **WIN** = ≥ 2×TV, hoặc thuộc 20% clip nhiều view nhất và ≥ 1,3×TV. **FLOP** = ≤ 0,4×TV, hoặc thuộc 20% ít view nhất và ≤ 0,7×TV. Còn lại **ỔN**.",
-      "- **VIRAL** = ≥ 5×TV **và** view ≥ số follower của kênh (đã lan ra ngoài tệp fan), share/view không thấp hơn mức thường. VIRAL tính riêng, không đếm vào WIN.",
+      "- **×TV** = view của clip ÷ view trung vị của ~20 clip organic đăng cùng giai đoạn (gần nhất trước và sau nó), nên kênh đang lên hay đang xuống vẫn so công bằng.",
+      "- **WIN** = ≥ 3×TV, hoặc ≥ 2×TV và thuộc 10% clip vượt chuẩn mạnh nhất. **FLOP** = ≤ 0,4×TV. Còn lại **ỔN**.",
+      "- **VIRAL** = ≥ 5×TV **và** view ≥ số follower của kênh (đã lan ra ngoài tệp fan), share/view không thấp hơn mức thường. **SIÊU VIRAL** = VIRAL và ≥ 10×TV hoặc view ≥ 5 lần follower. VIRAL tính riêng, không đếm vào WIN.",
+      ...(s.thin_base ? [`- ⚠️ **Mẫu mỏng:** chỉ có ${s.base_n} clip organic đủ ${NEW_DAYS} ngày để làm chuẩn (cần ≥ 10). Nhãn chỉ để tham khảo, đừng kết luận chắc.`] : []),
       `- **MỚI** = đăng chưa tới ${NEW_DAYS} ngày, view còn đang lên → không chấm win/flop, không tính vào mức chuẩn.`,
       "- **ER cao** = tương tác/view thuộc top 20% kênh dù view không nổi → khán giả thích nhưng chưa được đẩy rộng.",
       "- Tương tác = (like + comment + share + save) / view. Mọi clip đều đủ số liệu; comment, reply và phụ đề chỉ đọc ở các clip đại diện (mục D4).",
@@ -393,7 +404,7 @@
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
       v._i = i + 1;
-      const lab = v.label + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
+      const lab = (v.super ? "SIÊU VIRAL" : v.label) + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
       const dur = v.is_photo ? "ảnh" : v.duration ? v.duration + "s" : "–";
       o.push(`| ${v._i} | ${date_(v.ts, false, true)} | ${dur} | ${n_(v.views)} | ${x_(v.x_med)} | ${lab} | ${p_(v.er)} | ${p_(v.share_r, 2)} | ${p_(v.save_r, 2)} | ${n_(v.comments_count)} | ${(v.hook || "").replace(/[|\n]/g, " ").slice(0, 70)} |`);
     });
@@ -429,7 +440,7 @@
     o.push("## D4. Chi tiết từng clip", "", "_Gồm các clip đã đọc comment và phụ đề. Thứ tự: VIRAL → WIN → FLOP → ỔN → PAID → NGHI ADS → MỚI. Số # khớp với bảng ở mục D2._", "");
     [...rows].filter(v => !v.lite && !v.thin).sort((a, b) => (ord[a.label] - ord[b.label]) || (b.x_med - a.x_med)).forEach(v => {
       const hot = ["VIRAL", "WIN", "FLOP", "PAID", "NGHI ADS"].includes(v.label) || v.er_high;
-      o.push(`### #${v._i} · ${v.label}${v.er_high ? " · ER cao" : ""} · ${x_(v.x_med)} · ${date_(v.ts, true)}`, `- Link: ${v.url}`,
+      o.push(`### #${v._i} · ${v.super ? "SIÊU VIRAL" : v.label}${v.er_high ? " · ER cao" : ""} · ${x_(v.x_med)} · ${date_(v.ts, true)}`, `- Link: ${v.url}`,
         `- View ${n_(v.views)} · Like ${n_(v.likes)} · Cmt ${n_(v.comments_count)} · Share ${n_(v.shares)} · Save ${n_(v.saves)}` +
         (v.duration ? ` · Dài ${v.duration}s` : "") + (v.wpm ? ` · nói ~${v.wpm} từ/phút` : ""));
       if ((v.hashtags || []).length) o.push("- Hashtag: " + v.hashtags.map(x => "#" + x).join(" "));

@@ -302,12 +302,12 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
     </div>
 
     <div class="gpane" data-g="read">
-      <p class="gl">Mọi nhãn đều so với <b>×TV</b>, tức view trung vị của kênh: mức view một clip “bình thường” của kênh đó đạt được. 1× là đúng phong độ, 3× là gấp ba.</p>
+      <p class="gl">Mọi nhãn đều so với <b>×TV</b>: view của clip chia cho view trung vị của khoảng 20 clip đăng cùng giai đoạn. Kênh đang lên hay đang xuống, clip vẫn được so với đúng phong độ lúc đó. 1× là bình thường, 3× là gấp ba.</p>
       <dl class="gdl pills">
-        <dt><span class="pill VIRAL">VIRAL</span></dt><dd>Lọt ra ngoài tệp follower: từ 5× trở lên, view vượt số follower, và được share mạnh. Hiếm, đừng mong clip nào cũng thế.</dd>
-        <dt><span class="pill WIN">WIN</span></dt><dd>Hơn hẳn mặt bằng (từ 2×, hoặc nằm trong top 20%). Đây là công thức nên lặp lại. VIRAL là trúng số, WIN là kiếm được đều.</dd>
+        <dt><span class="pill VIRAL">VIRAL</span></dt><dd>Lọt ra ngoài tệp follower: từ 5× trở lên, view vượt số follower, và được share mạnh. Từ 10×, hoặc view gấp 5 lần follower, thành <b>SIÊU VIRAL</b>. Hiếm, đừng mong clip nào cũng thế.</dd>
+        <dt><span class="pill WIN">WIN</span></dt><dd>Vượt hẳn mặt bằng: từ 3×, hoặc từ 2× và nằm trong 10% clip mạnh nhất. Đây là công thức nên lặp lại. VIRAL là trúng số, WIN là kiếm được đều.</dd>
         <dt><span class="pill ỔN">ỔN</span></dt><dd>Đúng phong độ. Phần lớn clip nằm ở đây, và thế là bình thường.</dd>
-        <dt><span class="pill FLOP">FLOP</span></dt><dd>Hụt hơi: từ 0,4× trở xuống, hoặc nằm trong 20% đáy. Thứ cần mổ xẻ, không phải thứ cần xoá.</dd>
+        <dt><span class="pill FLOP">FLOP</span></dt><dd>Hụt hơi: từ 0,4× trở xuống. Thứ cần mổ xẻ, không phải thứ cần xoá.</dd>
         <dt><span class="pill MỚI">MỚI</span></dt><dd>Đăng chưa đủ 7 ngày, view còn đang chạy. Chưa chấm, kẻo oan.</dd>
         <dt><span class="pill er">ER cao</span></dt><dd>View không nổi, nhưng ai xem cũng tương tác. Chủ đề này có fan cứng, chỉ chưa có đường ra.</dd>
         <dt><span class="pill PAID">PAID</span></dt><dd>Đã chạy ads: TikTok gắn cờ quảng cáo, creator tự ghi trong caption (#ad, #quangcao…), hoặc bạn tự đánh dấu. Không chấm WIN/FLOP, vì view có tiền chen vào. Clip viral thật mà vẫn bị TikTok gắn cờ? Bấm “Không chạy ads?” ngay dưới caption.</dd>
@@ -565,6 +565,7 @@ function renderDetail(){
         <button class="btn" onclick="exportJpg()">Xuất ảnh JPEG</button><button class="btn primary" onclick="exportMd()">Xuất .md cho AI</button></div>
     </div>
     ${m.partial?`<div class="note" style="margin-top:14px">TikTok chặn danh sách clip khi chưa đăng nhập, nên dữ liệu kênh này chưa đủ. Đăng nhập TikTok trên trình duyệt này rồi bấm ⚡ lại trên trang kênh.</div>`:""}
+    ${d.summary.thin_base?`<div class="note" style="margin-top:14px">Mẫu mỏng: chỉ ${d.summary.base_n} clip organic đủ 7 ngày để làm chuẩn, cần ít nhất 10. Nhãn để tham khảo, đừng chốt vội.</div>`:""}
     <div class="chips">
       <div class="chip"><small>Follower</small><span class="cv"><b>${fmt(m.followers)}</b>${fgrow(m)}</span></div>
       <div class="chip"><small>Clip có số liệu</small><span class="cv"><b>${d.rows.length}${m.videos&&!ranged()?"/"+m.videos:""}</b></span></div>
@@ -588,7 +589,7 @@ function renderDetail(){
     <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
       <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}${r.flag_paid?` <button class="fix" onclick="event.stopPropagation();markOne('${r.id}','organic')">Không chạy ads? Chấm như clip thường</button>`:""}</div>`:r.is_ad_flag&&r.mark==="organic"?`<div class="why ok">Bạn đã xác nhận không chạy ads <button class="fix" onclick="event.stopPropagation();markOne('${r.id}',null)">Hoàn tác</button></div>`:""}</td><td class="num">${fmt(r.views)}</td>
       <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*60))}px"></i>${xm(r.x_med)}</span></td>
-      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.paid_src||"")}">${r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
+      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
       <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
       <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
   </section>`;
