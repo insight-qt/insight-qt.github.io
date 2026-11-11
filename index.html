@@ -123,7 +123,9 @@ td.hk{color:var(--mute);max-width:360px}
 @keyframes shine{0%,60%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
 @media (prefers-reduced-motion:reduce){.pill.VIRAL,.pill.VIRAL::after{animation:none}} .pill.MỚI{background:var(--accent-soft);color:var(--accent)}
 .pill.PAID{background:var(--warn-soft);color:var(--warn)} .pill.NGHI{background:var(--warn-soft);color:var(--warn);border:1px dashed var(--warn)}
-.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.pin,.pill.collab{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.adf{background:var(--adf-soft);color:var(--adf);margin-left:4px}
+.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.brand{background:rgba(212,160,23,.14);color:#b8860b;margin-left:4px;border:1px solid rgba(212,160,23,.35)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.brand{color:#e8c25a}}
+.pill.pin,.pill.collab{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.adf{background:var(--adf-soft);color:var(--adf);margin-left:4px}
 .xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--accent);opacity:.75}
 .guide{max-height:86vh;overflow:auto}
 .ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -136,7 +138,11 @@ td.hk{color:var(--mute);max-width:360px}
 .gsteps,.gq{margin:0;padding-left:20px}.gsteps li,.gq li{margin-bottom:8px}.gsteps b{color:var(--ink)}
 .gdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin:0}
 .gdl dt{font-size:13px;font-weight:600}.gdl dd{margin:0}
-.gdl.pills dt{padding-top:1px}.gdl.pills .pill{margin-left:0}
+.gdl.gtags{align-items:center}
+/* sổ tay: kẻ dòng mảnh như bảng */
+.gpane .gdl:not(.faq){gap:0;border-bottom:1px solid var(--line)}.gpane .gdl:not(.faq)>dd{padding-left:16px!important}
+.gpane .gdl:not(.faq)>dt,.gpane .gdl:not(.faq)>dd{padding:9px 0;border-top:1px solid var(--line);margin:0;line-height:20px}.gpane .gdl.gtags>dt{display:flex;align-items:flex-start}
+@media (max-width:600px){.gpane .gdl:not(.faq)>dt{padding-bottom:2px}.gpane .gdl:not(.faq)>dd{border-top:0;padding-top:0;padding-left:0!important}}.gdl.gtags dt{display:flex}.gdl.gtags .pill{margin-left:0}
 .gdl.faq{grid-template-columns:1fr}.gdl.faq dd{margin-bottom:8px}
 .gnote{margin:18px 0 0!important;padding:10px 12px;background:var(--soft);border-radius:10px;font-size:12.5px!important}
 @media (max-width:600px){.gdl{grid-template-columns:1fr;gap:4px}.gdl dd{margin-bottom:10px}}
@@ -303,7 +309,7 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
         <li><b>Dán link kênh, chọn khoảng ngày, bấm Mở kênh trên TikTok.</b> Nhận cả link clip, tool tự lấy ra tên kênh.</li>
         <li><b>Sang tab TikTok vừa mở, bấm ⚡.</b> Khung tiến độ hiện ở góc trang. Đừng đóng tab đó cho tới khi khung báo Xong.</li>
       </ol>
-      <h4>Hai lựa chọn trước khi quét</h4>
+      <h4>Chọn trước khi quét</h4>
       <dl class="gdl">
         <dt>Nhanh (mặc định)</dt><dd>Lấy view và ngày đăng của mọi clip, rồi đọc kỹ (comment, reply, phụ đề) khoảng 40 clip đại diện: nhiều view nhất, ít view nhất, mới nhất, rải đều ở giữa. 2–4 phút, đủ thấy quy luật.</dd>
         <dt>Kỹ</dt><dd>Như Nhanh nhưng khoảng 85 clip. Dùng khi cần báo cáo AI chắc tay hơn.</dd>
@@ -316,38 +322,47 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
     </div>
 
     <div class="gpane" data-g="read">
-      <p class="gl">Mọi nhãn đều so với <b>×TV</b>: view của clip chia cho view trung vị của khoảng 20 clip đăng cùng giai đoạn. Kênh đang lên hay đang xuống, clip vẫn được so với đúng phong độ lúc đó. 1× là bình thường, 3× là gấp ba.</p>
-      <dl class="gdl pills">
-        <dt><span class="pill VIRAL">VIRAL</span></dt><dd>Lọt ra ngoài tệp follower: từ 5× trở lên, view vượt số follower, và được share mạnh. Từ 10×, hoặc view gấp 5 lần follower, thành <b>SIÊU VIRAL</b>. Hiếm, đừng mong clip nào cũng thế.</dd>
-        <dt><span class="pill WIN">WIN</span></dt><dd>Vượt hẳn mặt bằng: từ 3×, hoặc từ 2× và nằm trong 10% clip mạnh nhất. Đây là công thức nên lặp lại. VIRAL là trúng số, WIN là kiếm được đều.</dd>
-        <dt><span class="pill ỔN">ỔN</span></dt><dd>Đúng phong độ. Phần lớn clip nằm ở đây, và thế là bình thường.</dd>
-        <dt><span class="pill FLOP">FLOP</span></dt><dd>Hụt hơi: từ 0,4× trở xuống. Thứ cần mổ xẻ, không phải thứ cần xoá.</dd>
-        <dt><span class="pill MỚI">MỚI</span></dt><dd>Đăng chưa đủ 7 ngày, view còn đang chạy. Chưa chấm, kẻo oan.</dd>
-        <dt><span class="pill er">ER cao</span></dt><dd>View không nổi, nhưng ai xem cũng tương tác. Chủ đề này có fan cứng, chỉ chưa có đường ra.</dd>
-        <dt><span class="pill PAID">PAID</span></dt><dd>Đã chạy ads: TikTok gắn cờ quảng cáo, creator tự ghi trong caption (#ad, #quangcao…), hoặc bạn tự đánh dấu. Không chấm WIN/FLOP, vì view có tiền chen vào. Clip viral thật mà vẫn bị TikTok gắn cờ? Bấm “Không chạy ads?” ngay dưới caption.</dd>
-        <dt><span class="pill NGHI">NGHI ADS</span></dt><dd>Không ai khai, nhưng số liệu “có mùi tiền”. Mỗi clip kèm lý do, đọc ngay dưới caption.</dd>
-        <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip không chạy ads, nên tool chấm như clip thường.</dd>
-        <dt><span class="pill collab">Collab</span></dt><dd>Caption tag một creator khác: clip hợp tác. View có thể mượn từ tệp fan của người kia, nên WIN ở clip này chưa chắc là nhờ content. Không tính là ads.</dd>
-        <dt><span class="pill shop">Giỏ hàng</span></dt><dd>Clip có gắn sản phẩm TikTok Shop hoặc link bán hàng. Chỉ để biết, không ảnh hưởng nhãn.</dd>
+      <p class="gl">Mọi nhãn so với <b>×TV</b>: view của clip chia view trung vị của ~20 clip đăng cùng giai đoạn. 1× là bình thường, 3× là gấp ba.</p>
+      <h4>Nhãn chính</h4>
+      <dl class="gdl gtags">
+        <dt><span class="pill VIRAL">VIRAL</span></dt><dd>Từ 5×, view vượt số follower, share mạnh. Từ 10× là <b>SIÊU VIRAL</b>.</dd>
+        <dt><span class="pill WIN">WIN</span></dt><dd>Từ 3×, hoặc 2× và nằm trong top 10%. Công thức nên lặp lại.</dd>
+        <dt><span class="pill ỔN">ỔN</span></dt><dd>Đúng phong độ. Phần lớn clip nằm ở đây.</dd>
+        <dt><span class="pill FLOP">FLOP</span></dt><dd>Từ 0,4× trở xuống. Để mổ xẻ, không phải để xoá.</dd>
+        <dt><span class="pill MỚI">MỚI</span></dt><dd>Chưa đủ 7 ngày, view còn chạy. Chưa chấm.</dd>
       </dl>
-      <h4>Tool bắt clip chạy ads ngầm bằng cách nào?</h4>
-      <p class="gp">Brand hay xin mã quảng cáo của creator để chạy chính clip đó (Spark Ads). Clip trông y như clip thường, view từ ads cộng thẳng vào clip, và TikTok không công khai clip nào được boost. Nên tool không tìm câu trả lời, nó gom dấu vết:</p>
-      <dl class="gdl" style="margin-top:10px">
-        <dt>View già mà vẫn lớn</dt><dd>Clip organic thường chững sau 1–2 tuần. Clip đăng cả tháng mà view vẫn tăng đều là có người đang trả tiền. <b>Dấu hiệu mạnh nhất, cần quét kênh ít nhất 2 lần cách nhau vài ngày.</b></dd>
-        <dt>Brand vào comment</dt><dd>Tài khoản doanh nghiệp, hoặc tài khoản được tag trong caption, xuất hiện trong phần comment.</dd>
-        <dt>Người xem đã nhận ra</dt><dd>Comment kiểu “lại quảng cáo”, “clip này nhận bao nhiêu vậy”.</dd>
-        <dt>Xem nhiều, thờ ơ nhiều</dt><dd>View cao gấp ba mức thường mà tương tác, share chỉ lèo tèo.</dd>
-        <dt>Dấu vết bán hàng</dt><dd>Tag tài khoản khác, gắn giỏ hàng, caption giảm giá hay link bio. Dấu hiệu yếu, chỉ cộng thêm, một mình không đủ để nghi.</dd>
+      <h4>Nhãn phụ</h4>
+      <dl class="gdl gtags">
+        <dt><span class="pill er">ER cao</span></dt><dd>View thường, nhưng ai xem cũng tương tác. Thiếu hook, không thiếu fan.</dd>
+        <dt><span class="pill brand">Brand</span></dt><dd>Clip có brand deal. View vẫn organic nên vẫn được chấm như thường.</dd>
+        <dt><span class="pill collab">Collab</span></dt><dd>Tag một creator khác. View có thể mượn từ fan của người kia.</dd>
+        <dt><span class="pill shop">Giỏ hàng</span></dt><dd>Gắn TikTok Shop. Chỉ để biết.</dd>
       </dl>
-      <p class="gnote">Clip nghi ads bị tách khỏi mức chuẩn, để tiền không làm đẹp giùm content. Biết chắc clip nào chạy ads hay chắc chắn organic? Mở kênh, bấm <b>Đánh dấu clip ads</b>.</p>
-      <h4>Heatmap khung giờ</h4>
-      <p class="gp">Ô càng đậm, khung giờ đó càng nhiều view. Ô chữ nhạt mới có một clip, chưa đủ để tin. Heatmap cho biết khán giả <i>của kênh này</i> thức lúc nào, không phải giờ vàng chung của TikTok.</p>
-      <h4>Share/view và mốc so sánh</h4>
-      <p class="gp">TikTok coi việc xem hết và share là tín hiệu mạnh, còn số follower không phải yếu tố trực tiếp. Tool không xem được thời gian xem, nên dùng share/view làm thước đo thay thế. Ô Share/view có kèm mốc của kênh cùng cỡ (số liệu bên thứ ba, để định hướng): xanh là được share nhiều hơn mặt bằng, đỏ là ít hơn.</p>
-      <h4>Chủ đề TikTok tự gắn</h4>
-      <p class="gp">TikTok tự xếp mỗi clip vào vài chủ đề và gợi ý vài từ khoá tìm kiếm bên dưới clip. Tool đọc lại hai thứ đó, nên biết được kênh đang được TikTok “hiểu” là kênh gì, và clip nào lên nhờ tìm kiếm.</p>
-      <h4>Cmt lấy / tổng</h4>
-      <p class="gp">Số comment tool đọc được trên số TikTok hiển thị. Hai số lệch nhau là bình thường: TikTok đếm cả comment đã ẩn hoặc bị xoá, còn tool lấy tối đa 500 comment mỗi clip, ưu tiên comment nhiều like.</p>
+      <h4>Nhãn tiền</h4>
+      <dl class="gdl gtags">
+        <dt><span class="pill PAID">PAID</span></dt><dd>Đã chạy ads, view có tiền chen vào nên không chấm Win/Flop. Sai thì bấm “Không chạy ads?” dưới caption.</dd>
+        <dt><span class="pill NGHI">NGHI ADS</span></dt><dd>Không ai khai, nhưng số liệu có mùi tiền. Lý do ghi ngay dưới caption.</dd>
+        <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok gắn cờ quảng cáo, nhưng bạn đã xác nhận không chạy.</dd>
+      </dl>
+      <h4>Brand deal khác chạy ads thế nào?</h4>
+      <p class="gp">Brand deal là brand trả tiền để creator làm clip, view vẫn từ người thật lướt tới. Chạy ads là trả tiền để TikTok đẩy clip, view được mua. Tool chỉ tách clip chạy ads khỏi mức chuẩn.</p>
+      <h4>Tool bắt ads ngầm bằng gì?</h4>
+      <dl class="gdl">
+        <dt>View già vẫn lớn</dt><dd>Clip cũ vẫn tăng view đều. Mạnh nhất, cần quét 2 lần cách vài ngày.</dd>
+        <dt>Brand vào comment</dt><dd>Tài khoản doanh nghiệp được TikTok xác minh xuất hiện dưới clip.</dd>
+        <dt>Người xem nhận ra</dt><dd>Comment kiểu “lại quảng cáo”.</dd>
+        <dt>Xem nhiều, thờ ơ nhiều</dt><dd>View gấp ba mức thường mà tương tác lèo tèo.</dd>
+      </dl>
+      <p class="gnote">Biết chắc clip nào chạy ads? Bấm <b>Đánh dấu clip ads</b>.</p>
+      <h4>Các ô còn lại</h4>
+      <dl class="gdl">
+        <dt>Kê đơn</dt><dd>Tối đa 5 việc nên làm, rút thẳng từ số liệu, kèm clip làm bằng chứng.</dd>
+        <dt>Heatmap</dt><dd>Xanh ăn, vàng ngang, đỏ kém so với mức thường. Ô mờ mới có 1 clip.</dd>
+        <dt>Share/view</dt><dd>Thước đo gần nhất với việc TikTok đẩy clip ra ngoài tệp fan. Kèm mốc của kênh cùng cỡ.</dd>
+        <dt>10% clip gánh</dt><dd>Càng cao, kênh càng sống nhờ vài clip nổ.</dd>
+        <dt>Chủ đề TikTok tự gắn</dt><dd>Cách TikTok “hiểu” kênh này là kênh gì.</dd>
+        <dt>Cmt lấy / tổng</dt><dd>Tool đọc tối đa 500 comment mỗi clip, ưu tiên comment nhiều like.</dd>
+      </dl>
     </div>
 
     <div class="gpane" data-g="ai">
@@ -378,11 +393,13 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
       <dl class="gdl faq">
         <dt>Khung ⚡ báo “TikTok tạm từ chối”</dt><dd>TikTok thấy đọc nhanh quá nên bắt nghỉ. Tool tự giảm tốc và thử lại. Nếu dừng hẳn, đợi vài phút rồi bấm ⚡ lần nữa. Dữ liệu đã lấy không mất.</dd>
         <dt>Kênh có 300 clip mà chỉ lấy được vài chục</dt><dd>Bạn chưa đăng nhập TikTok trên trình duyệt này. Đăng nhập, tải lại trang kênh, bấm ⚡.</dd>
+        <dt>Đã đăng nhập mà vẫn báo chưa đăng nhập</dt><dd>Mở thẳng trang kênh (tiktok.com/@tenkenh) rồi bấm ⚡. Tool sẽ đọc ngay trên trang đó.</dd>
+        <dt>Không copy được file .md</dt><dd>Bấm <b>Tải file .md</b> rồi kéo file vào khung chat AI. File dài thì cách này chắc hơn dán.</dd>
         <dt>Bấm ⚡ mà không thấy gì</dt><dd>Kiểm tra hai thứ: bạn đang ở đúng trang kênh (tiktok.com/@tenkenh), và trình duyệt không chặn cửa sổ bật lên của tiktok.com.</dd>
-        <dt>Khung báo “Không kết nối được trang TikTok Insight”</dt><dd>Tab TikTok Insight đã bị đóng. Mở lại trang này, bấm Mở kênh, rồi bấm ⚡ trên tab mới.</dd>
+        <dt>Khung báo “Không kết nối được trang TikTok Insight”</dt><dd>Tab TikTok Insight đã bị đóng. Bấm <b>Mở trang TikTok Insight</b> trong khung ⚡, dữ liệu được gửi bù, không mất gì.</dd>
         <dt>Dùng trên điện thoại được không?</dt><dd>Chưa. Nút ⚡ cần trình duyệt máy tính (Chrome, Safari, Edge, Arc đều được).</dd>
         <dt>Dữ liệu nằm ở đâu?</dt><dd>Trong trình duyệt của bạn, không ở máy chủ nào. Đổi máy hoặc xoá dữ liệu trình duyệt là mất, nên xuất file .md những kênh quan trọng.</dd>
-        <dt>Xoá bớt kênh đã quét</dt><dd>Bấm <b>Quản lý</b> cạnh mục Kênh đã quét, tick các kênh muốn bỏ, bấm Xoá. Xoá là mất cả lịch sử tái khám và báo cáo AI của kênh đó.</dd>
+        <dt>Xoá bớt kênh đã quét</dt><dd>Bấm <b>Quản lý</b> cạnh mục Kênh đã quét, tick các kênh muốn bỏ, bấm Xoá. Xoá là mất cả lịch sử tái khám của kênh đó.</dd>
       </dl>
     </div>
   </div>
@@ -576,7 +593,7 @@ function heat(h,t){
 }
 function renderDetail(){
   const d=detail,m=d.meta||{},s=d.summary||{},t=d.tables||{};
-  const FL=[["all","Tất cả",()=>true],["VIRAL","Viral",r=>r.label==="VIRAL"],["WIN","Win",r=>r.label==="WIN"],["FLOP","Flop",r=>r.label==="FLOP"],["ADS","Ads",r=>r.kind!=="ORGANIC"],["MỚI","Mới",r=>r.label==="MỚI"]];
+  const FL=[["all","Tất cả",()=>true],["VIRAL","Viral",r=>r.label==="VIRAL"],["WIN","Win",r=>r.label==="WIN"],["FLOP","Flop",r=>r.label==="FLOP"],["BRAND","Brand",r=>r.brand],["ADS","Ads",r=>r.kind!=="ORGANIC"],["MỚI","Mới",r=>r.label==="MỚI"]];
   const fsel=FL.find(f=>f[0]===labFilter)||FL[0];
   let rows=d.rows.filter(fsel[2]);
   if(sortBy==="x")rows.sort((a,b)=>b.x_med-a.x_med); if(sortBy==="er")rows.sort((a,b)=>(b.er||0)-(a.er||0));
@@ -617,7 +634,7 @@ function renderDetail(){
     <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
       <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}${r.flag_paid?` <button class="fix" onclick="event.stopPropagation();markOne('${r.id}','organic')">Không chạy ads? Chấm như clip thường</button>`:""}</div>`:r.is_ad_flag&&r.mark==="organic"?`<div class="why ok">Bạn đã xác nhận không chạy ads <button class="fix" onclick="event.stopPropagation();markOne('${r.id}',null)">Hoàn tác</button></div>`:""}</td><td class="num">${fmt(r.views)}</td>
       <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*40))}px"></i>${xm(r.x_med)}</span></td>
-      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.collab&&r.collab.length?`<span class="pill collab" title="Hợp tác với ${esc(r.collab.map(x=>"@"+x).join(", "))}: view có thể đến từ tệp fan của người kia">Collab</span>`:""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
+      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.brand?`<span class="pill brand" title="${esc(r.brand_src.join(" · "))}">Brand</span>`:""}${r.collab&&r.collab.length?`<span class="pill collab" title="Hợp tác với ${esc(r.collab.map(x=>"@"+x).join(", "))}: view có thể đến từ tệp fan của người kia">Collab</span>`:""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
       <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
       <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
   </section>`;

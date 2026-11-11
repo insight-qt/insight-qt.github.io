@@ -4,7 +4,15 @@
   const WEEKDAY = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const HOURS = [[0, 6, "0–6h"], [6, 11, "6–11h"], [11, 14, "11–14h"], [14, 18, "14–18h"], [18, 22, "18–22h"], [22, 24, "22–24h"]];
   const DURS = [[0, 16, "<15s"], [16, 31, "15–30s"], [31, 61, "30–60s"], [61, 181, "1–3 phút"], [181, 1e9, ">3 phút"]];
-  const PAID_TAG = /#(ad|ads|advert|sponsored|sponsor|quangcao|qc|hoptac|hợptác|partner|brandpartner|paidpartnership|taitro|tàitrợ|booking)\b/i;
+  // Hashtag công bố hợp tác / tài trợ: là nội dung có brand (brand deal), KHÔNG có nghĩa là view đến từ ads
+  const PAID_TAG = /#(ad|ads|advert|sponsored|sponsor|quangcao|qc|partner|brandpartner|paidpartnership|booking)(?![\p{L}\p{N}_])|#(hoptac|hợptác|taitro|tàitrợ|donghanh|đồnghành)[\p{L}\p{N}_]*/iu;
+  // Brand phổ biến ở Việt Nam (FMCG, F&B, ngân hàng, ví, sàn TMĐT, viễn thông, xe, điện máy, mỹ phẩm, giáo dục, tuyển dụng…)
+  const BRANDS = new Set(["7eleven", "7up", "acb", "acecook", "acer", "acnes", "adidas", "aeon", "agoda", "agribank", "aia", "aice", "aji", "ajingon", "ajinomoto", "anessa", "anhang", "ankhang", "apple", "aquafina", "ariel", "asus", "bachhoaxanh", "baemin", "bamboo", "baoviet", "barona", "befood", "bia333", "bibica", "bibigo", "bidv", "bigc", "bioderma", "biofermin", "biore", "biti's", "bitis", "blackrouge", "bluestone", "bmw", "bobapop", "bobby", "bocalex", "bosch", "budweiser", "burgerking", "cailan", "canifa", "canon", "careerbuilder", "carlsberg", "casper", "castrol", "cellphones", "cerave", "cfresh", "chinsu", "chocopie", "cholimex", "chubb", "circlek", "closeup", "coca", "cocacola", "cocoon", "cogaihalan", "colgate", "comfee", "congcaphe", "coolmate", "coopfood", "coopmart", "daiichi", "daikin", "danisa", "dasani", "datbike", "decolgen", "dell", "diana", "dienmayxanh", "digiworld", "dilmah", "dingtea", "dominos", "dookki", "dove", "downy", "drpong", "drthanh", "duolingo", "durex", "dutchlady", "electrolux", "emart", "eucerin", "eugica", "familymart", "fanta", "fecredit", "fixderma", "focallure", "fpt", "fptplay", "fptshop", "fpttelecom", "funiki", "fwd", "galaxyplay", "garnier", "geely", "generali", "gillette", "gogi", "gojek", "gongcha", "grab", "growplus", "gs25", "gsm", "guardian", "habeco", "hadalabo", "haidilao", "handy", "hanoibeer", "haohao", "hasaki", "haugiang", "hauvang", "hazeline", "hdbank", "headandshoulders", "headshoulders", "heineken", "highlands", "highlandscoffee", "hm", "hoanghamobile", "homecredit", "honda", "hondaviet", "huawei", "huggies", "hygienegel", "hyundai", "innisfree", "iphone", "itel", "itviec", "jeep", "jisulife", "jobstreet", "jollibee", "judydoll", "kangaroo", "karofi", "katinat", "kfc", "kichikichi", "kido", "kinhdo", "kitkat", "klairs", "klook", "knorr", "kokomi", "kotex", "lalamove", "lancome", "laneige", "larocheposay", "larue", "laurier", "lavie", "lays", "lazada", "lenovo", "lexus", "lifebuoy", "lipton", "locklock", "longchau", "loreal", "lotte", "lotteria", "lpbank", "maggi", "manulife", "manwah", "masan", "maybelline", "mazda", "mbbank", "mcdonalds", "meatsnack", "mediheal", "meizan", "mercedes", "merino", "merries", "merzy", "midea", "miliket", "ministop", "miohya", "mirinda", "mitsubishi", "mixue", "mobifone", "momo", "moony", "msb", "msi", "myvnpt", "namabank", "nammngu", "namngu", "neptune", "nescafe", "nestle", "netflix", "nike", "nissin", "nokia", "numberone", "nutifood", "nutriboost", "nutrinest", "ocb", "ohya", "oishi", "olay", "olong", "omachi", "omo", "oolong", "oppo", "oralb", "oreo", "orion", "palmolive", "pampers", "panadol", "panasonic", "pandora", "pantene", "pepsi", "perspirex", "petrolimex", "peugeot", "pharmacity", "phela", "philips", "phuclong", "piaggio", "pizza4ps", "pizzahut", "playmore", "playtogether", "poco", "pond", "ponds", "ponnie", "popeyes", "popmart", "porsche", "pringles", "prudential", "pslove", "puma", "rakuten", "realme", "redbull", "redmi", "rejoice", "revive", "rexona", "rockstar", "rohto", "romand", "romano", "sabeco", "sacombank", "safeguard", "saigonbeer", "saigontourist", "samsung", "santen", "seabank", "selsun", "sendo", "senka", "sensodyne", "shb", "shell", "shiseido", "shopee", "shopeefood", "shopeepay", "simply", "snickers", "solite", "sontoa", "sonvn", "spotify", "sprite", "starbucks", "sting", "strepsils", "strongbow", "sulwhasoo", "sunhouse", "sunlight", "sunplay", "sunsilk", "surfsach", "suzuki", "tanhiepphat", "teaplus", "techcombank", "tefal", "tgdd", "thecoffeehouse", "thegioididong", "thegioiskinfood", "thepizzacompany", "thienlong", "thmilk", "thorakao", "thp", "thtruemilk", "tienlong", "tiffy", "tiger", "tigerbalm", "tiki", "tiktokshop", "tocotoco", "topcv", "topica", "toshiba", "toyota", "tpbank", "traphaco", "traveloka", "tresemme", "trungnguyen", "tuongan", "tv360", "uniben", "unilever", "uniqlo", "vaseline", "vespa", "vib", "viber", "vichy", "vieclam24h", "vieon", "vietcombank", "vietinbank", "vietjet", "vietnamairlines", "vietnamworks", "vietqr", "vietravel", "viettel", "viettelmoney", "viettelstore", "vifon", "vinamilk", "vinaphone", "vincom", "vinfast", "vinfastvf", "vingroup", "vinhomes", "vinmec", "vinpearl", "vinschool", "visa", "vivo", "vnpay", "vnpt", "vocarimex", "vpbank", "vtvgo", "wakeup", "warrior", "watsons", "whisper", "winmart", "xanhsm", "xiaomi", "xylitol", "yamaha", "yody", "ysl", "zalopay", "zara"]);
+  const PREFIX3 = new Set(["ysl", "omo", "kfc", "bmw", "fpt", "7up"]);
+  const brandOf = h => { h = String(h).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]/g, "");
+    for (const b of BRANDS) { if (b.length >= 6 ? h.includes(b) : b.length >= 4 ? (h.startsWith(b) || h.endsWith(b)) : h === b || h === b + "vn" || h === b + "vietnam" || (PREFIX3.has(b) && h.startsWith(b))) return b; } return null; };
+  // hashtag chung chung, viết hoa kiểu CamelCase nhưng không phải brand
+  const GENERIC_TAG = /^(fyp|foryou|foryoupage|xuhuong|trend|trending|viral|tiktok|tiktokawards|tiktokvietnam|capcut|learnontiktok|tiktokgiaitri|worldcup|backtoschool|tet|giangsinh|christmas|noel|halloween|valentine|trungthu)/i;
   // comment cho thấy người xem nhận ra quảng cáo
   const AD_TALK = /qu[ảa]ng c[áa]o|\bqc\b|\bads?\b|t[àa]i tr[ợo]|sponsor|booking|nh[ậa]n bao nhi[êe]u|bao nhi[êe]u (ti[ềe]n|c[áa]t)|\bpr\b|seeding|đ[ưu][ợo]c tr[ảa] ti[ềe]n|clip (qc|pr)|l[ạa]i (qc|pr|qu[ảa]ng)/i;
   // caption kiểu bán hàng / kêu gọi mua
@@ -195,13 +203,33 @@
       // TikTok không công bố tài liệu nên tool coi là dấu hiệu rất mạnh của NGHI ADS, không coi là creator tự khai.
       v.is_ad_flag = (v.paid_flags || []).includes("isAd");
       v.paid_flags = (v.paid_flags || []).filter(f => f !== "isAd");
-      v.self_declared = !!(v.paid_flags.length || PAID_TAG.test(tags));
-      v.declared = v.mark === "paid" || (v.mark !== "organic" && v.self_declared);   // cờ isAd xét ở vòng sau, khi đã có mức tương tác chuẩn
+      // Công bố hợp tác (hashtag, nhãn "Paid partnership" của TikTok) → nội dung có brand, view vẫn là organic nếu không chạy ads
+      v.brand_src = [];
+      const disc = [...new Set(((v.hashtags || []).map(h => "#" + h)).filter(h => PAID_TAG.test(h)))];
+      if (disc.length) v.brand_src.push("công bố hợp tác " + disc.slice(0, 2).join(" "));
+      else if (PAID_TAG.test(tags)) v.brand_src.push("caption công bố hợp tác / tài trợ");
+      if (v.paid_flags.length) v.brand_src.push("TikTok ghi nhãn hợp tác thương hiệu");
+      v.self_declared = false;
+      v.declared = v.mark === "paid";   // cờ isAd xét ở vòng sau, khi đã có mức tương tác chuẩn
       v.isNew = !!(v.ts && now - v.ts < NEW_DAYS * 86400);
     }
     // Cờ isAd của TikTok: clip đã được đưa vào ads, nhưng không cho biết bao nhiêu view là tiền.
     // Kiểm trên kênh thật: clip ads của brand có tương tác chỉ ~1/4 mức thường; clip viral organic có cờ vẫn tương tác cao.
     // → có cờ + tương tác ≤ 60% mức thường của các clip không cờ: PAID. Có cờ mà tương tác vẫn tự nhiên: giữ nhãn thật, kèm "Cờ ads".
+    // Hashtag chiến dịch của brand: viết kiểu CamelCase (#NuocMamCHINSU, #TeaPlus), không phải hashtag quen của kênh
+    const tagCnt = {};
+    rows.forEach(v => new Set((v.hashtags || []).map(h => h.toLowerCase())).forEach(h => { tagCnt[h] = (tagCnt[h] || 0) + 1; }));
+    const ownCut = Math.max(6, rows.length * 0.12);
+    const meN = String((rows.find(v => v.channel) || {}).channel || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    for (const v of rows) {
+      const hs = (v.hashtags || []).filter(h => !PAID_TAG.test("#" + h));
+      // bỏ brand trùng tên kênh (kênh chính chủ của brand) và hashtag kênh dùng ở gần nửa số clip
+      const known = [...new Set(hs.filter(h => { const b = brandOf(h); return b && !meN.includes(b) && (tagCnt[h.toLowerCase()] || 0) <= rows.length * 0.4; }))];
+      const camp = [...new Set(hs.filter(h => !brandOf(h) && (tagCnt[h.toLowerCase()] || 0) < ownCut && h.length >= 4 && /\p{Lu}/u.test(h.slice(1)) && /\p{Ll}/u.test(h) && !GENERIC_TAG.test(h)))];
+      if (known.length) v.brand_src.push("hashtag brand " + known.slice(0, 3).map(h => "#" + h).join(" "));
+      if (camp.length) v.brand_src.push("hashtag kiểu chiến dịch " + camp.slice(0, 3).map(h => "#" + h).join(" "));
+      v.brand_tags = known.concat(camp);
+    }
     const medErClean = median(rows.filter(v => !v.is_ad_flag && !v.declared && v.er != null).map(v => v.er)) || 0;
     for (const v of rows) {
       if (!v.is_ad_flag || v.declared || v.mark === "organic") continue;
@@ -233,7 +261,7 @@
       const acc = v.ment_acc || {};
       const brands = Object.keys(acc).filter(x => x !== me && acc[x].org);
       const bizTag = Object.keys(acc).filter(x => x !== me && !acc[x].org && acc[x].biz);
-      if (brands.length) sig.push([2, `caption tag tài khoản brand ${brands.slice(0, 3).map(x => "@" + x).join(", ")} (TikTok xác nhận là tổ chức)`]);
+      if (brands.length) v.brand_src.push(`tag tài khoản brand ${brands.slice(0, 3).map(x => "@" + x).join(", ")}`);
       else if (bizTag.length) sig.push([0.5, `caption tag tài khoản business ${bizTag.slice(0, 3).map(x => "@" + x).join(", ")}`]);
       // Kiểm trên kênh thật: isAd bật cả ở clip vài nghìn view, nhất là clip gắn TikTok Shop → nghĩa là clip được đưa vào
       // quảng cáo (thường là quảng cáo tự động cho clip bán hàng), không cho biết bao nhiêu view đến từ ads. Cần thêm dấu hiệu khác.
@@ -265,6 +293,7 @@
       v.suspect = !v.declared && v.mark !== "organic" && v.ad_score >= 2;
       v.paid_src = v.mark === "paid" ? "bạn xác nhận" : !v.declared ? "" : v.flag_paid ? (v.ad_low_er ? `TikTok gắn cờ quảng cáo, tương tác chỉ bằng ${v.er != null && medErClean ? frac(v.er / medErClean) : "–"} mức thường: view chủ yếu đến từ ads` : "TikTok gắn cờ quảng cáo, nhưng tương tác vẫn tự nhiên: có thể chỉ chạy ít, hoặc clip vốn đã hay") : v.paid_flags.length ? "nhãn quảng cáo trong dữ liệu TikTok (" + v.paid_flags.join(", ") + ")" : "creator tự ghi trong caption";
       v.kind = v.declared ? "PAID" : v.suspect ? "NGHI ADS" : "ORGANIC";
+      v.brand = v.brand_src.length > 0;
     }
     const org = rows.filter(v => v.kind === "ORGANIC" && !v.isNew);
     const baseOrganic = org.length >= 5;
@@ -311,7 +340,7 @@
     const baseT = base.filter(v => !v.pinned);   // clip ghim là clip cũ treo đầu kênh: không tính vào dòng thời gian
     const durKey = v => v.is_photo ? ["Ảnh (photo)"] : v.duration ? DURS.filter(([a, b]) => a <= v.duration && v.duration < b).map(d => d[2]) : [];
     const tables = {
-      kind: group(v => [v.kind], ["ORGANIC", "PAID", "NGHI ADS"], 1, rows.filter(v => !v.isNew)),
+      kind: group(v => [v.kind === "ORGANIC" && v.brand ? "CÓ BRAND" : v.kind], ["ORGANIC", "CÓ BRAND", "PAID", "NGHI ADS"], 1, rows.filter(v => !v.isNew)),
       duration: group(durKey, DURS.map(d => d[2]).concat(["Ảnh (photo)"])),
       weekday: group(v => (dt(v) ? [WEEKDAY[wkIdx(dt(v))]] : []), WEEKDAY, 1, baseT),
       hour: group(v => (dt(v) ? HOURS.filter(([a, b]) => a <= dt(v).getHours() && dt(v).getHours() < b).map(h => h[2]) : []), HOURS.map(h => h[2]), 1, baseT),
@@ -342,7 +371,7 @@
       per_week: span >= 7 ? Math.round(tl.length / (span / 7) * 10) / 10 : null, pinned: rows.filter(v => v.pinned).length,
       viral: viral.size, win: [...win].filter(id => !viral.has(id)).length, flop: flop.size,
       new: rows.filter(v => v.isNew).length, organic: rows.filter(v => v.kind === "ORGANIC").length,
-      paid: rows.filter(v => v.kind === "PAID").length, suspect: rows.filter(v => v.kind === "NGHI ADS").length,
+      paid: rows.filter(v => v.kind === "PAID").length, brand: rows.filter(v => v.brand).length, suspect: rows.filter(v => v.kind === "NGHI ADS").length,
       shop: rows.filter(v => v.shop).length, deep: rows.filter(v => !v.lite && !v.thin).length, full: rows.filter(v => !v.lite).length,
       with_transcript: rows.filter(v => v.transcript).length, comments_got: rows.reduce((a, v) => a + (v.comments || []).filter(c => String(c.by || "").toLowerCase() !== String(v.channel || "").toLowerCase()).length, 0),
       own_cmts: rows.reduce((a, v) => a + (v.comments || []).filter(c => c.by && String(c.by).toLowerCase() === String(v.channel || "").toLowerCase()).length, 0),
@@ -465,7 +494,7 @@
       `- Trung vị: tương tác/view ${p_(s.med_er)} · share/view ${p_(s.med_share, 2)} · save/view ${p_(s.med_save, 2)} · comment/view ${p_(s.med_cmt, 2)}`,
       ...(s.med_share != null ? [`- Mốc share/view tham khảo cho ${s.share_bench.tier}: ${p_(s.share_bench.rate, 2)} (số liệu bên thứ ba, chỉ để định hướng) → kênh này ${s.med_share >= s.share_bench.rate * 1.2 ? "**được share nhiều hơn mặt bằng**" : s.med_share <= s.share_bench.rate * 0.8 ? "**được share ít hơn mặt bằng**" : "ngang mặt bằng"}. TikTok coi xem hết và share là tín hiệu mạnh; follower không phải yếu tố trực tiếp.`] : []),
       ...((meta.fhist || []).length >= 2 ? [(() => { const h = meta.fhist, a = h[0], b = h[h.length - 1], d = b[1] - a[1]; return `- Follower qua các lần quét: ${n_(a[1])} (${date_(a[0])}) → ${n_(b[1])} (${date_(b[0])}) · ${d >= 0 ? "+" : ""}${n_(d)} trong ${Math.max(1, Math.round((b[0] - a[0]) / 86400))} ngày`; })()] : []),
-      `- Loại clip: ${s.organic} organic · ${s.paid} paid có công bố · ${s.suspect} nghi chạy ads · ${s.shop} clip gắn giỏ hàng / sản phẩm`,
+      `- Loại clip: ${s.organic} organic · ${s.brand} clip có brand (brand deal) · ${s.paid} clip chạy ads · ${s.suspect} nghi chạy ads · ${s.shop} clip gắn giỏ hàng / sản phẩm`,
       `- ${s.viral} clip VIRAL · ${s.win} clip WIN · ${s.flop} clip FLOP · ${s.new} clip MỚI (chưa đủ ${NEW_DAYS} ngày) · ${s.with_transcript}/${s.deep} clip đọc comment có phụ đề · ${n_(s.comments_got)} comment của khán giả đã lấy${s.own_cmts ? ` (bỏ ${s.own_cmts} comment của chính kênh)` : ""}`,
       "", "**Cách gắn nhãn** (đã tính sẵn, không cần tính lại):",
             "- **×TV** = view của clip ÷ view trung vị của ~20 clip organic đăng cùng giai đoạn (gần nhất trước và sau nó), nên kênh đang lên hay đang xuống vẫn so công bằng.",
@@ -476,7 +505,8 @@
       "- **ER cao** = tương tác/view thuộc top 20% kênh dù view không nổi → khán giả thích nhưng chưa được đẩy rộng.",
       "- Tương tác = (like + comment + share + save) / view. Mọi clip đều đủ số liệu; comment, reply và phụ đề chỉ đọc ở các clip đại diện (mục D4).",
       "- Clip được đọc comment là clip đại diện: nhiều view nhất, ít view nhất, mới nhất và rải đều ở giữa.",
-      "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip (lý do ghi rõ tương tác thấp hẳn hay vẫn tự nhiên), creator tự ghi trong caption (#ad #quangcao #hoptac #taitro…), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
+      "- **brand** = nội dung có brand (brand deal): creator công bố hợp tác (#hoptaccung…, #taitro, #ad…, nhãn hợp tác của TikTok), dùng hashtag chiến dịch của brand (#NuocMamCHINSU…), hoặc tag tài khoản brand. View vẫn là organic nếu không chạy ads, nên clip brand vẫn được chấm VIRAL/WIN/FLOP như thường. Nên so riêng clip brand với clip thường: brand có làm kênh mất chất không.",
+      "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip (lý do ghi rõ tương tác thấp hẳn hay vẫn tự nhiên), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
       "- **collab @x** = caption tag một creator khác (không phải tài khoản doanh nghiệp): clip hợp tác giữa 2 creator, view có thể đến từ tệp fan của người kia. Không tính là ads.",
       "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp (TikTok xác minh) vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
@@ -486,7 +516,7 @@
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
       v._i = i + 1;
-      const lab = (v.super ? "SIÊU VIRAL" : v.label) + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.collab && v.collab.length ? " · collab " + v.collab.slice(0, 2).map(x => "@" + x).join(" ") : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
+      const lab = (v.super ? "SIÊU VIRAL" : v.label) + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.brand ? " · brand" : "") + (v.collab && v.collab.length ? " · collab " + v.collab.slice(0, 2).map(x => "@" + x).join(" ") : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
       const dur = v.is_photo ? "ảnh" : v.duration ? v.duration + "s" : "–";
       o.push(`| ${v._i} | ${date_(v.ts, false, true)} | ${dur} | ${n_(v.views)} | ${x_(v.x_med)} | ${lab} | ${p_(v.er)} | ${p_(v.share_r, 2)} | ${p_(v.save_r, 2)} | ${n_(v.comments_count)} | ${(v.hook || "").replace(/[|\n]/g, " ").slice(0, 70)} |`);
     });
@@ -532,6 +562,7 @@
         if (v.declared) sig.push(v.paid_src === "bạn xác nhận" ? "người dùng tool xác nhận đã chạy ads" : v.paid_src);
         if (!v.declared) sig.push(...(v.ad_reasons || []));
         o.push(`- Loại: **${v.kind}** · dấu hiệu: ${sig.join("; ")}`);
+        if (v.brand) o.push(`- Có brand: ${v.brand_src.join("; ")}`);
       }
       if ((v.labels || []).length || (v.kw || []).length) o.push(`- TikTok xếp vào: ${(v.labels || []).join(", ") || "–"}${(v.kw || []).length ? " · từ khoá gợi ý: " + v.kw.join(", ") : ""}`);
       o.push(`- Caption: ${v.caption || "(trống)"}`);
