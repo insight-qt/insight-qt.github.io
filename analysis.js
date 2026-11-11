@@ -190,9 +190,19 @@
       v.is_ad_flag = (v.paid_flags || []).includes("isAd");
       v.paid_flags = (v.paid_flags || []).filter(f => f !== "isAd");
       v.self_declared = !!(v.paid_flags.length || PAID_TAG.test(tags));
-      // Cờ isAd của TikTok = clip đã được đưa vào quảng cáo → coi là PAID (kiểm trên kênh brand chạy ads thật), trừ khi người dùng xác nhận organic
-      v.declared = v.mark === "paid" || (v.mark !== "organic" && (v.self_declared || v.is_ad_flag));
+      v.declared = v.mark === "paid" || (v.mark !== "organic" && v.self_declared);   // cờ isAd xét ở vòng sau, khi đã có mức tương tác chuẩn
       v.isNew = !!(v.ts && now - v.ts < NEW_DAYS * 86400);
+    }
+    // Cờ isAd của TikTok: clip đã được đưa vào ads, nhưng không cho biết bao nhiêu view là tiền.
+    // Kiểm trên kênh thật: clip ads của brand có tương tác chỉ ~1/4 mức thường; clip viral organic có cờ vẫn tương tác cao.
+    // → có cờ + tương tác ≤ 60% mức thường của các clip không cờ: PAID. Có cờ mà tương tác vẫn tự nhiên: giữ nhãn thật, kèm "Cờ ads".
+    const medErClean = median(rows.filter(v => !v.is_ad_flag && !v.declared && v.er != null).map(v => v.er)) || 0;
+    for (const v of rows) {
+      if (!v.is_ad_flag || v.declared || v.mark === "organic") continue;
+      // Dữ liệu công khai không tách được "viral thật nhưng có cờ" với "chạy ads mà nội dung vẫn hay" (đều tương tác tốt)
+      // → mặc định PAID cho an toàn; người dùng biết clip không chạy ads thì đánh dấu organic.
+      v.ad_low_er = v.er == null || !medErClean || v.er <= 0.6 * medErClean;
+      v.declared = true; v.flag_paid = true;
     }
     const medAll = median(rows.map(v => v.views)) || 1;
     const medErAll = median(rows.filter(v => v.er != null).map(v => v.er)) || 0;
@@ -237,7 +247,7 @@
       v.ad_score = sig.reduce((a, x) => a + x[0], 0);
       v.ad_reasons = sig.sort((a, b) => b[0] - a[0]).map(x => x[1]);
       v.suspect = !v.declared && v.mark !== "organic" && v.ad_score >= 2;
-      v.paid_src = v.mark === "paid" ? "bạn xác nhận" : !v.declared ? "" : v.is_ad_flag ? "TikTok gắn cờ quảng cáo: clip đã được chạy ads" : v.paid_flags.length ? "nhãn quảng cáo trong dữ liệu TikTok (" + v.paid_flags.join(", ") + ")" : "creator tự ghi trong caption";
+      v.paid_src = v.mark === "paid" ? "bạn xác nhận" : !v.declared ? "" : v.flag_paid ? (v.ad_low_er ? `TikTok gắn cờ quảng cáo, tương tác chỉ bằng ${v.er != null && medErClean ? frac(v.er / medErClean) : "–"} mức thường: view chủ yếu đến từ ads` : "TikTok gắn cờ quảng cáo, nhưng tương tác vẫn tự nhiên: có thể chỉ chạy ít, hoặc clip vốn đã hay") : v.paid_flags.length ? "nhãn quảng cáo trong dữ liệu TikTok (" + v.paid_flags.join(", ") + ")" : "creator tự ghi trong caption";
       v.kind = v.declared ? "PAID" : v.suspect ? "NGHI ADS" : "ORGANIC";
     }
     const org = rows.filter(v => v.kind === "ORGANIC" && !v.isNew);
@@ -376,14 +386,14 @@
       "- **ER cao** = tương tác/view thuộc top 20% kênh dù view không nổi → khán giả thích nhưng chưa được đẩy rộng.",
       "- Tương tác = (like + comment + share + save) / view. Mọi clip đều đủ số liệu; comment, reply và phụ đề chỉ đọc ở các clip đại diện (mục D4).",
       "- Clip được đọc comment là clip đại diện: nhiều view nhất, ít view nhất, mới nhất và rải đều ở giữa.",
-      "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip, creator tự ghi trong caption (#ad #quangcao #hoptac #taitro…), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
+      "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip (lý do ghi rõ tương tác thấp hẳn hay vẫn tự nhiên), creator tự ghi trong caption (#ad #quangcao #hoptac #taitro…), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
       "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp / được tag vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
     o.push("## D2. Bảng toàn bộ clip (mới → cũ)", "",
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
       v._i = i + 1;
-      const lab = v.label + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.pinned ? " · ghim" : "");
+      const lab = v.label + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
       const dur = v.is_photo ? "ảnh" : v.duration ? v.duration + "s" : "–";
       o.push(`| ${v._i} | ${date_(v.ts, false, true)} | ${dur} | ${n_(v.views)} | ${x_(v.x_med)} | ${lab} | ${p_(v.er)} | ${p_(v.share_r, 2)} | ${p_(v.save_r, 2)} | ${n_(v.comments_count)} | ${(v.hook || "").replace(/[|\n]/g, " ").slice(0, 70)} |`);
     });
