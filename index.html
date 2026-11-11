@@ -903,7 +903,7 @@ async function openClip(){
   document.body.classList.add("shared");
   let raw="";try{raw=decodeURIComponent(h.slice(3))}catch(e){raw=h.slice(3)}
   // trang clip có cả thông tin tài khoản đang đăng nhập (đứng trước) → tên kênh và follower lấy lần xuất hiện CUỐI (của người đăng clip)
-  const LAST=["uniqueId","followerCount"];
+  const LAST=["uniqueId","followerCount","heartCount","videoCount"];
   const get=k=>{const all=[...raw.matchAll(new RegExp('"'+k+'":"?([^",}]*)','g'))];if(!all.length)return null;return (LAST.includes(k)?all[all.length-1]:all[0])[1]};
   const num=k=>{const v=get(k);return v!=null&&v!==""&&!isNaN(+v)?+v:null};
   const url=(raw.match(/https?:\/\/[^\s,"]+/)||[])[0]||"";
@@ -919,6 +919,10 @@ async function openClip(){
       music:(it.music&&it.music.title)||"",orig:!!(it.music&&it.music.original),isAd:!!it.isAd,shop:!!((it.anchors&&it.anchors.length)||+it.isECVideo===1),loc:it.locationCreated||"",poi:(it.poi&&it.poi.name)||"",photo:!!it.imagePost,
       tags:(it.textExtra||[]).map(x=>x.userUniqueId).filter(Boolean),verified:!!au.verified,id:it.id||""});
   }
+  if(!it){const f1=k=>{const m=raw.match(new RegExp('"'+k+'":\\["((?:[^"\\\\]|\\\\.)*)"'));return m?[m[1]]:[]};
+    const hc=num("heartCount"),vc=num("videoCount");
+    Object.assign(X,{hearts:hc,vids:vc,labels:f1("diversificationLabels"),kw:f1("suggestedWords"),isAd:/"isAd":true/.test(raw)});
+    if(!X.labels.length&&!hc)Object.assign(X,{labels:null});}
   const idm=X.id||(url.match(/\/video\/(\d+)/)||raw.match(/"id":"(\d{15,})"/)||[])[1]||"";
   if(v.views==null){
     $("sharebar").innerHTML="Không đọc được số liệu clip. TikTok có thể đã chặn Phím tắt đọc trang clip, hoặc link không phải link clip. Thử lại, hoặc mở clip trên máy tính rồi bấm ⚡.";
@@ -939,7 +943,7 @@ async function openClip(){
   if(brand.length)say.push(`Có brand: ${esc(brand.join(" · "))}.`);
   if(X.isAd)say.push(`TikTok gắn cờ quảng cáo cho clip này: có thể đã chạy ads, view không hoàn toàn tự nhiên.`);
   const avgLike=X.hearts&&X.vids?X.hearts/X.vids:null;
-  if(avgLike&&v.likes!=null){const r=v.likes/avgLike;say.unshift(`Clip được <b>${fmt(v.likes)}</b> tim, ${r>=1?`gấp <b>${times(r)}</b>`:`chỉ bằng <b>${pct(r,0)}</b>`} mức tim trung bình mỗi clip của kênh (${fmt(X.hearts)} tim ÷ ${fmt(X.vids)} clip)${r>=3?": clip nổi hẳn so với kênh":r<=0.4?": clip hụt so với kênh":""}. Trung bình dễ bị vài clip nổ kéo lên, nên chỉ để tham khảo.`)}
+  if(avgLike&&v.likes!=null){const r=v.likes/avgLike;say.push(`Clip được ${fmt(v.likes)} tim, ${r>=1?`gấp ${times(r)}`:`bằng ${pct(r,0)}`} mức tim trung bình cả đời kênh (${fmt(X.hearts)} tim ÷ ${fmt(X.vids)} clip). Mức này bị các clip nổ cũ kéo lên rất mạnh, nên đừng dùng để chấm thắng thua. Muốn biết chắc: quét cả kênh trên máy tính.`)}
   if(v.ts&&age>=1)say.push(`Trung bình <b>${fmt(Math.round(v.views/Math.max(1,age)))}</b> view mỗi ngày kể từ khi đăng.`);
   if(X.labels&&X.labels.length)say.push(`TikTok xếp clip vào chủ đề: <b>${esc(X.labels.slice(0,5).join(", "))}</b>. Đây là cách thuật toán hiểu clip, quyết định clip được đẩy cho ai.`);
   if(X.kw&&X.kw.length)say.push(`Từ khoá tìm kiếm TikTok gợi ý dưới clip: ${esc(X.kw.join(" · "))}. Clip có cửa lên từ tìm kiếm, không chỉ từ lướt.`);
@@ -951,11 +955,11 @@ async function openClip(){
   $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
   const chip=(k,val,extra="")=>`<div class="chip"><small>${k}</small><span class="cv"><b>${val}</b>${extra}</span></div>`;
   $("det").innerHTML=`<section class="card det">
-    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${X.labels||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
+    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${(X.labels&&X.labels.length)||X.hearts||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
     <div class="chips">
       ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
       ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
-      ${X.hearts&&X.vids?chip("Tim so với TB kênh",v.likes!=null?xm(v.likes/(X.hearts/X.vids)):"–")+chip("Comment",fmt(v.cm)):""}
+      ${X.hearts&&X.vids?chip("Tim TB mỗi clip của kênh",fmt(X.hearts/X.vids))+chip("Comment",fmt(v.cm)):""}
     </div>
     <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}
       <p class="hint" style="margin:12px 0 0">Cách tính: View / follower = view ÷ follower kênh. Tương tác/view = (tim + comment + share + lưu) ÷ view. Share/view, Save/view = số share, số lưu ÷ view. Mốc share là trung bình của kênh cùng cỡ follower (số liệu bên thứ ba, để định hướng).</p></div>
