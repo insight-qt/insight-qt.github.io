@@ -928,7 +928,7 @@ async function openClip(){
     if(!X.labels.length&&!hc)Object.assign(X,{labels:null});}
   const idm=X.id||(url.match(/\/video\/(\d+)/)||raw.match(/"id":"(\d{15,})"/)||[])[1]||"";
   if(v.views==null){
-    $("sharebar").innerHTML="Không đọc được số liệu clip. TikTok có thể đã chặn Phím tắt đọc trang clip, hoặc link không phải link clip. Thử lại, hoặc mở clip trên máy tính rồi bấm ⚡.";
+    $("sharebar").innerHTML=/"uniqueId"|"desc"/.test(raw)?"Không đọc được số liệu clip. Link có thể không phải link clip, hoặc mẫu trong phím tắt chưa đúng.":"TikTok trả về trang trống, không có số liệu clip (thỉnh thoảng TikTok làm vậy để chặn đọc tự động). Đợi vài giây rồi chạy lại phím tắt.";
     $("det").innerHTML=`<section class="card det"><h4 style="margin:0 0 8px">Phím tắt đã gửi sang (${raw.length} ký tự)</h4><pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;margin:0;color:var(--mute)">${esc(raw.slice(0,900))}</pre></section>`;return true;
   }
   const er=v.views?((v.likes||0)+(v.cm||0)+(v.sh||0)+(v.sv||0))/v.views:null, shr=v.views?(v.sh||0)/v.views:null, svr=v.views?(v.sv||0)/v.views:null, cmr=v.views?(v.cm||0)/v.views:null;
