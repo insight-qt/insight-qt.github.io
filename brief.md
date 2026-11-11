@@ -20,6 +20,7 @@ Không tóm tắt lại từng clip. Tìm **pattern**, tức điều lặp lại
 - **Share/view và save/view** cho biết clip có ích hoặc "nói hộ" người xem. **Comment/view** cho biết clip gây tranh luận hoặc chạm nỗi niềm. Like dễ, đừng dựa vào like.
 - **Comment nói thật hơn caption.** Comment nhiều like là đồng thuận lớn. Dòng "N người viết y vậy" và dòng đếm comment 1–2 chữ ("đúng tui" ×12) là tín hiệu mạnh.
 - Reply có ghi **creator trả lời** cho biết creator đang nuôi cộng đồng thế nào.
+- Dòng **Kênh tự comment** là comment của chính kênh (thường là lời kêu gọi). Không tính là tiếng nói khán giả; chỉ dùng để nhận xét cách kênh kêu gọi hành động.
 - Transcript là phụ đề tự động, sai chính tả là bình thường. Đọc theo ngữ cảnh.
 - Nhóm chỉ có 1–2 clip thì không đủ để kết luận. Nói rõ khi mẫu mỏng.
 - Không bịa số liệu, không bịa quote. Thứ gì là suy luận thì ghi *(suy luận)*. Khi nêu bằng chứng, dẫn số **#clip**.

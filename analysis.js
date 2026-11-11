@@ -302,7 +302,8 @@
       new: rows.filter(v => v.isNew).length, organic: rows.filter(v => v.kind === "ORGANIC").length,
       paid: rows.filter(v => v.kind === "PAID").length, suspect: rows.filter(v => v.kind === "NGHI ADS").length,
       shop: rows.filter(v => v.shop).length, deep: rows.filter(v => !v.lite && !v.thin).length, full: rows.filter(v => !v.lite).length,
-      with_transcript: rows.filter(v => v.transcript).length, comments_got: rows.reduce((a, v) => a + (v.comments || []).length, 0),
+      with_transcript: rows.filter(v => v.transcript).length, comments_got: rows.reduce((a, v) => a + (v.comments || []).filter(c => String(c.by || "").toLowerCase() !== String(v.channel || "").toLowerCase()).length, 0),
+      own_cmts: rows.reduce((a, v) => a + (v.comments || []).filter(c => c.by && String(c.by).toLowerCase() === String(v.channel || "").toLowerCase()).length, 0),
     };
     return { rows, summary, tables };
   }
@@ -313,8 +314,11 @@
   // ký tự vô hình / ô trống mà spam hay dùng (braille trống, hangul filler, zero-width…)
   const INVIS = /[\u2800\u3164\uFFA0\u115F\u1160\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF\u00AD\u034F\u17B4\u17B5\u180E]/g;
   const clean = t => { t = String(t || "").replace(INVIS, " ").replace(/\s+/g, " ").trim(); return t.length > 300 ? t.slice(0, 300) + "…" : t; };
-  function pickComments(cm, cap) {
+  function pickComments(cm, cap, owner) {
     const out = [], seen = new Map(), short = new Map(); let dropped = 0;
+    const me = String(owner || "").toLowerCase();
+    const own = me ? (cm || []).filter(c => String(c.by || "").toLowerCase() === me).map(c => clean(c.text)) : [];
+    if (me) cm = (cm || []).filter(c => String(c.by || "").toLowerCase() !== me);
     cm = (cm || []).map(c => ({ ...c, text: clean(c.text), reply_list: (c.reply_list || []).map(r => ({ ...r, text: clean(r.text) })) }));
     for (const c0 of cm) {
       const k = norm(c0.text);
@@ -324,7 +328,7 @@
       const c = { ...c0, reply_list: (c0.reply_list || []).filter(r => !isNoise(r.text)) };
       seen.set(k, c); out.push(c);
     }
-    return { list: cap ? out.slice(0, cap) : out, dropped, shorts: [...short].sort((a, b) => b[1] - a[1]), total: out.length };
+    return { list: cap ? out.slice(0, cap) : out, dropped, shorts: [...short].sort((a, b) => b[1] - a[1]), total: out.length, own };
   }
 
   /* ---------- xuất markdown ---------- */
@@ -352,19 +356,19 @@
       ...(!ranged && meta.videos && rows.length < meta.videos * 0.6 ? [`- ⚠ Mới đọc được ${rows.length}/${n_(meta.videos)} clip của kênh (TikTok chỉ cho tải tới đó). Kết luận chỉ đúng cho giai đoạn bên dưới, không phải cả kênh.`] : []),
       `- Giai đoạn: ${date_(s.first)} → ${date_(s.last)}${s.per_week ? ` · đăng trung bình ${String(s.per_week).replace(".", ",")} clip/tuần` : ""}`,
       `- View: trung vị ${n_(s.med_views)} · trung bình ${n_(s.mean_views)} · cao nhất ${n_(s.max_views)} · thấp nhất ${n_(s.min_views)}`,
-      `- Trung vị (clip đã soi sâu): tương tác/view ${p_(s.med_er)} · share/view ${p_(s.med_share, 2)} · save/view ${p_(s.med_save, 2)} · comment/view ${p_(s.med_cmt, 2)}`,
+      `- Trung vị: tương tác/view ${p_(s.med_er)} · share/view ${p_(s.med_share, 2)} · save/view ${p_(s.med_save, 2)} · comment/view ${p_(s.med_cmt, 2)}`,
       ...(s.med_share != null ? [`- Mốc share/view tham khảo cho ${s.share_bench.tier}: ${p_(s.share_bench.rate, 2)} (số liệu bên thứ ba, chỉ để định hướng) → kênh này ${s.med_share >= s.share_bench.rate * 1.2 ? "**được share nhiều hơn mặt bằng**" : s.med_share <= s.share_bench.rate * 0.8 ? "**được share ít hơn mặt bằng**" : "ngang mặt bằng"}. TikTok coi xem hết và share là tín hiệu mạnh; follower không phải yếu tố trực tiếp.`] : []),
       ...((meta.fhist || []).length >= 2 ? [(() => { const h = meta.fhist, a = h[0], b = h[h.length - 1], d = b[1] - a[1]; return `- Follower qua các lần quét: ${n_(a[1])} (${date_(a[0])}) → ${n_(b[1])} (${date_(b[0])}) · ${d >= 0 ? "+" : ""}${n_(d)} trong ${Math.max(1, Math.round((b[0] - a[0]) / 86400))} ngày`; })()] : []),
       `- Loại clip: ${s.organic} organic · ${s.paid} paid có công bố · ${s.suspect} nghi chạy ads · ${s.shop} clip gắn giỏ hàng / sản phẩm`,
-      `- ${s.viral} clip VIRAL · ${s.win} clip WIN · ${s.flop} clip FLOP · ${s.new} clip MỚI (chưa đủ ${NEW_DAYS} ngày) · ${s.with_transcript}/${s.deep} clip soi sâu có phụ đề · ${n_(s.comments_got)} comment đã lấy`,
+      `- ${s.viral} clip VIRAL · ${s.win} clip WIN · ${s.flop} clip FLOP · ${s.new} clip MỚI (chưa đủ ${NEW_DAYS} ngày) · ${s.with_transcript}/${s.deep} clip đọc comment có phụ đề · ${n_(s.comments_got)} comment của khán giả đã lấy${s.own_cmts ? ` (bỏ ${s.own_cmts} comment của chính kênh)` : ""}`,
       "", "**Cách gắn nhãn** (đã tính sẵn, không cần tính lại):",
       "- `×TV` = view của clip chia view trung vị của kênh. 1,0× là mức bình thường của kênh này.",
       "- **WIN** = ≥ 2×TV, hoặc thuộc 20% clip nhiều view nhất và ≥ 1,3×TV. **FLOP** = ≤ 0,4×TV, hoặc thuộc 20% ít view nhất và ≤ 0,7×TV. Còn lại **ỔN**.",
       "- **VIRAL** = ≥ 5×TV **và** view ≥ số follower của kênh (đã lan ra ngoài tệp fan), share/view không thấp hơn mức thường. VIRAL tính riêng, không đếm vào WIN.",
       `- **MỚI** = đăng chưa tới ${NEW_DAYS} ngày, view còn đang lên → không chấm win/flop, không tính vào mức chuẩn.`,
       "- **ER cao** = tương tác/view thuộc top 20% kênh dù view không nổi → khán giả thích nhưng chưa được đẩy rộng.",
-      "- Tương tác = (like + comment + share + save) / view. Clip chưa soi sâu chỉ có view + ngày đăng (cột khác để –).",
-      "- Clip soi sâu được chọn đại diện: nhiều view nhất, ít view nhất, mới nhất và rải đều ở giữa.",
+      "- Tương tác = (like + comment + share + save) / view. Mọi clip đều đủ số liệu; comment, reply và phụ đề chỉ đọc ở các clip đại diện (mục D4).",
+      "- Clip được đọc comment là clip đại diện: nhiều view nhất, ít view nhất, mới nhất và rải đều ở giữa.",
       "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip, creator tự ghi trong caption (#ad #quangcao #hoptac #taitro…), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
       "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp / được tag vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
@@ -400,12 +404,12 @@
     if ((t.keyword || []).length) table("Từ khoá tìm kiếm TikTok gợi ý dưới clip (clip lên nhờ search nào)", t.keyword, "Từ khoá");
     const sus = rows.filter(v => v.kind === "NGHI ADS");
     if (sus.length) {
-      o.push("## D3b. Clip nghi chạy ads và lý do", "", "_Gồm cả clip chưa soi sâu (dấu hiệu view tăng đều lấy từ các lần quét)._", "");
+      o.push("## D3b. Clip nghi chạy ads và lý do", "", "_Gồm cả clip chưa đọc comment (dấu hiệu view tăng đều lấy từ các lần quét)._", "");
       sus.sort((a, b) => b.ad_score - a.ad_score).forEach(v => o.push(`- ${date_(v.ts)} · ${n_(v.views)} view · ${v.url} — ${v.ad_reasons.join("; ")}`));
       o.push("");
     }
     const ord = { VIRAL: 0, WIN: 1, FLOP: 2, "ỔN": 3, PAID: 4, "NGHI ADS": 5, "MỚI": 6 };
-    o.push("## D4. Chi tiết từng clip", "", "_Chỉ gồm clip đã soi sâu. Thứ tự: VIRAL → WIN → FLOP → ỔN → PAID → NGHI ADS → MỚI. Số # khớp với bảng ở mục D2._", "");
+    o.push("## D4. Chi tiết từng clip", "", "_Gồm các clip đã đọc comment và phụ đề. Thứ tự: VIRAL → WIN → FLOP → ỔN → PAID → NGHI ADS → MỚI. Số # khớp với bảng ở mục D2._", "");
     [...rows].filter(v => !v.lite && !v.thin).sort((a, b) => (ord[a.label] - ord[b.label]) || (b.x_med - a.x_med)).forEach(v => {
       const hot = ["VIRAL", "WIN", "FLOP", "PAID", "NGHI ADS"].includes(v.label) || v.er_high;
       o.push(`### #${v._i} · ${v.label}${v.er_high ? " · ER cao" : ""} · ${x_(v.x_med)} · ${date_(v.ts, true)}`, `- Link: ${v.url}`,
@@ -424,17 +428,24 @@
       let tr = v.transcript || "";
       if (tr && !hot && trOk) { const w = tr.split(/\s+/); tr = w.slice(0, trOk).join(" ") + (w.length > trOk ? " …(rút gọn)" : ""); }
       o.push(`- Transcript (phụ đề tự động, có thể sai chính tả): ${tr || "(không có phụ đề)"}`);
-      const P = pickComments(v.comments, hot ? capHot : capOk);
+      const P = pickComments(v.comments, hot ? capHot : capOk, h);
+      if (P.own.length) o.push(`- Kênh tự comment dưới clip (không tính là khán giả): ${P.own.slice(0, 3).map(t => "«" + t + "»").join(" · ")}`);
       if (P.list.length || P.shorts.length) {
-        o.push(`- Comment, xếp theo like (${P.list.length}/${P.total} comment có ý${P.dropped ? `, bỏ ${P.dropped} comment chỉ emoji/cười` : ""}):`);
+        o.push(`- Comment của khán giả, xếp theo like (${P.list.length}/${P.total} comment có ý${P.dropped ? `, bỏ ${P.dropped} comment chỉ emoji/cười` : ""}):`);
         P.list.forEach(c => {
           o.push(`  - [${n_(c.likes)} like${c.replies ? ` · ${c.replies} trả lời` : ""}${c.dup ? ` · ${c.dup} người viết y vậy` : ""}] ${c.text}`);
           (capRep ? c.reply_list.slice(0, capRep) : c.reply_list).forEach(r => o.push(`    - ↳ ${r.by_creator ? "**creator trả lời** " : ""}[${n_(r.likes)} like] ${r.text}`));
         });
         if (P.shorts.length) o.push(`  - Comment 1–2 chữ (${P.shorts.reduce((a, x) => a + x[1], 0)}): ` + P.shorts.slice(0, 20).map(([k, c]) => `«${k}»${c > 1 ? " ×" + c : ""}`).join(" · "));
-      } else o.push("- Comment: (không có / không lấy được)");
+      } else o.push("- Comment của khán giả: (không có)");
       o.push("");
     });
+    const rest = rows.filter(v => v.thin && (v.caption || "").length > 70);
+    if (rest.length) {
+      o.push("## D5. Caption đầy đủ của các clip còn lại", "", "_Clip có đủ số liệu nhưng chưa đọc comment; bảng D2 cắt caption ở 70 ký tự._", "");
+      rest.forEach(v => o.push(`- #${v._i} · ${v.label} · ${x_(v.x_med)}: ${v.caption.replace(/\n/g, " ")}`));
+      o.push("");
+    }
     return o.join("\n").trim() + "\n";
   }
 
