@@ -234,11 +234,20 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 @media (min-width:701px){.det .chips{grid-template-columns:repeat(6,minmax(0,1fr))}
  .det .chips+.acts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
  .det .chips+.acts>.btn{width:100%;min-width:0;padding:0 10px;white-space:nowrap}
- .det .chips+.acts .scanned{grid-column:4/6;padding-left:12px}.det .chips+.acts .del{grid-column:6;justify-self:end;padding-right:12px}}
+ .det .chips+.acts .scanned{grid-column:5/6;padding-left:12px}.det .chips+.acts .del{grid-column:6;justify-self:end;padding-right:12px}}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
 
+
+/* bản xem lại trên điện thoại */
+.pbox{max-width:420px}.pqr{display:flex;justify-content:center;margin-top:14px;background:#fff;border-radius:12px;padding:14px}.pqr svg{width:100%;max-width:340px;height:auto;image-rendering:pixelated}
+.pqr.none{background:none;padding:0}.pqr.none p{margin:0;color:var(--mute);font-size:13px}
+.sharebar{display:none}
+body.shared #setup,body.shared .scan,body.shared #range,body.shared #job,body.shared .chsec,body.shared #chs,body.shared header .row,body.shared .det .acts,body.shared .det .tfil{display:none!important}
+body.shared .sharebar{display:block;margin-bottom:14px}
+.sh-sec{border-bottom:0!important}body.shared footer button{display:none}
+.snap-sec,.sh-sec{font-weight:600;font-size:12.5px;color:var(--mute);padding:14px 0 6px!important}
 /* ===== điện thoại ===== */
 .phone-note{display:none}
 @media (max-width:700px){
@@ -290,8 +299,9 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 
   <div id="job"></div>
 
-  <div class="sec"><h2>Kênh đã quét</h2><div class="row" id="chbar"><span class="hint" id="chcount"></span></div></div>
+  <div class="sec chsec"><h2>Kênh đã quét</h2><div class="row" id="chbar"><span class="hint" id="chcount"></span></div></div>
   <div class="chs" id="chs"></div>
+  <div class="note sharebar" id="sharebar"></div>
   <div id="det"></div>
 
   <footer>
@@ -438,6 +448,14 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="modal" id="pmodal" onclick="if(event.target===this)closePhone()">
+  <div class="card mbox pbox">
+    <h3>Mở trên điện thoại</h3>
+    <p class="hint">Lấy camera điện thoại quét mã. Bản xem lại nằm gọn trong link, không cần đăng nhập, không lưu ở đâu cả.</p>
+    <div id="pqr" class="pqr"></div>
+    <div class="row" style="margin-top:14px"><button class="btn" onclick="copyPhone()">Copy link</button><button class="btn" id="pshare" onclick="sharePhone()">Gửi qua AirDrop / Zalo…</button><span style="flex:1"></span><button class="btn primary" onclick="closePhone()">Xong</button></div>
+  </div>
+</div>
 
 <script src="analysis.js"></script>
 <script>
@@ -644,7 +662,7 @@ function renderDetail(){
       <div class="chip" title="10% clip nhiều view nhất chiếm bao nhiêu tổng view organic. Càng cao càng sống nhờ vài clip nổ"><small>10% clip gánh</small><span class="cv"><b>${s.conc!=null?Math.round(s.conc*100)+"% view":"–"}</b></span></div>
     </div>
     <div class="acts"><a class="btn" href="https://www.tiktok.com/@${esc(m.handle)}" target="_blank" onclick="job={handle:'${esc(m.handle)}',state:'wait',mode:$('mode').value,msg:'Sang tab TikTok vừa mở, bấm ⚡ để cập nhật và soi tiếp.',done:0,todo:0,errors:[]};renderJob()" style="text-decoration:none">Cập nhật / soi tiếp</a>
-      <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button>
+      <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button><button class="btn" onclick="openPhone()" title="Gửi bản xem lại sang điện thoại">Mở trên điện thoại</button>
       <span class="hint scanned">Quét lần cuối ${esc(m.scanned||"–")}</span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
     ${diffCard(d)}
     <div class="groups">${heat(t.heat,t)}<div class="side" style="--lw:${sideLw([t.duration,(t.topic||[]).slice(0,6),t.kind])}px">${grp("Theo độ dài",t.duration)}${grp("Chủ đề TikTok tự gắn",(t.topic||[]).slice(0,6))}${grp("Organic vs paid",t.kind)}</div></div>
@@ -806,6 +824,78 @@ async function exportJpg(){
   }catch(e){document.querySelectorAll(".snap").forEach(x=>x.remove());toast("Không xuất được ảnh: "+e.message)}
 }
 
+
+/* ---------- mở trên điện thoại: gói kết quả gọn vào link ---------- */
+async function packStr(str){const cs=new Blob([str]).stream().pipeThrough(new CompressionStream("deflate-raw"));const buf=new Uint8Array(await new Response(cs).arrayBuffer());let b="";buf.forEach(c=>b+=String.fromCharCode(c));return btoa(b).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+async function unpackStr(b64){const bin=atob(b64.replace(/-/g,"+").replace(/_/g,"/"));const u=Uint8Array.from(bin,c=>c.charCodeAt(0));const ds=new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate-raw"));return await new Response(ds).text()}
+const r2=v=>typeof v==="number"?Math.round(v*100)/100:null, r4=v=>typeof v==="number"?Math.round(v*10000)/10000:null;
+function sharePayload(d){
+  const m=d.meta||{},s=d.summary||{},t=d.tables||{};
+  const g=a=>(a||[]).map(x=>[x.key,x.n,r2(x.med_x)]);
+  const org=d.rows.filter(r=>r.kind==="ORGANIC"&&r.label!=="MỚI"&&typeof r.x_med==="number").sort((a,b)=>b.x_med-a.x_med);
+  const top=org.slice(0,5),bot=org.slice(-5).reverse().filter(r=>!top.includes(r));
+  const cut=(x,n)=>{x=String(x||"").replace(/\s+/g," ").trim();if(x.length<=n)return x;const y=x.slice(0,n);const i=y.lastIndexOf(" ");return (i>n*0.6?y.slice(0,i):y).replace(/[\s,.;:·(]+$/,"")+"…"};
+  const row=r=>[r.ts||0,cut(r.hook||r.caption,40),r.views,r2(r.x_med),r.label,(r.super?"s":"")+(r.brand?"b":"")+(r.collab&&r.collab.length?"c":"")+(r.er_high?"e":""),String(r.id||"")];
+  return {v:1,at:Math.floor(Date.now()/1000),rg:ranged()?TTI.rangeLabel(range):"",
+    m:{h:m.handle,n:m.nickname||"",f:m.followers||0,vd:m.videos||0},
+    s:{n:d.rows.length,dp:s.deep||0,mv:s.med_views,er:r4(s.med_er),sh:r4(s.med_share),bt:s.share_bench?[s.share_bench.tier,s.share_bench.rate]:null,vi:s.viral||0,wi:s.win||0,fl:s.flop||0,o:s.organic||0,p:s.paid||0,su:s.suspect||0,pw:s.per_week||null,sv:r4(s.med_save),re:r4(s.reach),co:r2(s.conc),tb:s.thin_base?s.base_n:0},
+    t:{hh:t.heat?t.heat.hours:[],ho:t.heat?t.heat.organic:false,hr:t.heat?t.heat.rows.map(r=>[r.day,r.cells.map(c=>[c.n,r2(c.x)])]):[],wd:g(t.weekday),hu:g(t.hour),du:g(t.duration),to:g((t.topic||[]).slice(0,6)),ki:g(t.kind)},
+    rx:TTI.prescribe(d).map(r=>[r.t,cut(r.d,170)]),top:top.map(row),bot:bot.map(row)};
+}
+let PHONE_URL="";
+async function openPhone(){
+  if(!detail)return;
+  try{
+    const enc=await packStr(JSON.stringify(sharePayload(detail)));
+    PHONE_URL=location.origin+location.pathname+"#r="+enc;
+    $("pmodal").classList.add("show");
+    const box=$("pqr");box.className="pqr";box.innerHTML="";
+    if(PHONE_URL.length>2900){box.className="pqr none";box.innerHTML="<p>Kết quả dài quá để vừa một mã QR. Bấm Copy link hoặc Gửi qua AirDrop / Zalo bên dưới.</p>";}
+    else{if(!window.qrcode)await loadJs("qrcode.js");const q=qrcode(0,"L");q.addData(PHONE_URL,"Byte");q.make();box.innerHTML=q.createSvgTag({cellSize:4,margin:2,scalable:true});}
+    $("pshare").style.display=navigator.share?"":"none";
+  }catch(e){toast("Trình duyệt này chưa hỗ trợ, thử Chrome hoặc Safari mới hơn")}
+}
+function closePhone(){$("pmodal").classList.remove("show")}
+function copyPhone(){const ta=document.createElement("textarea");ta.value=PHONE_URL;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();if(ok)return toast("Đã copy link");navigator.clipboard&&navigator.clipboard.writeText(PHONE_URL).then(()=>toast("Đã copy link"),()=>toast("Không copy được"))}
+function sharePhone(){navigator.share&&navigator.share({title:"Khám kênh @"+((detail&&detail.meta&&detail.meta.handle)||""),url:PHONE_URL}).catch(()=>{})}
+async function openShared(){
+  const h=location.hash;if(!h.startsWith("#r="))return false;
+  let P;try{P=JSON.parse(await unpackStr(h.slice(3)))}catch(e){document.body.classList.add("shared");$("sharebar").textContent="Link này bị lỗi hoặc thiếu một đoạn. Nhờ người gửi copy lại link.";return true}
+  document.body.classList.add("shared");
+  const ex=(a)=>(a||[]).map(([key,n,x])=>({key,n,med_x:x,med_views:null,win:0,flop:0}));
+  const T=P.t||{};
+  const tables={heat:{hours:T.hh||[],organic:T.ho,rows:(T.hr||[]).map(([day,cells])=>({day,cells:cells.map(([n,x])=>({n,x,med:null}))}))},weekday:ex(T.wd),hour:ex(T.hu),duration:ex(T.du),topic:ex(T.to),kind:ex(T.ki)};
+  const S=P.s||{},m={handle:P.m.h,nickname:P.m.n,followers:P.m.f,videos:P.m.vd};
+  const sum={deep:S.dp,med_views:S.mv,med_er:S.er,med_share:S.sh,share_bench:S.bt?{tier:S.bt[0],rate:S.bt[1]}:null,viral:S.vi,win:S.wi,flop:S.fl,organic:S.o,paid:S.p,suspect:S.su,per_week:S.pw,med_save:S.sv,reach:S.re,conc:S.co,thin_base:!!S.tb,base_n:S.tb};
+  const row=([ts,cap,views,x,label,f,id])=>`<tr class="r" ${id?`onclick="window.open('https://www.tiktok.com/@${esc(m.handle)}/video/${esc(id)}','_blank')"`:""}><td>${dfmt(ts)}</td><td class="hk">${esc(cap)}</td><td class="num">${fmt(views)}</td><td><span class="xm">${xm(x)}</span></td><td><div class="pills"><span class="pill ${label}">${f.includes("s")?"SIÊU VIRAL":label}</span>${f.includes("e")?'<span class="pill er">ER cao</span>':""}${f.includes("b")?'<span class="pill brand">Brand</span>':""}${f.includes("c")?'<span class="pill collab">Collab</span>':""}</div></td></tr>`;
+  const sec=t=>`<tr><td colspan="5" class="sh-sec">${t}</td></tr>`;
+  $("sharebar").innerHTML=`Bản xem lại, gửi từ máy tính lúc ${new Date(P.at*1000).toLocaleString("vi-VN",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"})}${P.rg?" · "+esc(P.rg):""}. Muốn quét kênh mới: mở trang này trên máy tính.`;
+  const bt=sum.share_bench;
+  $("det").innerHTML=`<section class="card det">
+    <div class="det-head"><div><h2>${esc(m.nickname||m.handle)} <span class="hint">@${esc(m.handle)}</span></h2></div></div>
+    ${sum.thin_base?`<div class="note" style="margin-top:14px">Mẫu mỏng: chỉ ${sum.base_n} clip organic đủ 7 ngày để làm chuẩn. Nhãn để tham khảo.</div>`:""}
+    <div class="chips">
+      <div class="chip"><small>Follower</small><span class="cv"><b>${fmt(m.followers)}</b></span></div>
+      <div class="chip"><small>Clip có số liệu</small><span class="cv"><b>${S.n}${m.videos&&!P.rg?"/"+m.videos:""}</b></span></div>
+      <div class="chip"><small>Đã đọc comment</small><span class="cv"><b>${sum.deep??0}</b></span></div>
+      <div class="chip"><small>View trung vị</small><span class="cv"><b>${fmt(sum.med_views)}</b></span></div>
+      <div class="chip"><small>Tương tác/view</small><span class="cv"><b>${pct(sum.med_er)}</b></span></div>
+      ${sum.med_share!=null&&bt?`<div class="chip"><small>Share/view</small><span class="cv"><b>${pct(sum.med_share,2)}</b><em class="${sum.med_share>=bt.rate*1.2?"up":sum.med_share<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em></span></div>`:""}
+      <div class="chip"><small>Viral · Win · Flop</small><span class="cv"><b><span style="color:var(--win)">${sum.viral} · ${sum.win}</span> · <span style="color:var(--flop)">${sum.flop}</span></b></span></div>
+      <div class="chip"><small>Organic · Ads · Nghi</small><span class="cv"><b>${sum.organic} · ${sum.paid} · ${sum.suspect}</b></span></div>
+      <div class="chip"><small>Tần suất</small><span class="cv"><b>${sum.per_week?String(sum.per_week).replace(".",",")+"/tuần":"–"}</b></span></div>
+      <div class="chip"><small>Save/view</small><span class="cv"><b>${sum.med_save!=null?pct(sum.med_save,2):"–"}</b></span></div>
+      <div class="chip"><small>View / follower</small><span class="cv"><b>${sum.reach!=null?pct(sum.reach,sum.reach<0.1?1:0):"–"}</b></span></div>
+      <div class="chip"><small>10% clip gánh</small><span class="cv"><b>${sum.conc!=null?Math.round(sum.conc*100)+"% view":"–"}</b></span></div>
+    </div>
+    <div class="groups">${heat(tables.heat,tables)}<div class="side" style="--lw:${sideLw([tables.duration,tables.topic,tables.kind])}px">${grp("Theo độ dài",tables.duration)}${grp("Chủ đề TikTok tự gắn",tables.topic)}${grp("Organic vs paid",tables.kind)}</div></div>
+    ${(P.rx||[]).length?`<div class="rx"><h4>Kê đơn · ${P.rx.length} việc nên làm cho kênh</h4><ol>${P.rx.map(([t,d])=>`<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`).join("")}</ol></div>`:""}
+    <div class="tw"><table class="ct"><thead><tr><th>Ngày</th><th>Hook / caption</th><th class="num">View</th><th>×TV</th><th>Nhãn</th></tr></thead>
+    <tbody>${(P.top||[]).length?sec("5 clip ăn nhất")+P.top.map(row).join(""):""}${(P.bot||[]).length?sec("5 clip kém nhất")+P.bot.map(row).join(""):""}</tbody></table></div>
+  </section>`;
+  return true;
+}
+
 /* ---------- sổ tay ---------- */
 function gTab(k){document.querySelectorAll(".gtabs button").forEach(b=>b.classList.toggle("on",b.dataset.g===k));document.querySelectorAll(".gpane").forEach(p=>p.classList.toggle("on",p.dataset.g===k));ls.set("tti_gtab",k)}
 function openGuide(k){gTab(k||ls.get("tti_gtab","start"));$("gmodal").classList.add("show");$("gmodal").querySelector(".guide").scrollTop=0}
@@ -815,8 +905,8 @@ function toggleSetup(on){$("setup").style.display=on?"":"none";ls.set("tti_setup
 if(ls.get("tti_setup_hidden","")==="1")$("setup").style.display="none";
 $("url").addEventListener("keydown",e=>{if(e.key==="Enter")openChannel()});
 try{const md=ls.get("tti_mode","fast");if([...$("mode").options].some(o=>o.value===md))$("mode").value=md}catch(e){}
-renderRange();
-loadChannels();
+openShared().then(sh=>{if(!sh){renderRange();loadChannels()}});
+window.addEventListener("hashchange",()=>location.reload());
 </script>
 </body>
 </html>
