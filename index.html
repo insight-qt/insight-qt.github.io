@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok Insight</title>
+<meta name="description" content="Phân tích kênh TikTok: clip nào win, clip nào flop, vì sao. Xuất file cho AI đọc insight. Dữ liệu nằm trong trình duyệt của bạn.">
+<style>
+:root{
+  --bg:#f6f5f2; --card:#fff; --ink:#16151a; --mute:#6f6c78; --faint:#a9a6b2; --line:#e7e5ea; --soft:#f1f0f4;
+  --accent:#6b3fd4; --accent-ink:#fff; --accent-soft:#efe9fc;
+  --win:#1f8a5b; --win-soft:#e3f4ec; --shop:#0e7c82; --shop-soft:#dcf2f3; --adf:#c25a12; --adf-soft:#fde9da; --flop:#c2413b; --flop-soft:#fbe7e5; --warn:#b07a10; --warn-soft:#fbf1dc;
+  --shadow:0 1px 2px rgba(20,18,30,.04),0 8px 24px rgba(20,18,30,.05); --r:14px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111014; --card:#1a191e; --ink:#f2f1f5; --mute:#9e9ba8; --faint:#6a6774; --line:#2a2830; --soft:#222027;
+  --accent:#9a74ff; --accent-ink:#120f1a; --accent-soft:#2a2240;
+  --win:#4cc38a; --win-soft:#173326; --shop:#5ccfd5; --shop-soft:#12302f; --adf:#f2a160; --adf-soft:#3a2414; --flop:#ff7b72; --flop-soft:#3a1d1b; --warn:#e8b54a; --warn-soft:#362a12; --shadow:none;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 24px 80px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin:0}
+.brand span{color:var(--mute);font-size:13px}
+.ghost{background:none;border:0;padding:7px 11px;border-radius:9px;color:var(--mute);cursor:pointer}
+.ghost:hover{background:var(--soft);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:600;background:var(--soft);white-space:nowrap}
+.btn:hover{filter:brightness(.97)} .btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.link{background:none;border:0;color:var(--mute);cursor:pointer;font-size:13px;padding:6px 8px;border-radius:8px}
+.link:hover{color:var(--ink);background:var(--soft)} .link.del:hover{color:var(--flop)}
+.hint{color:var(--faint);font-size:12.5px}
+/* onboarding */
+.setup{padding:22px;margin-bottom:14px}
+.setup h2{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
+.setup p.lead{margin:0 0 18px;color:var(--mute);font-size:13.5px;max-width:640px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.step{background:var(--soft);border-radius:12px;padding:14px}
+.step b{display:block;font-size:13px;margin-bottom:4px} .step span{color:var(--mute);font-size:12.5px}
+.step .stepn{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:700;align-items:center;justify-content:center;margin-bottom:8px}
+.bm{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:650;font-size:13px;text-decoration:none;cursor:grab;margin-top:10px}
+@media (max-width:760px){.steps{grid-template-columns:1fr}}
+/* scan */
+.scan{padding:8px 8px 8px 18px;display:flex;gap:10px;align-items:center}
+.scan input{flex:1;border:0;outline:0;background:none;font-size:15px;padding:8px 0;min-width:0}
+.scan input::placeholder{color:var(--faint)}
+.scan select{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 10px;font-size:13px}
+.sub{margin:10px 4px 0}
+.job{margin-top:14px;padding:16px 18px}
+.job h3{margin:0;font-size:14px;font-weight:650}
+.job .msg{color:var(--mute);font-size:13px;margin-top:2px}
+.job.ask{border-color:var(--warn);background:var(--warn-soft)} .job.ask .msg{color:var(--ink)}
+.bar{height:6px;background:var(--soft);border-radius:99px;overflow:hidden;margin:12px 0 8px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.errs{margin-top:8px;font-size:12.5px;color:var(--mute)} .errs div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:34px 0 12px}
+.sec h2{font-size:15px;margin:0;font-weight:650}
+.chs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.ch{padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.ch:hover{border-color:var(--faint)} .ch.on{border-color:var(--accent)}
+.ch b{font-weight:650} .ch .h{color:var(--mute);font-size:12.5px}
+.ch .m{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--mute)} .ch .m span{white-space:nowrap} .ch .m b{color:var(--ink);font-weight:600}
+.empty{padding:40px 20px;text-align:center;color:var(--mute)}
+.det{margin-top:14px;padding:20px}
+.det-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.det-head h2{margin:0;font-size:18px;letter-spacing:-.01em}
+.det-head .bio{color:var(--mute);font-size:13px;max-width:560px;margin-top:2px}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:16px 0}
+.chip{background:var(--soft);border-radius:12px;padding:10px 12px}
+.chip small{display:block;color:var(--mute);font-size:11.5px} .chip b{font-size:16px;font-weight:650}
+.note{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px}
+.range{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 2px 0}
+.range>small{color:var(--mute);font-size:12.5px}
+.seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 11px;border-radius:8px;font-size:12.5px;color:var(--mute);cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(20,18,30,.08)}
+.range .dates{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:12.5px}
+.range input[type=date]{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:5px 8px;font-size:12.5px}
+.rtag{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:600;vertical-align:middle}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.acts select{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:8px 10px;font-size:13px}
+.groups{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;margin:18px 0 6px;align-items:start}
+.side{display:flex;flex-direction:column;gap:10px}
+.grp{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.grp h4,.heat h4{margin:0 0 8px;font-size:12.5px;color:var(--mute);font-weight:600}
+.gr{display:grid;grid-template-columns:var(--lw,72px) minmax(40px,1fr) 44px;gap:8px;align-items:center;font-size:12.5px;margin:3px 0}
+.gr .t{height:6px;background:var(--soft);border-radius:99px;overflow:hidden} .gr .t i{display:block;height:100%;background:var(--accent)}
+.gr span:last-child{text-align:right;color:var(--mute)}
+.heat{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.hm{display:grid;grid-template-columns:34px repeat(6,1fr);gap:4px;font-size:12px}
+.hm .hd{color:var(--mute);text-align:center;font-size:11px;padding-bottom:2px}
+.hm .dl{color:var(--mute);display:flex;align-items:center}
+.hm .c{height:34px;border-radius:8px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;font-weight:600}
+.hm .c.one{font-weight:500;opacity:.85}
+@media (max-width:700px){.heat{grid-column:auto}.groups{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px}
+th{text-align:left;font-weight:600;color:var(--mute);font-size:12px;padding:8px 6px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.r:hover td{background:var(--soft)} tr.r{cursor:pointer}
+td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums} th.num{text-align:right}
+td.hk{color:var(--mute);max-width:360px}
+.pill{display:inline-block;vertical-align:middle;line-height:1.5;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.02em}
+.pill.WIN{background:var(--win-soft);color:var(--win)} .pill.FLOP{background:var(--flop-soft);color:var(--flop)}
+.pill.ỔN{background:var(--soft);color:var(--mute)} .pill.er{background:var(--accent-soft);color:var(--accent);margin-left:4px}
+.pill.VIRAL{position:relative;overflow:hidden;color:#3b2b60;text-shadow:0 1px 0 rgba(255,255,255,.6);
+  background:linear-gradient(110deg,#ffc2d4,#ffdcb0,#fff3a8,#c9f7c4,#ade9ff,#cfbcff,#ffc2d4);background-size:300% 100%;animation:holo 6s linear infinite;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.65),0 1px 8px rgba(190,170,255,.55),0 0 16px rgba(255,190,215,.4)}
+.pill.VIRAL::before{content:"✦";margin-right:3px;font-size:9px;vertical-align:1px}
+.pill.VIRAL::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.9) 48%,transparent 64%);transform:translateX(-130%);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes holo{to{background-position:300% 0}}
+@keyframes shine{0%,60%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+@media (prefers-reduced-motion:reduce){.pill.VIRAL,.pill.VIRAL::after{animation:none}} .pill.MỚI{background:var(--accent-soft);color:var(--accent)}
+.pill.PAID{background:var(--warn-soft);color:var(--warn)} .pill.NGHI{background:var(--warn-soft);color:var(--warn);border:1px dashed var(--warn)}
+.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.pin{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.adf{background:var(--adf-soft);color:var(--adf);margin-left:4px}
+.xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--accent);opacity:.75}
+.guide{max-height:86vh;overflow:auto}
+.ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.gtabs{margin-bottom:18px}
+.gpane{display:none}.gpane.on{display:block}
+.gpane h4{font-size:13px;margin:22px 0 8px}
+.gl{font-size:14.5px;margin:0 0 14px;color:var(--ink)!important}
+.gp,.gpane li,.gdl dd{color:var(--mute);font-size:13px}
+.gp{margin:0}
+.gsteps,.gq{margin:0;padding-left:20px}.gsteps li,.gq li{margin-bottom:8px}.gsteps b{color:var(--ink)}
+.gdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin:0}
+.gdl dt{font-size:13px;font-weight:600}.gdl dd{margin:0}
+.gdl.pills dt{padding-top:1px}.gdl.pills .pill{margin-left:0}
+.gdl.faq{grid-template-columns:1fr}.gdl.faq dd{margin-bottom:8px}
+.gnote{margin:18px 0 0!important;padding:10px 12px;background:var(--soft);border-radius:10px;font-size:12.5px!important}
+@media (max-width:600px){.gdl{grid-template-columns:1fr;gap:4px}.gdl dd{margin-bottom:10px}}
+td.hk .why{font-size:11.5px;color:var(--warn);margin-top:3px;line-height:1.35}
+.mk{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mk label{font-size:12.5px;font-weight:600;display:block;margin-bottom:6px}
+.mk textarea{height:180px!important;margin:0!important}
+@media (max-width:600px){.mk{grid-template-columns:1fr}}
+.chip em{display:block;font-style:normal;font-size:11px;color:var(--mute);margin-top:2px}.chip em.up{color:var(--win)}.chip em.down{color:var(--flop)}
+.due{display:block;font-size:10.5px;margin-top:2px}
+.diff{margin:16px 0 4px;padding:14px 16px;border-radius:12px;background:var(--accent-soft)}
+.diff h4{margin:0 0 8px;font-size:13px;color:var(--accent)}
+.diff ul{margin:0;padding-left:18px;font-size:13px}.diff li{margin:3px 0}
+.diff a{color:inherit}
+.fl{display:block;font-size:12.5px;font-weight:600;margin:12px 0 6px}
+.mbox input[type=password],.mbox select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px 11px;font-size:13px}
+.note.small{font-size:12px}
+.ai{margin:16px 0 4px;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.ai.empty-ai{display:flex;gap:16px;align-items:center;justify-content:space-between;background:var(--soft);border:0}
+.ai.empty-ai .hint{display:block;margin-top:2px;max-width:560px}
+.ai-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.ai-h .hint{margin-left:8px}
+.ai-body{font-size:13.5px;line-height:1.6;max-height:70vh;overflow:auto}
+.ai-body h2{font-size:15.5px;margin:20px 0 6px}.ai-body h3{font-size:14px;margin:16px 0 4px}.ai-body h4{font-size:13.5px;margin:12px 0 4px}
+.ai-body p{margin:6px 0}.ai-body ul,.ai-body ol{margin:6px 0;padding-left:20px}.ai-body li{margin:3px 0}
+.ai-body blockquote{margin:8px 0;padding:6px 12px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0}
+.ai-body code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:12px}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}.ai-body table{font-size:12.5px;margin:8px 0}
+.ai-body.busy::after{content:"▍";color:var(--accent);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (max-width:600px){.ai.empty-ai{flex-direction:column;align-items:flex-start}}
+.ch{position:relative}
+.ch .ck{display:none;position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:6px;border:1.5px solid var(--faint);background:var(--card)}
+.chs.manage .ch .ck{display:block}
+.chs.manage .ch{user-select:none}
+.ch.sel{border-color:var(--flop);background:var(--flop-soft)}
+.ch.sel .ck{background:var(--flop);border-color:var(--flop)}
+.ch.sel .ck::after{content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+#chbar{gap:12px;align-items:center}
+.btn.danger{background:var(--flop);color:#fff;border-color:var(--flop)}.btn.danger:disabled{opacity:.4;cursor:default}
+.hm .c{flex-direction:column;gap:0;height:42px;line-height:1.15}
+.hm .c b{font-size:12.5px;font-weight:650}.hm .c small{font-size:10px;opacity:.75;font-weight:500}
+.hm .c.one{opacity:.55}
+.lg{display:inline-flex;align-items:center;gap:5px;margin-right:12px;white-space:nowrap}.lg i{width:11px;height:11px;border-radius:3px;background:var(--soft);display:inline-block}
+.hsay{margin:0 0 4px;font-size:13.5px;line-height:1.45}.hsub{margin:0 0 12px;font-size:12px;color:var(--mute)}
+.hmempty{padding:22px 16px;border-radius:10px;background:var(--soft);font-size:13px}.hmempty b{display:block;margin-bottom:4px}.hmempty span{color:var(--mute)}
+.ai-prog{padding:12px 14px;margin:10px 0;border-radius:10px;background:var(--soft);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.ai-prog .hint{font-size:12px}.ai-prog .th,.ai-prog div.hint{flex-basis:100%;margin:0}.ai-prog .th{font-style:italic}
+.ai-prog .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:blink 1s infinite}
+.snap *{animation:none!important;transition:none!important}.snap .pill.VIRAL::after{display:none}
+.snap-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 14px;font-size:13px;color:var(--mute)}.snap-h b{font-size:17px;color:var(--ink);letter-spacing:-.01em}
+.snap .snap-sec{padding:16px 4px 6px!important;font-size:12px;font-weight:650;color:var(--mute);border-bottom:1px solid var(--line)}
+.snap-f{margin:14px 4px 0;font-size:11.5px;color:var(--faint);text-align:right}
+.modal{position:fixed;inset:0;background:rgba(10,8,16,.35);display:none;align-items:center;justify-content:center;padding:20px;z-index:5}
+.modal.show{display:flex}
+.mbox{width:min(480px,100%);padding:24px}
+.mbox.wide{width:min(820px,100%)}
+.mbox h3{margin:0 0 4px;font-size:17px} .mbox p{margin:0 0 18px;color:var(--mute);font-size:13px;word-break:break-word}
+.mbox .row{justify-content:flex-end}
+.mbox textarea{width:100%;height:55vh;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);font:12.5px/1.5 ui-monospace,Menlo,monospace;resize:vertical;margin-bottom:12px}
+.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-80px);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font-size:13px;transition:transform .2s;z-index:9}
+.toast.show{transform:translate(-50%,0)}
+footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
+@media (max-width:700px){.wrap{padding:18px 16px 80px}td.hk{max-width:160px}.hide-s{display:none}.scan{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>TikTok Insight</h1><span>phân tích kênh TikTok cho creator</span></div>
+    <div class="row">
+      <button class="ghost" onclick="openGuide()">Sổ tay</button>
+      <button class="ghost" onclick="openBrief()">Sửa brief</button>
+      <button class="ghost" onclick="openAIset()">Cài đặt AI</button>
+    </div>
+  </header>
+
+  <section class="card setup" id="setup">
+    <h2>10K view là kỳ tích với kênh này, là báo động với kênh kia.</h2>
+    <p class="lead">Nên tool không chấm clip theo con số tuyệt đối. Nó đọc hết clip, comment, reply của một kênh, so từng clip với mặt bằng của chính kênh đó, rồi gói lại thành một file để AI đọc giùm bạn. Không cài app. Không đăng ký. Không tốn token.</p>
+    <div class="steps">
+      <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><br><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
+      <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
+      <div class="step"><span class="stepn">3</span><b>Sang tab TikTok, bấm ⚡</b><span>Rồi để đó. Tab này tự đầy dần. Đang xem clip nào cũng được: ⚡ tự quét cả kênh của người đăng. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
+  </section>
+
+  <section class="card scan">
+    <input id="url" placeholder="Dán link kênh TikTok, ví dụ tiktok.com/@tenkenh" autocomplete="off">
+    <select id="mode" title="Mức soi sâu" onchange="ls.set('tti_mode',this.value)"><option value="fast">Nhanh · ~40 clip · 2–4 phút</option><option value="smart">Kỹ · ~85 clip · 5–10 phút</option><option value="all">Toàn bộ · rất lâu</option></select>
+    <button class="btn primary" onclick="openChannel()">Mở kênh trên TikTok</button>
+  </section>
+  <div class="range" id="range"></div>
+
+  <div id="job"></div>
+
+  <div class="sec"><h2>Kênh đã quét</h2><div class="row" id="chbar"><span class="hint" id="chcount"></span></div></div>
+  <div class="chs" id="chs"></div>
+  <div id="det"></div>
+
+  <footer>
+    <b>Quyền riêng tư.</b> Dữ liệu quét được lưu ngay trong trình duyệt của bạn (IndexedDB), không gửi lên máy chủ nào. Tool chỉ đọc nội dung công khai mà bạn tự mở trên TikTok, không đăng, không like, không comment thay bạn. Hãy dùng có trách nhiệm và tôn trọng người comment khi chia sẻ kết quả.
+    <button class="link del" onclick="wipeAll()">Xoá toàn bộ dữ liệu trong trình duyệt</button>
+  </footer>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="card mbox">
+    <h3>File cho AI đã sẵn sàng</h3>
+    <p id="mfile"></p>
+    <div class="row">
+      <button class="btn" onclick="copyMd()">Copy nội dung</button>
+      <button class="btn" onclick="downloadMd()">Tải file .md</button>
+      <button class="btn primary" onclick="closeModal()">Xong</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="bmodal" onclick="if(event.target===this)closeBrief()">
+  <div class="card mbox wide">
+    <h3>Brief gửi kèm cho AI</h3>
+    <p>Đoạn này đứng đầu mọi file xuất, dặn AI cách đọc dữ liệu và trả lời theo khung nào. Sửa theo nhu cầu của bạn.</p>
+    <textarea id="btext"></textarea>
+    <div class="row"><button class="link" onclick="resetBrief()">Khôi phục mặc định</button><span style="flex:1"></span><button class="btn" onclick="closeBrief()">Huỷ</button><button class="btn primary" onclick="saveBrief()">Lưu</button></div>
+  </div>
+</div>
+<div class="modal" id="gmodal" onclick="if(event.target===this)closeGuide()">
+  <div class="card mbox wide guide">
+    <div class="ghead"><h3>Sổ tay</h3><button class="link" onclick="closeGuide()">Đóng</button></div>
+    <div class="seg gtabs"><button data-g="start" onclick="gTab('start')">Bắt đầu</button><button data-g="read" onclick="gTab('read')">Đọc kết quả</button><button data-g="ai" onclick="gTab('ai')">Hỏi AI</button><button data-g="fix" onclick="gTab('fix')">Gỡ rối</button></div>
+
+    <div class="gpane" data-g="start">
+      <p class="gl">Ba bước, bước đầu chỉ làm một lần.</p>
+      <ol class="gsteps">
+        <li><b>Kéo nút ⚡ TikTok Insight lên thanh bookmark.</b> Nó là một đoạn code nhỏ chạy ngay trên trang TikTok bạn đang mở, nên đọc được đúng những gì bạn thấy.</li>
+        <li><b>Dán link kênh, chọn khoảng ngày, bấm Mở kênh trên TikTok.</b> Nhận cả link clip, tool tự lấy ra tên kênh.</li>
+        <li><b>Sang tab TikTok vừa mở, bấm ⚡.</b> Khung tiến độ hiện ở góc trang. Đừng đóng tab đó cho tới khi khung báo Xong.</li>
+      </ol>
+      <h4>Hai lựa chọn trước khi quét</h4>
+      <dl class="gdl">
+        <dt>Nhanh (mặc định)</dt><dd>Lấy view và ngày đăng của mọi clip, rồi đọc kỹ (comment, reply, phụ đề) khoảng 40 clip đại diện: nhiều view nhất, ít view nhất, mới nhất, rải đều ở giữa. 2–4 phút, đủ thấy quy luật.</dd>
+        <dt>Kỹ</dt><dd>Như Nhanh nhưng khoảng 85 clip. Dùng khi cần báo cáo AI chắc tay hơn.</dd>
+        <dt>Toàn bộ</dt><dd>Đọc kỹ từng clip. Chỉ nên dùng cho kênh nhỏ.</dd>
+        <dt>Khoảng ngày</dt><dd>Kênh vừa đổi format, đổi người dẫn, hay vừa ăn một cú viral? Chọn khoảng ngày để so cái mới với cái mới. Đổi khoảng thì số liệu tự tính lại, không cần quét lại.</dd>
+      </dl>
+      <h4>Khám một lần biết bệnh. Tái khám mới biết thuốc.</h4>
+      <p class="gp">Mỗi lần quét, tool lưu lại view và follower. Lần sau mở kênh sẽ có mục <b>Kết quả tái khám</b>: bao nhiêu clip mới, clip nào vừa thành WIN, follower lên hay xuống, clip cũ nào đang tăng view lạ. Bấm <b>Hẹn tái khám</b> để tải file lịch, mở ra là có nhắc trong Google Calendar hoặc lịch iPhone.</p>
+      <p class="gnote">Quét lại kênh cũ chỉ đọc phần còn thiếu. Clip đã soi sâu rồi được giữ nguyên.</p>
+    </div>
+
+    <div class="gpane" data-g="read">
+      <p class="gl">Mọi nhãn đều so với <b>×TV</b>, tức view trung vị của kênh: mức view một clip “bình thường” của kênh đó đạt được. 1× là đúng phong độ, 3× là gấp ba.</p>
+      <dl class="gdl pills">
+        <dt><span class="pill VIRAL">VIRAL</span></dt><dd>Lọt ra ngoài tệp follower: từ 5× trở lên, view vượt số follower, và được share mạnh. Hiếm, đừng mong clip nào cũng thế.</dd>
+        <dt><span class="pill WIN">WIN</span></dt><dd>Hơn hẳn mặt bằng (từ 2×, hoặc nằm trong top 20%). Đây là công thức nên lặp lại. VIRAL là trúng số, WIN là kiếm được đều.</dd>
+        <dt><span class="pill ỔN">ỔN</span></dt><dd>Đúng phong độ. Phần lớn clip nằm ở đây, và thế là bình thường.</dd>
+        <dt><span class="pill FLOP">FLOP</span></dt><dd>Hụt hơi: từ 0,4× trở xuống, hoặc nằm trong 20% đáy. Thứ cần mổ xẻ, không phải thứ cần xoá.</dd>
+        <dt><span class="pill MỚI">MỚI</span></dt><dd>Đăng chưa đủ 7 ngày, view còn đang chạy. Chưa chấm, kẻo oan.</dd>
+        <dt><span class="pill er">ER cao</span></dt><dd>View không nổi, nhưng ai xem cũng tương tác. Chủ đề này có fan cứng, chỉ chưa có đường ra.</dd>
+        <dt><span class="pill PAID">PAID</span></dt><dd>Đã chắc chắn chạy ads: creator tự ghi trong caption (#ad, #quangcao, #taitro…), hoặc bạn tự đánh dấu.</dd>
+        <dt><span class="pill NGHI">NGHI ADS</span></dt><dd>Không ai khai, nhưng số liệu “có mùi tiền”. Mỗi clip kèm lý do, đọc ngay dưới caption.</dd>
+        <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok có gắn cờ quảng cáo cho clip, nhưng chưa có dấu hiệu nào khác. Clip đã được đưa vào ads, chưa rõ nhiều hay ít, nên vẫn tính là organic.</dd>
+        <dt><span class="pill shop">Giỏ hàng</span></dt><dd>Clip có gắn sản phẩm TikTok Shop hoặc link bán hàng. Chỉ để biết, không ảnh hưởng nhãn.</dd>
+      </dl>
+      <h4>Tool bắt clip chạy ads ngầm bằng cách nào?</h4>
+      <p class="gp">Brand hay xin mã quảng cáo của creator để chạy chính clip đó (Spark Ads). Clip trông y như clip thường, view từ ads cộng thẳng vào clip, và TikTok không công khai clip nào được boost. Nên tool không tìm câu trả lời, nó gom dấu vết:</p>
+      <dl class="gdl" style="margin-top:10px">
+        <dt>View già mà vẫn lớn</dt><dd>Clip organic thường chững sau 1–2 tuần. Clip đăng cả tháng mà view vẫn tăng đều là có người đang trả tiền. <b>Dấu hiệu mạnh nhất, cần quét kênh ít nhất 2 lần cách nhau vài ngày.</b></dd>
+        <dt>Brand vào comment</dt><dd>Tài khoản doanh nghiệp, hoặc tài khoản được tag trong caption, xuất hiện trong phần comment.</dd>
+        <dt>Người xem đã nhận ra</dt><dd>Comment kiểu “lại quảng cáo”, “clip này nhận bao nhiêu vậy”.</dd>
+        <dt>Xem nhiều, thờ ơ nhiều</dt><dd>View cao gấp ba mức thường mà tương tác, share chỉ lèo tèo.</dd>
+        <dt>Cờ quảng cáo của TikTok</dt><dd>Trong dữ liệu clip có cờ <code>isAd</code>. Thử trên kênh thật thì cờ này bật cả ở clip vài nghìn view, nhất là clip gắn TikTok Shop: clip đã được đưa vào quảng cáo, nhưng chưa nói được bao nhiêu view là tiền. Nên nó chỉ là một dấu hiệu, cần thêm dấu hiệu khác mới thành NGHI ADS.</dd>
+        <dt>Dấu vết bán hàng</dt><dd>Tag tài khoản khác, gắn giỏ hàng, caption giảm giá hay link bio. Dấu hiệu yếu, chỉ cộng thêm, một mình không đủ để nghi.</dd>
+      </dl>
+      <p class="gnote">Clip nghi ads bị tách khỏi mức chuẩn, để tiền không làm đẹp giùm content. Biết chắc clip nào chạy ads hay chắc chắn organic? Mở kênh, bấm <b>Đánh dấu clip ads</b>.</p>
+      <h4>Heatmap khung giờ</h4>
+      <p class="gp">Ô càng đậm, khung giờ đó càng nhiều view. Ô chữ nhạt mới có một clip, chưa đủ để tin. Heatmap cho biết khán giả <i>của kênh này</i> thức lúc nào, không phải giờ vàng chung của TikTok.</p>
+      <h4>Share/view và mốc so sánh</h4>
+      <p class="gp">TikTok coi việc xem hết và share là tín hiệu mạnh, còn số follower không phải yếu tố trực tiếp. Tool không xem được thời gian xem, nên dùng share/view làm thước đo thay thế. Ô Share/view có kèm mốc của kênh cùng cỡ (số liệu bên thứ ba, để định hướng): xanh là được share nhiều hơn mặt bằng, đỏ là ít hơn.</p>
+      <h4>Chủ đề TikTok tự gắn</h4>
+      <p class="gp">TikTok tự xếp mỗi clip vào vài chủ đề và gợi ý vài từ khoá tìm kiếm bên dưới clip. Tool đọc lại hai thứ đó, nên biết được kênh đang được TikTok “hiểu” là kênh gì, và clip nào lên nhờ tìm kiếm.</p>
+      <h4>Cmt lấy / tổng</h4>
+      <p class="gp">Số comment tool đọc được trên số TikTok hiển thị. Hai số lệch nhau là bình thường: TikTok đếm cả comment đã ẩn hoặc bị xoá, còn tool lấy tối đa 500 comment mỗi clip, ưu tiên comment nhiều like.</p>
+    </div>
+
+    <div class="gpane" data-g="ai">
+      <p class="gl">Tool đếm. AI đọc. Bạn quyết.</p>
+      <h4>Cách nhanh: AI đọc ngay trong trang</h4>
+      <ol class="gsteps">
+        <li>Bấm <b>Cài đặt AI</b> ở góc trên, dán key Gemini. Key miễn phí, lấy ở Google AI Studio trong 1 phút.</li>
+        <li>Mở kênh, bấm <b>Phân tích bằng AI</b>. Báo cáo chạy ra ngay dưới phần số liệu và được lưu lại theo kênh.</li>
+      </ol>
+      <p class="gnote">Key chỉ nằm trong trình duyệt của bạn. Với key miễn phí, Google có thể dùng nội dung để cải thiện sản phẩm, nên chỉ phân tích dữ liệu công khai. Hết lượt trong ngày thì đổi sang model Flash-Lite.</p>
+      <h4>Cách tự chọn AI: xuất file</h4>
+      <ol class="gsteps">
+        <li>Mở kênh, bấm <b>Xuất .md cho AI</b>.</li>
+        <li>Copy nội dung hoặc tải file, dán vào Claude, ChatGPT hay Gemini.</li>
+        <li>File đã kèm sẵn brief dặn AI cách đọc số liệu, nên chỉ cần hỏi.</li>
+      </ol>
+      <h4>Chọn độ dày file</h4>
+      <dl class="gdl">
+        <dt>File gọn</dt><dd>Cho bản chat miễn phí, hoặc khi chỉ cần bức tranh lớn.</dd>
+        <dt>File vừa</dt><dd>Đủ comment để thấy khán giả nghĩ gì. Dùng cho hầu hết trường hợp.</dd>
+        <dt>File đầy đủ</dt><dd>Mọi comment, mọi transcript. Dành cho AI đọc được file dài.</dd>
+      </dl>
+      <h4>Câu hỏi đáng hỏi</h4>
+      <ul class="gq">
+        <li>Người xem kênh này là ai, họ đang cần gì mà chưa ai cho?</li>
+        <li>Đặt clip WIN cạnh clip FLOP: khác nhau ở 3 giây đầu, độ dài hay chủ đề?</li>
+        <li>Comment đang hỏi gì mà kênh chưa trả lời?</li>
+        <li>Từ công thức WIN, viết 5 ý tưởng clip tiếp theo kèm câu hook.</li>
+        <li>So kênh này với kênh của tôi (dán thêm file thứ hai): họ làm gì mà tôi chưa làm?</li>
+      </ul>
+      <p class="gnote">Muốn AI trả lời theo khung riêng? Bấm <b>Sửa brief</b> ở góc trên.</p>
+    </div>
+
+    <div class="gpane" data-g="fix">
+      <dl class="gdl faq">
+        <dt>Khung ⚡ báo “TikTok tạm từ chối”</dt><dd>TikTok thấy đọc nhanh quá nên bắt nghỉ. Tool tự giảm tốc và thử lại. Nếu dừng hẳn, đợi vài phút rồi bấm ⚡ lần nữa. Dữ liệu đã lấy không mất.</dd>
+        <dt>Kênh có 300 clip mà chỉ lấy được vài chục</dt><dd>Bạn chưa đăng nhập TikTok trên trình duyệt này. Đăng nhập, tải lại trang kênh, bấm ⚡.</dd>
+        <dt>Bấm ⚡ mà không thấy gì</dt><dd>Kiểm tra hai thứ: bạn đang ở đúng trang kênh (tiktok.com/@tenkenh), và trình duyệt không chặn cửa sổ bật lên của tiktok.com.</dd>
+        <dt>Khung báo “Không kết nối được trang TikTok Insight”</dt><dd>Tab TikTok Insight đã bị đóng. Mở lại trang này, bấm Mở kênh, rồi bấm ⚡ trên tab mới.</dd>
+        <dt>Dùng trên điện thoại được không?</dt><dd>Chưa. Nút ⚡ cần trình duyệt máy tính (Chrome, Safari, Edge, Arc đều được).</dd>
+        <dt>Dữ liệu nằm ở đâu?</dt><dd>Trong trình duyệt của bạn, không ở máy chủ nào. Đổi máy hoặc xoá dữ liệu trình duyệt là mất, nên xuất file .md những kênh quan trọng.</dd>
+        <dt>Xoá bớt kênh đã quét</dt><dd>Bấm <b>Quản lý</b> cạnh mục Kênh đã quét, tick các kênh muốn bỏ, bấm Xoá. Xoá là mất cả lịch sử tái khám và báo cáo AI của kênh đó.</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+<div class="modal" id="kmodal" onclick="if(event.target===this)closeMarks()">
+  <div class="card mbox wide">
+    <h3>Đánh dấu clip ads</h3>
+    <p>Biết chắc clip nào đã chạy ads (từ Ads Manager, từ brand, hoặc chủ kênh nói)? Dán link vào đây, mỗi dòng một link. Tool sẽ tin bạn hơn tin dấu hiệu.</p>
+    <div class="mk">
+      <div><label>Đã chạy ads → gắn PAID</label><textarea id="kpaid" placeholder="https://www.tiktok.com/@kenh/video/…"></textarea></div>
+      <div><label>Chắc chắn organic → bỏ NGHI ADS</label><textarea id="korg" placeholder="https://www.tiktok.com/@kenh/video/…"></textarea></div>
+    </div>
+    <div class="row" style="margin-top:14px"><span class="hint" id="kmsg" style="flex:1"></span><button class="btn" onclick="closeMarks()">Huỷ</button><button class="btn primary" onclick="saveMarks()">Lưu</button></div>
+  </div>
+</div>
+<div class="modal" id="amodal" onclick="if(event.target===this)closeAIset()">
+  <div class="card mbox">
+    <h3>Cài đặt AI</h3>
+    <p>Tool dùng Gemini của Google để viết báo cáo. Key miễn phí, lấy trong 1 phút: vào <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>, bấm <b>Create API key</b>, copy rồi dán vào đây. Key mới bắt đầu bằng <b>AQ.</b></p>
+    <label class="fl">API key</label>
+    <input id="gkey" type="password" placeholder="AQ.…" autocomplete="off" onchange="fillModels()" onpaste="setTimeout(()=>fillModels(),50)">
+    <label class="fl">Model</label>
+    <select id="gmodelsel"><option value="">Dán key trước</option></select>
+    <div class="hint" id="gmsg" style="min-height:18px;margin:8px 0 4px"></div>
+    <div class="note small">Key chỉ lưu trong trình duyệt này và gửi thẳng tới Google, không qua máy chủ nào. Với key miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm: chỉ phân tích dữ liệu công khai, đừng gửi số liệu nội bộ.</div>
+    <div class="row" style="margin-top:14px"><button class="link del" onclick="clearAIset()">Xoá key</button><span style="flex:1"></span><button class="btn" onclick="closeAIset()">Huỷ</button><button class="btn primary" onclick="saveAIset()">Lưu</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="analysis.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=v=>typeof v==="number"?v>=1e6?(v/1e6).toFixed(1).replace(".",",")+"M":v>=1e3?(v/1e3).toFixed(1).replace(".",",")+"K":String(Math.round(v)):"–";
+const pct=(v,d=1)=>typeof v==="number"?(v*100).toFixed(d).replace(".",",")+"%":"–";
+const xm=v=>typeof v==="number"?v.toFixed(1).replace(".",",")+"×":"–";
+const dfmt=ts=>ts?new Date(ts*1000).toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit",year:"2-digit"}):"–";
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2400)}
+const handleOf=t=>{const m=String(t||"").match(/@([A-Za-z0-9_.\-]+)/);if(m)return m[1].replace(/\.$/,"").toLowerCase();t=String(t||"").trim();return /^[A-Za-z0-9_.\-]{2,40}$/.test(t)?t.toLowerCase():null};
+const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ---------- IndexedDB: mỗi kênh = {handle, meta, vids, errors} ---------- */
+const DB={db:null,
+  open(){return this.db||(this.db=new Promise((res,rej)=>{const r=indexedDB.open("tiktok-insight",1);r.onupgradeneeded=()=>r.result.createObjectStore("channels",{keyPath:"handle"});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
+  async tx(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("channels",mode),s=t.objectStore("channels");const out=fn(s);t.oncomplete=()=>res(out&&("result" in out)?out.result:undefined);t.onerror=()=>rej(t.error)})},
+  get(h){return this.tx("readonly",s=>s.get(h))}, put(o){return this.tx("readwrite",s=>s.put(o))},
+  all(){return this.tx("readonly",s=>s.getAll())}, del(h){return this.tx("readwrite",s=>s.delete(h))}, clear(){return this.tx("readwrite",s=>s.clear())}};
+// ghi tuần tự để các clip về cùng lúc không đè nhau
+let chain=Promise.resolve();
+const queue=fn=>(chain=chain.then(fn).catch(e=>console.error(e)));
+
+/* ---------- nút ⚡ ---------- */
+const TEST_HOST=new URLSearchParams(location.search).get("testhost");
+fetch("bm.js",{cache:"no-cache"}).then(r=>r.text()).then(code=>{
+  const host=TEST_HOST?"^"+TEST_HOST.replace(/\./g,"\\.")+"$":"(^|\\.)tiktok\\.com$";
+  const base=location.origin+location.pathname.replace(/[^/]*$/,""), appurl=base+(TEST_HOST?location.search:""), hostEsc=host.replace(/\\/g,"\\\\");
+  const full=code.split("%%APPURL%%").join(appurl).split("%%APP%%").join(location.origin).split("%%HOST%%").join(hostEsc).trim();
+  // Nút ⚡ tự cập nhật: mỗi lần bấm tải bm.js mới nhất từ trang này; không tải được thì chạy bản lưu sẵn trong nút.
+  // Mở sẵn tab tool ngay lúc bấm (trước khi tải) để trình duyệt không chặn cửa sổ bật lên.
+    const loader="(function(){var F=function(){"+full+"};"
+    +"if(window.__tti&&window.__tti.running)return F();"
+    +"if(!(window.opener&&!window.opener.closed)&&new RegExp("+JSON.stringify(host)+").test(location.hostname))window.__ttiWin=window.open("+JSON.stringify(appurl+"#from-tiktok")+",'tikinsight');"
+    +"fetch("+JSON.stringify(base+"bm.js?v=")+"+Date.now()).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(c){"
+    +"c=c.split('%%'+'APPURL%%').join("+JSON.stringify(appurl)+").split('%%'+'APP%%').join("+JSON.stringify(location.origin)+").split('%%'+'HOST%%').join("+JSON.stringify(hostEsc)+");(0,eval)(c)}).catch(F)})()";
+  $("bm").href="javascript:"+encodeURIComponent(loader);
+});
+const tiktokOrigin=o=>TEST_HOST?o.includes(TEST_HOST):/^https:\/\/([a-z0-9-]+\.)*tiktok\.com$/.test(o);
+
+
+/* ---------- khoảng ngày: dùng chung cho lần quét tới + phần phân tích ---------- */
+let range=(()=>{try{return JSON.parse(ls.get("tti_range","null"))||{preset:"all"}}catch(e){return{preset:"all"}}})();
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+function renderRange(){
+  const ps=[["all","Toàn kênh"],["30","30 ngày"],["90","3 tháng"],["180","6 tháng"],["365","1 năm"],["custom","Tự chọn"]];
+  $("range").innerHTML=`<small>Khoảng ngày</small><div class="seg">${ps.map(([k,n])=>`<button class="${range.preset===k?"on":""}" onclick="setRange('${k}')">${n}</button>`).join("")}</div>
+    ${range.preset==="custom"?`<span class="dates"><input type="date" id="rf" value="${esc(range.from||"")}" max="${today()}" onchange="setDates()"> → <input type="date" id="rt" value="${esc(range.to||"")}" max="${today()}" onchange="setDates()"></span>`:""}
+    <small>${range.preset==="all"?"Tính mọi clip của kênh.":"Chỉ tính clip đăng trong khoảng này. Kênh càng to, quét càng nhanh."}</small>`;
+}
+function applyRange(){ls.set("tti_range",JSON.stringify(range));renderRange();loadChannels();if(cur)loadDetail(cur,true)}
+function setRange(k){range={...range,preset:k};if(k==="custom"&&!range.from){range.from=new Date(Date.now()-90*864e5).toISOString().slice(0,10);range.to=today()}applyRange()}
+function setDates(){range={...range,from:$("rf").value,to:$("rt").value};if(range.from&&range.to&&range.from>range.to)[range.from,range.to]=[range.to,range.from];applyRange()}
+const ranged=()=>!!TTI.rangeBounds(range);
+
+/* ---------- quét ---------- */
+let detailMarks={}; let job=null, cur=null, detail=null, sortBy="date", last=null;
+function openChannel(){
+  const h=handleOf($("url").value);
+  if(!h){toast("Dán link dạng tiktok.com/@tenkenh");return $("url").focus()}
+  const base=TEST_HOST?"http://"+TEST_HOST+":"+(new URLSearchParams(location.search).get("testport")||"80"):"https://www.tiktok.com";
+  window.open(base+"/@"+h,"_blank");
+  job={handle:h,state:"wait",mode:$("mode").value,msg:"Trang kênh đã mở ở tab mới. Sang tab đó, bấm nút ⚡ TikTok Insight trên thanh bookmark.",done:0,todo:0,errors:[]};
+  renderJob();
+}
+window.addEventListener("message",e=>{
+  if(!tiktokOrigin(e.origin)||!e.data||!e.data.type)return;
+  const m=e.data, reply=x=>{try{e.source.postMessage(x,e.origin)}catch(err){}};
+  if(m.type==="hello"){const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
+  if(m.type==="channel")return queue(async()=>{
+    const meta=m.meta||{},h=(meta.handle||"").toLowerCase();if(!h)return;
+    const rec=(await DB.get(h))||{handle:h,meta:{},vids:{}};
+    const nowS=Math.floor(Date.now()/1000);
+    // ảnh chụp lần khám trước để so "thay đổi từ lần trước" (chỉ chụp khi lần trước cách đây > 6 giờ)
+    if(Object.keys(rec.vids).length&&(!rec.meta.scannedAt||nowS-rec.meta.scannedAt>6*3600)){
+      const a0=TTI.analyze(TTI.applyMarks(rec.vids,rec.marks),rec.meta.followers);
+      rec.last={at:rec.meta.scannedAt||null,followers:rec.meta.followers||null,labels:Object.fromEntries(a0.rows.map(r=>[r.id,r.label])),views:Object.fromEntries(a0.rows.map(r=>[r.id,r.views]))};
+    }
+    rec.meta={...rec.meta,...meta,handle:h,scanned:new Date().toLocaleString("vi-VN"),scannedAt:nowS,partial:!!m.blocked};
+    if(meta.followers){const fh=(rec.meta.fhist||[]).slice();if(fh.length&&nowS-fh[fh.length-1][0]<12*3600)fh[fh.length-1]=[nowS,meta.followers];else fh.push([nowS,meta.followers]);rec.meta.fhist=fh.slice(-60)}
+    TTI.mergeLinks(rec.vids,m.links||[],h); TTI.mergeItems(rec.vids,m.items||[]);
+    const pmode=(job&&job.mode)||$("mode").value, urls=m.blocked?[]:TTI.plan(rec.vids,pmode,range);
+    const inR=Object.keys(TTI.filterRange(rec.vids,range)).length;
+    await DB.put(rec);
+    job={...(job||{}),handle:h,state:m.blocked?"ask":"run",todo:urls.length,done:0,errors:[],total:(m.links||[]).length,
+      msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}: TikTok chỉ cho tải tới đó, đăng nhập TikTok rồi quét lại để đủ hơn)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · đã soi sâu đủ, không cần soi thêm")};
+    reply({type:"plan",urls,mode:pmode});cur=h;renderJob();await loadChannels();loadDetail(h,true);
+  });
+  if(m.type==="video")return queue(async()=>{
+    const v=TTI.videoFrom(m.data),h=(v.channel||(job&&job.handle)||"").toLowerCase();if(!h)return;
+    const rec=(await DB.get(h))||{handle:h,meta:{handle:h},vids:{}};
+    const old=rec.vids[v.id];v.hist=(old&&old.hist)||[];TTI.snap(v,v.views);rec.vids[v.id]=v;await DB.put(rec);
+    if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";if(!job.handle)job.handle=h}
+    renderJob();throttleDetail(h);
+  });
+  if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
+  if(m.type==="finished"){if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để soi tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: soi sâu ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
+    queue(async()=>{renderJob();await loadChannels();if(job&&job.handle)loadDetail(job.handle)});}
+});
+let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if(!cur||cur===h)queue(()=>loadDetail(h,true))}}
+function renderJob(){
+  if(!job){$("job").innerHTML="";return}
+  const p=job.todo?Math.round(job.done/job.todo*100):0, ask=job.state==="ask"||job.state==="wait", run=job.state==="run"&&job.todo;
+  const errs=job.errors||[], eta=job.eta?(job.eta<60?"còn chưa tới 1 phút":`còn khoảng ${Math.round(job.eta/60)} phút`):"";
+  const msg=run&&!job.msg?`Đang đọc comment ${job.done}/${job.todo} clip${eta?" · "+eta:""}`:(job.msg||"");
+  $("job").innerHTML=`<section class="card job ${ask?"ask":""}">
+    <div class="row" style="justify-content:space-between"><div><h3>${job.handle?"@"+esc(job.handle):"Đang chờ nút ⚡"}</h3><div class="msg">${esc(msg)}</div></div>
+    ${["done","ask"].includes(job.state)?`<button class="link" onclick="job=null;renderJob()">Ẩn</button>`:run?`<span class="hint">Giữ tab TikTok mở. Muốn dừng: bấm Dừng trong khung ⚡</span>`:""}</div>
+    ${job.todo?`<div class="bar"><i style="width:${p}%"></i></div>`:""}
+    ${run?`<div class="hint">Kết quả bên dưới đã xem được và tự cập nhật khi soi thêm clip.</div>`:""}
+    ${errs.length?`<details class="errs"><summary>${errs.length} clip chưa đọc được (lần quét sau tự thử lại)</summary>${errs.slice(-30).map(e=>`<div>${esc(String(e.url).split("/").pop())} · ${esc(e.error)}</div>`).join("")}</details>`:""}
+  </section>`;
+}
+
+/* ---------- hiển thị ---------- */
+async function loadChannels(){
+  const all=await DB.all();
+  const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.keys(fv).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
+  CHS=cs.map(c=>c.handle); MSEL.forEach(h=>{if(!CHS.includes(h))MSEL.delete(h)}); renderChBar();
+  $("chs").classList.toggle("manage",MANAGE);
+  $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
+      <b>${esc(c.meta.nickname||c.handle)}</b><div class="h">@${esc(c.handle)} · ${fmt(c.meta.followers)} follower</div>
+      <div class="m"><span><b>${c.n}</b>${ranged()?" clip · "+esc(TTI.rangeLabel(range)):"/"+(c.meta.videos??"?")+" clip"} · soi sâu ${c.s.deep??0}</span><span>TV <b>${fmt(c.s.med_views)}</b></span>
+      <span>${c.s.viral?`<b style="color:var(--win)">${c.s.viral}</b> viral · `:""}<b style="color:var(--win)">${c.s.win??0}</b> win · <b style="color:var(--flop)">${c.s.flop??0}</b> flop</span></div>
+    </div>`).join(""):`<div class="card empty" style="grid-column:1/-1">Chưa có kênh nào. Làm theo 3 bước ở trên để quét kênh đầu tiên.</div>`;
+  if(!cur&&cs.length)loadDetail(CH0&&cs.some(c=>c.handle===CH0.toLowerCase())?CH0.toLowerCase():cs[0].handle);
+}
+async function loadDetail(h,quiet){
+  const r=await DB.get(h); if(!r){$("det").innerHTML="";return}
+  cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),r.meta.followers); detail={meta:r.meta,last:r.last,ai:r.ai,...a};
+  renderDetail(); if(!quiet)document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("on",e.textContent.includes("@"+h+" ")));
+}
+// một cột nhãn chung cho mọi khung bên phải → mọi thanh bắt đầu cùng một chỗ
+function sideLw(lists){const ks=lists.flatMap(l=>(l||[]).map(r=>String(r.key)));return Math.round(Math.min(170,Math.max(64,...ks.map(k=>k.length*7.4))))}
+function grp(title,rows){
+  if(!rows||!rows.length)return"";
+  const mx=Math.max(...rows.map(r=>r.med_x||0),1);
+  return `<div class="grp"><h4>${title}</h4>${rows.map(r=>`<div class="gr" title="${r.n} clip · TV ${fmt(r.med_views)} · ${r.win} win / ${r.flop} flop"><span>${esc(r.key)}</span><span class="t"><i style="width:${Math.round((r.med_x||0)/mx*100)}%"></i></span><span>${xm(r.med_x)}</span></div>`).join("")}</div>`;
+}
+function heat(h,t){
+  if(!h||!h.rows)return"";
+  const short={"Thứ 2":"T2","Thứ 3":"T3","Thứ 4":"T4","Thứ 5":"T5","Thứ 6":"T6","Thứ 7":"T7","Chủ nhật":"CN"};
+  const all=h.rows.flatMap(r=>r.cells).filter(c=>c.n), N=all.reduce((a,c)=>a+c.n,0);
+  const title=`<h4>Khung giờ đăng${h.organic?" · clip organic":""}</h4>`;
+  if(N<8)return `<div class="heat">${title}<div class="hmempty"><b>Chưa đủ dữ liệu để đọc giờ đăng.</b><span>Mới có ${N} clip đủ điều kiện (đăng từ 7 ngày trước${h.organic?", không tính clip ads":""}). Cần từ 8 clip: chọn khoảng ngày rộng hơn hoặc quét thêm clip.</span></div></div>`;
+  // câu kết luận: chỉ tin nhóm có từ 3 clip, viết bằng lời thường
+  const full={"Thứ 2":"Thứ 2","Thứ 3":"Thứ 3","Thứ 4":"Thứ 4","Thứ 5":"Thứ 5","Thứ 6":"Thứ 6","Thứ 7":"Thứ 7","Chủ nhật":"Chủ nhật"};
+  const times=x=>x>=10?Math.round(x)+" lần":String(Math.round(x*10)/10).replace(".",",")+" lần";
+  const best=(g)=>(g||[]).filter(x=>x.n>=3&&x.med_x!=null).sort((a,b)=>b.med_x-a.med_x)[0];
+  const bd=best(t.weekday), bh=best(t.hour);
+  const cells=h.rows.flatMap(r=>r.cells.map((c,k)=>({...c,day:r.day,hour:h.hours[k]}))).filter(c=>c.n>=3&&c.x!=null).sort((a,b)=>b.x-a.x);
+  const top=cells[0], say=[];
+  if(top&&top.x>=1.2)say.push(`Giờ đăng tốt nhất: <b>${full[top.day]||top.day}, ${top.hour}</b>. Clip đăng lúc này được view gấp <b>${times(top.x)}</b> clip bình thường của kênh (dựa trên ${top.n} clip).`);
+  else say.push(`Chưa có khung giờ nào nổi hẳn lên. Giờ đăng không phải lý do chính khiến clip ăn hay flop.`);
+  const sub=[bd&&bd.med_x>=1.1&&`Nếu chỉ chọn ngày: <b>${full[bd.key]||bd.key}</b> (gấp ${times(bd.med_x)})`,bh&&bh.med_x>=1.1&&`Nếu chỉ chọn giờ: <b>${bh.key}</b> (gấp ${times(bh.med_x)})`].filter(Boolean).join(". ")+"";
+  // màu theo ×TV: đỏ = kém, vàng = ngang mức thường, xanh = ăn; xám = chưa đăng giờ này
+  const mx=Math.max(1.6,...all.map(c=>c.x||0)), isDark=matchMedia("(prefers-color-scheme: dark)").matches;
+  const tone=x=>x>=1.2?["31,170,110",0.3+0.62*Math.min(1,(x-1.2)/Math.max(0.3,mx-1.2))]:x>=0.8?["232,176,36",0.38]:["232,69,90",0.28+0.5*Math.min(1,(0.8-x)/0.6)];
+  const cell=c=>{if(!c.n)return `<div class="c"></div>`;
+    const x=c.x||0, [rgb,a]=tone(x), white=isDark&&a>0.45;
+    return `<div class="c ${c.n<2?"one":""}" style="background:rgba(${rgb},${a.toFixed(2)});color:${white?"#fff":"var(--ink)"}" title="${short[c.day]||""} ${c.hour||""} · ${c.n} clip · view trung vị ${fmt(c.med)} · ${xm(x)} so với mức thường"><b>${xm(x)}</b><small>${c.n} clip</small></div>`};
+  return `<div class="heat">${title}${say.length?`<p class="hsay">${say.join(" ")}</p>`:""}${sub?`<p class="hsub">${sub}</p>`:""}
+    <div class="hm"><div></div>${h.hours.map(x=>`<div class="hd">${x}</div>`).join("")}
+    ${h.rows.map(r=>`<div class="dl">${short[r.day]||r.day}</div>${r.cells.map((c,k)=>cell({...c,day:r.day,hour:h.hours[k]})).join("")}`).join("")}</div>
+    <div class="hint" style="margin-top:8px"><span class="lg"><i style="background:rgba(31,170,110,.75)"></i>ăn (≥1,2×)</span><span class="lg"><i style="background:rgba(232,176,36,.45)"></i>ngang</span><span class="lg"><i style="background:rgba(232,69,90,.55)"></i>kém (&lt;0,8×)</span><span class="lg"><i></i>chưa đăng</span><br>Số trong ô = view trung vị so với mức thường của kênh. Ô mờ mới có 1 clip, chưa đủ để tin. Dựa trên ${N} clip.</div></div>`;
+}
+function renderDetail(){
+  const d=detail,m=d.meta||{},s=d.summary||{},t=d.tables||{};
+  let rows=[...d.rows];
+  if(sortBy==="x")rows.sort((a,b)=>b.x_med-a.x_med); if(sortBy==="er")rows.sort((a,b)=>(b.er||0)-(a.er||0));
+  const mx=Math.max(...rows.map(r=>r.x_med||0),1);
+  $("det").innerHTML=`<section class="card det">
+    <div class="det-head">
+      <div><h2>${esc(m.nickname||m.handle)} <span class="hint">@${esc(m.handle)}</span>${ranged()?`<span class="rtag">${esc(TTI.rangeLabel(range))}</span>`:""}</h2><div class="bio">${esc((m.bio||"").replace(/\n/g," · "))}</div></div>
+      <div class="acts"><select id="depth" title="Độ dày file xuất"><option value="gon">File gọn</option><option value="vua" selected>File vừa (khuyên dùng)</option><option value="du">File đầy đủ</option></select>
+        <button class="btn" onclick="exportJpg()">Xuất ảnh JPEG</button><button class="btn primary" onclick="exportMd()">Xuất .md cho AI</button></div>
+    </div>
+    ${m.partial?`<div class="note" style="margin-top:14px">TikTok chặn danh sách clip khi chưa đăng nhập, nên dữ liệu kênh này chưa đủ. Đăng nhập TikTok trên trình duyệt này rồi bấm ⚡ lại trên trang kênh.</div>`:""}
+    <div class="chips">
+      <div class="chip"><small>Follower</small><b>${fmt(m.followers)}</b>${fgrow(m)}</div>
+      <div class="chip"><small>Clip có số liệu</small><b>${d.rows.length}${m.videos&&!ranged()?"/"+m.videos:""}</b></div>
+      <div class="chip"><small>Đã đọc comment</small><b>${s.deep??0}</b></div>
+      <div class="chip"><small>View trung vị</small><b>${fmt(s.med_views)}</b></div>
+      <div class="chip"><small>Tương tác/view</small><b>${pct(s.med_er)}</b></div>
+      ${s.med_share!=null?`<div class="chip" title="Mốc tham khảo cho ${esc(s.share_bench.tier)}: ${pct(s.share_bench.rate,2)} (nguồn bên thứ ba)"><small>Share/view</small><b>${pct(s.med_share,2)}</b><em class="${s.med_share>=s.share_bench.rate*1.2?"up":s.med_share<=s.share_bench.rate*0.8?"down":""}">mốc ${pct(s.share_bench.rate,2)}</em></div>`:""}
+      <div class="chip"><small>Viral · Win · Flop</small><b><span style="color:var(--win)">${s.viral??0} · ${s.win??0}</span> · <span style="color:var(--flop)">${s.flop??0}</span></b></div>
+      <div class="chip"><small>Organic · Paid · Nghi ads</small><b>${s.organic??0} · ${s.paid??0} · ${s.suspect??0}</b></div>
+      ${s.per_week?`<div class="chip"><small>Tần suất</small><b>${String(s.per_week).replace(".",",")}/tuần</b></div>`:""}
+    </div>
+    <div class="acts"><a class="btn" href="https://www.tiktok.com/@${esc(m.handle)}" target="_blank" onclick="job={handle:'${esc(m.handle)}',state:'wait',mode:$('mode').value,msg:'Sang tab TikTok vừa mở, bấm ⚡ để cập nhật và soi tiếp.',done:0,todo:0,errors:[]};renderJob()" style="text-decoration:none">Cập nhật / soi tiếp</a>
+      <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button>
+      <span class="hint">Quét lần cuối ${esc(m.scanned||"–")}</span><span style="flex:1"></span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
+    ${diffCard(d)}
+    <div id="aibox">${aiCard()}</div>
+    <div class="groups">${heat(t.heat,t)}<div class="side" style="--lw:${sideLw([t.duration,(t.topic||[]).slice(0,6),t.kind])}px">${grp("Theo độ dài",t.duration)}${grp("Chủ đề TikTok tự gắn",(t.topic||[]).slice(0,6))}${grp("Organic vs paid",t.kind)}</div></div>
+    <div class="hint">Thanh = view trung vị của nhóm so với mức thường (×TV). Clip PAID và NGHI ADS không được tính vào mức thường. Quét lại kênh sau vài ngày để tool bắt được clip đang chạy ads.</div>
+    <div class="tw"><table><thead><tr><th onclick="sortDet('date')">Ngày${sortBy==="date"?" ↓":""}</th><th>Hook / caption</th><th class="num">View</th><th onclick="sortDet('x')">×TV${sortBy==="x"?" ↓":""}</th><th>Nhãn</th>
+      <th class="num hide-s" onclick="sortDet('er')">Tương tác${sortBy==="er"?" ↓":""}</th><th class="num hide-s">Share</th><th class="num hide-s" title="Comment đã lấy / tổng TikTok hiển thị">Cmt lấy / tổng</th></tr></thead>
+    <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào trong khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
+      <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}</div>`:""}</td><td class="num">${fmt(r.views)}</td>
+      <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*60))}px"></i>${xm(r.x_med)}</span></td>
+      <td><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.paid_src||"")}">${r.label}</span>${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?'<span class="pill adf" title="TikTok gắn cờ isAd: clip đã được đưa vào quảng cáo, chưa rõ nhiều hay ít">Cờ ads</span>':""}</td>
+      <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
+      <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
+  </section>`;
+}
+function sortDet(k){sortBy=k;renderDetail()}
+async function delCh(h){if(!confirm("Xoá dữ liệu đã quét của @"+h+"?"))return;await DB.del(h);cur=null;$("det").innerHTML="";loadChannels()}
+async function wipeAll(){if(!confirm("Xoá toàn bộ dữ liệu TikTok Insight trong trình duyệt này?"))return;await DB.clear();cur=null;$("det").innerHTML="";loadChannels();toast("Đã xoá")}
+
+/* ---------- brief + xuất ---------- */
+let BRIEF_DEFAULT="";
+fetch("brief.md").then(r=>r.text()).then(t=>{BRIEF_DEFAULT=t});
+const brief=()=>ls.get("tti_brief",null)??BRIEF_DEFAULT;
+function openBrief(){$("btext").value=brief();$("bmodal").classList.add("show")}
+function closeBrief(){$("bmodal").classList.remove("show")}
+function saveBrief(){ls.set("tti_brief",$("btext").value);closeBrief();toast("Đã lưu brief")}
+function resetBrief(){$("btext").value=BRIEF_DEFAULT}
+async function exportMd(){
+  const r=await DB.get(cur); if(!r)return;
+  const md=TTI.buildMd(r.meta,TTI.applyMarks(r.vids,r.marks),$("depth").value,brief(),range);
+  last={md,name:`channel-${cur}${ranged()?"-"+(range.preset==="custom"?"tuychon":range.preset+"d"):""}-${new Date().toISOString().slice(0,16).replace(/[-:T]/g,"")}.md`};
+  $("mfile").textContent=`${last.name} · ${Math.round(new Blob([md]).size/1024)} KB · khoảng ${Math.round(md.length/3/1000)} nghìn token`;
+  $("modal").classList.add("show");
+}
+async function copyMd(){try{await navigator.clipboard.writeText(last.md);toast("Đã copy, dán thẳng vào Claude / ChatGPT / Gemini")}catch(e){toast("Không copy được, dùng Tải file .md")}}
+function downloadMd(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([last.md],{type:"text/markdown"}));a.download=last.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function closeModal(){$("modal").classList.remove("show")}
+
+
+/* ---------- đánh dấu clip ads ---------- */
+async function openMarks(){const r=await DB.get(cur);if(!r)return;const mk=r.marks||{},u=id=>(r.vids[id]&&r.vids[id].url)||id;
+  $("kpaid").value=Object.keys(mk).filter(k=>mk[k]==="paid").map(u).join("\n");$("korg").value=Object.keys(mk).filter(k=>mk[k]==="organic").map(u).join("\n");$("kmsg").textContent="";$("kmodal").classList.add("show")}
+function closeMarks(){$("kmodal").classList.remove("show")}
+async function saveMarks(){
+  const ids=t=>[...new Set(t.split(/[\s,]+/).map(TTI.idOf).filter(Boolean))], P=ids($("kpaid").value), O=ids($("korg").value);
+  const both=P.filter(x=>O.includes(x)); if(both.length){$("kmsg").textContent=both.length+" link nằm ở cả hai ô, chọn một bên thôi.";return}
+  await queue(async()=>{const r=await DB.get(cur);r.marks={};P.forEach(i=>r.marks[i]="paid");O.forEach(i=>r.marks[i]="organic");await DB.put(r)});
+  closeMarks();toast(`Đã lưu: ${P.length} clip ads · ${O.length} clip organic`);await loadChannels();loadDetail(cur,true)}
+
+
+/* ---------- quản lý kênh đã quét ---------- */
+let MANAGE=false, CHS=[]; const MSEL=new Set();
+function renderChBar(){
+  const n=CHS.length;
+  $("chbar").innerHTML=!n?"":MANAGE
+    ?`<span class="hint">Đã chọn ${MSEL.size}/${n}</span><button class="link" onclick="selAll()">${MSEL.size===n?"Bỏ chọn":"Chọn tất cả"}</button><button class="btn danger" ${MSEL.size?"":"disabled"} onclick="delSel()">Xoá ${MSEL.size||""} kênh</button><button class="btn" onclick="setManage(false)">Xong</button>`
+    :`<span class="hint">${n} kênh</span><button class="link" onclick="setManage(true)">Quản lý</button>`;
+}
+function setManage(on){MANAGE=on;MSEL.clear();loadChannels()}
+function toggleSel(h){MSEL.has(h)?MSEL.delete(h):MSEL.add(h);document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("sel",MSEL.has(e.dataset.h)));renderChBar()}
+function selAll(){if(MSEL.size===CHS.length)MSEL.clear();else CHS.forEach(h=>MSEL.add(h));document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("sel",MSEL.has(e.dataset.h)));renderChBar()}
+async function delSel(){
+  const hs=[...MSEL]; if(!hs.length)return;
+  if(!confirm(`Xoá dữ liệu đã quét của ${hs.length} kênh: ${hs.map(h=>"@"+h).join(", ")}?\n\nGồm số liệu, lịch sử tái khám và báo cáo AI. Không khôi phục được.`))return;
+  await queue(async()=>{for(const h of hs)await DB.del(h)});
+  if(hs.includes(cur)){cur=null;detail=null;$("det").innerHTML=""}
+  toast(`Đã xoá ${hs.length} kênh`); MANAGE=false; MSEL.clear(); await loadChannels();
+}
+
+/* ---------- tái khám ---------- */
+function fgrow(m){const h=m.fhist||[];if(h.length<2)return"";const a=h[0],b=h[h.length-1],d=b[1]-a[1];
+  return `<em class="${d>0?"up":d<0?"down":""}">${d>=0?"+":"−"}${fmt(Math.abs(d))} từ ${dfmt(a[0]).slice(0,5)}</em>`}
+function diffCard(d){
+  const L=d.last; if(!L||!L.labels)return"";
+  const rows=d.rows, isNewId=r=>!(r.id in L.labels);
+  const fresh=rows.filter(isNewId), cnt=l=>fresh.filter(r=>r.label===l).length;
+  const moved=rows.filter(r=>!isNewId(r)&&L.labels[r.id]!==r.label&&L.labels[r.id]!=="MỚI"&&["VIRAL","WIN","FLOP","NGHI ADS"].includes(r.label));
+  const grow=rows.filter(r=>!isNewId(r)&&L.views[r.id]&&r.views>L.views[r.id]).map(r=>({r,g:r.views-L.views[r.id]})).sort((a,b)=>b.g-a.g).slice(0,3);
+  const due=rows.filter(r=>r.label==="MỚI"&&r.ts).map(r=>r.ts+TTI.NEW_DAYS*86400).sort((a,b)=>a-b);
+  const li=[];
+  if(L.followers&&d.meta.followers){const df=d.meta.followers-L.followers;li.push(`Follower ${df>=0?"tăng":"giảm"} <b>${fmt(Math.abs(df))}</b> (${fmt(L.followers)} → ${fmt(d.meta.followers)})`)}
+  if(fresh.length)li.push(`<b>${fresh.length}</b> clip mới${["VIRAL","WIN","FLOP","MỚI"].filter(cnt).map(l=>` · ${cnt(l)} ${l==="MỚI"?"chưa đủ 7 ngày":l}`).join("")}`);
+  moved.slice(0,4).forEach(r=>li.push(`<a href="${esc(r.url)}" target="_blank">Clip ${dfmt(r.ts)}</a> đổi nhãn: ${esc(L.labels[r.id])} → <b>${esc(r.label)}</b>`));
+  if(grow.length)li.push("View tăng nhiều nhất: "+grow.map(x=>`<a href="${esc(x.r.url)}" target="_blank">${dfmt(x.r.ts)}</a> +${fmt(x.g)}`).join(" · "));
+  if(due.length)li.push(`${due.length} clip MỚI sẽ có điểm từ <b>${dfmt(due[0]).slice(0,5)}</b>. Quét lại sau ngày đó.`);
+  if(!li.length)li.push("Chưa có gì thay đổi đáng kể.");
+  return `<div class="diff"><h4>Kết quả tái khám${L.at?" · so với lần quét "+dfmt(L.at):""}</h4><ul>${li.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+}
+function remind(h){
+  const r=detail&&detail.rows||[], due=r.filter(x=>x.label==="MỚI"&&x.ts).map(x=>x.ts+TTI.NEW_DAYS*86400).sort((a,b)=>a-b);
+  let t=new Date(Date.now()+7*864e5); if(due.length&&due[0]*1000>Date.now()+864e5)t=new Date(due[0]*1000+864e5);
+  t.setHours(9,0,0,0); const e=new Date(t.getTime()+15*6e4), z=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  const url=location.origin+location.pathname+"?ch="+encodeURIComponent(h);
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//TikTok Insight//VI","BEGIN:VEVENT","UID:"+Date.now()+"-"+h+"@tiktok-insight",
+    "DTSTAMP:"+z(new Date()),"DTSTART:"+z(t),"DTEND:"+z(e),"SUMMARY:Tái khám kênh @"+h,
+    "DESCRIPTION:Mở TikTok Insight\\, bấm Cập nhật / soi tiếp để xem kênh đổi gì từ lần trước.\\n"+url,"URL:"+url,
+    "BEGIN:VALARM","TRIGGER:PT0M","ACTION:DISPLAY","DESCRIPTION:Tái khám kênh @"+h,"END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download="tai-kham-"+h+".ics";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast("Đã tạo lịch tái khám "+t.toLocaleDateString("vi-VN")+". Mở file để thêm vào lịch.");
+}
+const CH0=new URLSearchParams(location.search).get("ch");
+
+/* ---------- Gemini: báo cáo AI ngay trong trang ---------- */
+const GAPI=(new URLSearchParams(location.search).get("gemini"))||"https://generativelanguage.googleapis.com";
+const gkey=()=>ls.get("tti_gkey",""), gmodel=()=>ls.get("tti_gmodel","");
+let aiRun=null;
+function mdHtml(src){
+  const e=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const il=t=>e(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g,"$1<i>$2</i>").replace(/_([^_\s][^_]*)_/g,"<i>$1</i>");
+  const L=String(src||"").replace(/\r/g,"").split("\n"), out=[]; let list=null, para=[];
+  const flush=()=>{if(para.length){out.push("<p>"+para.map(il).join("<br>")+"</p>");para=[]}if(list){out.push(`</${list}>`);list=null}};
+  for(let i=0;i<L.length;i++){
+    const l=L[i], t=l.trim();
+    if(!t){flush();continue}
+    let m;
+    if((m=t.match(/^(#{1,4})\s+(.*)/))){flush();const n=Math.min(4,m[1].length+1);out.push(`<h${n}>${il(m[2])}</h${n}>`);continue}
+    if(/^(-{3,}|\*{3,})$/.test(t)){flush();out.push("<hr>");continue}
+    if(t.startsWith("|")&&L[i+1]&&/^\|?\s*:?-{2,}/.test(L[i+1].trim())){flush();
+      const cells=x=>x.trim().replace(/^\||\|$/g,"").split("|").map(c=>il(c.trim()));
+      let h=`<div class="tw"><table><thead><tr>${cells(t).map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;i+=2;
+      while(i<L.length&&L[i].trim().startsWith("|")){h+=`<tr>${cells(L[i]).map(c=>`<td>${c}</td>`).join("")}</tr>`;i++}
+      i--;out.push(h+"</tbody></table></div>");continue}
+    if((m=t.match(/^>\s?(.*)/))){flush();out.push(`<blockquote>${il(m[1])}</blockquote>`);continue}
+    if((m=t.match(/^([-*•]|\d+[.)])\s+(.*)/))){if(para.length){out.push("<p>"+para.map(il).join("<br>")+"</p>");para=[]}
+      const k=/\d/.test(m[1])?"ol":"ul";if(list!==k){if(list)out.push(`</${list}>`);out.push(`<${k}>`);list=k}
+      out.push(`<li>${il(m[2])}</li>`);continue}
+    if(list){out.push(`</${list}>`);list=null}
+    para.push(t);
+  }
+  flush();return out.join("");
+}
+function aiCard(){
+  const a=aiRun&&aiRun.handle===cur?aiRun:(detail&&detail.ai)||null;
+  if(!a)return `<div class="ai empty-ai"><div><b>Báo cáo AI</b><span class="hint">Gemini đọc toàn bộ dữ liệu kênh và brief, trả về TA, tuyến nội dung, công thức WIN, lý do FLOP, ý tưởng clip tiếp theo. Miễn phí với key Google của bạn.</span></div><button class="btn primary" onclick="runAI()">Phân tích bằng AI</button></div>`;
+  const busy=a.state==="run";
+  return `<div class="ai"><div class="ai-h"><div><b>Báo cáo AI</b><span class="hint">${busy?esc(a.model||""):`${esc(a.model||"")} · ${a.at?new Date(a.at).toLocaleString("vi-VN"):""}${a.secs&&a.text?" · viết trong "+a.secs+" giây":""}${a.range?" · "+esc(a.range):""}`}</span></div>
+    <div class="row">${busy?`<button class="btn" onclick="stopAI()">Dừng</button>`:`<button class="link" onclick="copyAI()">Copy</button><button class="btn" onclick="runAI()">Phân tích lại</button>`}</div></div>
+    ${a.error?`<div class="note">${esc(a.error)}</div>`:""}
+    ${busy?`<div class="ai-prog"><span class="dot"></span><b>${esc(a.phase||"")}</b><span class="hint">${Math.round((Date.now()-(a.t0||Date.now()))/1000)} giây</span>${a.thought?`<div class="hint th">${esc(a.thought)}</div>`:""}${!a.text?'<div class="hint">Kênh lớn thường mất 30–90 giây trước khi chữ đầu tiên hiện ra, vì Gemini đọc hết dữ liệu và suy nghĩ trước khi viết.</div>':""}</div>`:""}
+    <div class="ai-body ${busy?"busy":""}">${mdHtml(a.text||"")}</div></div>`;
+}
+const paintAI=()=>{const b=$("aibox");if(b)b.innerHTML=aiCard()};
+async function runAI(){
+  if(!gkey()||!gmodel())return openAIset("Dán key Gemini để bắt đầu. Lấy miễn phí trong 1 phút.");
+  if(keyKind(gkey()))return openAIset(keyKind(gkey()));
+  const r=await DB.get(cur); if(!r)return;
+  const h=cur, md=TTI.buildMd(r.meta,TTI.applyMarks(r.vids,r.marks),"vua",brief(),range);
+  const sys="Bạn là content strategist TikTok. Đọc brief ở đầu tài liệu và làm đúng phần Output (mục A → I), bằng tiếng Việt, định dạng Markdown: mỗi mục là một tiêu đề ##, dùng gạch đầu dòng và bảng khi cần. Chỉ dựa trên dữ liệu được cung cấp.";
+  const ctl=new AbortController(), t0=Date.now(), ktok=Math.round(md.length/3/1000);
+  aiRun={handle:h,state:"run",text:"",model:gmodel().replace(/^models\//,""),range:ranged()?TTI.rangeLabel(range):"",ctl,t0,
+    phase:`Đang gửi dữ liệu kênh cho Gemini (khoảng ${ktok} nghìn token)…`,thought:""};paintAI();
+  let last=0, lastByte=Date.now(), idleWhy="";
+  const tick=setInterval(()=>{ if(!aiRun||aiRun.handle!==h||aiRun.state!=="run")return clearInterval(tick);
+      if(Date.now()-lastByte>120000){idleWhy="Gemini không phản hồi trong 2 phút. Thử lại, hoặc chọn khoảng ngày hẹp hơn cho dữ liệu nhẹ đi, hoặc đổi sang model Flash-Lite trong Cài đặt AI.";ctl.abort()}
+      if(cur===h)paintAI() },1000);
+  const body=thinking=>JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:"user",parts:[{text:md}]}],
+    generationConfig:{temperature:0.6,maxOutputTokens:16384,...(thinking?{thinkingConfig:{includeThoughts:true}}:{})}});
+  try{
+    const call=(model,thinking)=>gfetch(`/v1beta/${model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctl.signal,
+      headers:{"Content-Type":"application/json"},body:body(thinking)},gkey());
+    // Google quá tải (503/500) → đợi rồi thử lại, sau đó tự chuyển sang model dự phòng
+    const models=[...new Set([gmodel(),"models/gemini-flash-latest","models/gemini-flash-lite-latest"])];
+    let res=null;
+    for(let mi=0;mi<models.length;mi++){
+      for(let attempt=0;attempt<2;attempt++){
+        if(mi||attempt){aiRun.phase=mi?`Model ${models[mi-1].replace(/^models\//,"")} đang quá tải, chuyển sang ${models[mi].replace(/^models\//,"")}…`:"Google đang quá tải, thử lại sau vài giây…";paintAI();await new Promise(r=>setTimeout(r,attempt?4000:1500))}
+        res=await call(models[mi],true);
+        if(res.status===400){const t=await res.clone().text();if(/think/i.test(t))res=await call(models[mi],false)}   // model không hỗ trợ suy nghĩ → gửi lại bản thường
+        if(![500,502,503,504].includes(res.status))break;
+      }
+      if(![500,502,503,504].includes(res.status)&&!(res.status===404)){aiRun.model=models[mi].replace(/^models\//,"");break}
+    }
+    lastByte=Date.now();
+    if(!res.ok){let m="";try{m=(await res.json()).error.message}catch(e){}
+      throw new Error(/API key not valid|API_KEY_INVALID/i.test(m)?"Key không hợp lệ. Kiểm tra lại trong Cài đặt AI.":/not supported|OAuth|ACCESS_TOKEN/i.test(m)?"Google chưa chấp nhận key này cho Gemini API. Tạo key mới trong Google AI Studio (aistudio.google.com/apikey) rồi thử lại.":/not found|is not supported for/i.test(m)?"Model này không còn dùng được. Vào Cài đặt AI chọn model khác.":[500,502,503,504].includes(res.status)?"Google đang quá tải tất cả model Flash. Đợi vài phút rồi bấm Phân tích lại.":res.status===429?"Hết lượt miễn phí của model này hôm nay (hoặc gửi quá nhanh). Đổi sang model Flash-Lite trong Cài đặt AI, hoặc thử lại sau.":res.status===403?"Key chưa được bật Gemini API, hoặc khu vực của bạn chưa được hỗ trợ.":`Gemini báo lỗi ${res.status}${m?": "+m:""}`)}
+    aiRun.phase="Gemini đang đọc dữ liệu và suy nghĩ…";paintAI();
+    const rd=res.body.getReader(), dec=new TextDecoder(); let buf="";
+    for(;;){const {done,value}=await rd.read();if(done)break;lastByte=Date.now();buf+=dec.decode(value,{stream:true});
+      let i;while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+        if(!line.startsWith("data:"))continue;
+        try{const j=JSON.parse(line.slice(5));const p=(((j.candidates||[])[0]||{}).content||{}).parts||[];
+          const th=p.filter(x=>x.thought).map(x=>x.text||"").join(" ").trim();
+          if(th){aiRun.thought=th.replace(/\*\*/g,"").split("\n").filter(Boolean).slice(-1)[0].slice(0,160);aiRun.phase="Gemini đang suy nghĩ…"}
+          const tx=p.filter(x=>!x.thought).map(x=>x.text||"").join("");
+          if(tx){aiRun.text+=tx;aiRun.phase="Gemini đang viết…"}
+          const fr=((j.candidates||[])[0]||{}).finishReason; if(fr&&fr!=="STOP"&&fr!=="MAX_TOKENS")aiRun.error="Gemini dừng giữa chừng ("+fr+").";
+          if(j.promptFeedback&&j.promptFeedback.blockReason)aiRun.error="Gemini từ chối nội dung ("+j.promptFeedback.blockReason+").";
+        }catch(e){}}
+      if(Date.now()-last>250&&cur===h){last=Date.now();paintAI()}}
+    if(!aiRun.text&&!aiRun.error)aiRun.error="Gemini không trả về nội dung. Thử lại hoặc đổi model.";
+  }catch(e){aiRun.error=e.name==="AbortError"?(idleWhy||"Đã dừng."):/Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Không kết nối được Gemini. Kiểm tra mạng.":e.message}
+  clearInterval(tick);
+  const done={state:"done",text:aiRun.text,model:aiRun.model,range:aiRun.range,at:Date.now(),error:aiRun.error||"",secs:Math.round((Date.now()-t0)/1000)};
+  if(done.text)await queue(async()=>{const rr=await DB.get(h);if(rr){rr.ai=done;await DB.put(rr)}});
+  if(detail&&cur===h&&done.text)detail.ai=done;
+  aiRun=done.text?null:{...done,handle:h};paintAI();
+}
+// Key AI Studio: "AQ." (loại mới, từ 2026) hoặc "AIza…" (loại cũ, đang bị khai tử). Chỉ cảnh báo khi không giống cả hai.
+function keyKind(k){k=String(k||"").trim();if(k&&!/^(AQ\.|AIza)/.test(k))return "Key Gemini thường bắt đầu bằng AQ. hoặc AIza… Kiểm tra lại, hoặc tạo key mới ở aistudio.google.com/apikey.";return ""}
+// Gọi Gemini: gửi key qua header; nếu bị từ chối kiểu "sai loại xác thực" thì thử lại bằng ?key=
+async function gfetch(path,opt,k){
+  const h={...(opt.headers||{}),"x-goog-api-key":k};
+  let r=await fetch(`${GAPI}${path}`,{...opt,headers:h});
+  if(r.status===401){const sep=path.includes("?")?"&":"?";const h2={...h};delete h2["x-goog-api-key"];r=await fetch(`${GAPI}${path}${sep}key=${encodeURIComponent(k)}`,{...opt,headers:h2})}
+  return r;
+}
+const FALLBACK_MODELS=[{name:"models/gemini-flash-latest",displayName:"Gemini Flash (mới nhất)"},{name:"models/gemini-flash-lite-latest",displayName:"Gemini Flash-Lite (mới nhất)"}];
+function stopAI(){if(aiRun&&aiRun.ctl)aiRun.ctl.abort()}
+async function copyAI(){const a=(detail&&detail.ai)||{};try{await navigator.clipboard.writeText(a.text||"");toast("Đã copy báo cáo")}catch(e){toast("Không copy được")}}
+/* cài đặt key */
+function openAIset(msg){$("gkey").value=gkey();$("gmsg").textContent=msg||"";fillModels(true);$("gmodal").classList.remove("show");$("amodal").classList.add("show")}
+function closeAIset(){$("amodal").classList.remove("show")}
+async function fillModels(quiet){
+  const k=$("gkey").value.trim(), sel=$("gmodelsel");
+  if(!k){sel.innerHTML='<option value="">Dán key trước</option>';return}
+  if(keyKind(k)){sel.innerHTML='<option value="">–</option>';$("gmsg").textContent=keyKind(k);return}
+  if(!quiet)$("gmsg").textContent="Đang kiểm tra key…";
+  const fill=(ms,msg)=>{const keep=gmodel()&&ms.some(m=>m.name===gmodel())?gmodel():ms[0].name;
+    sel.innerHTML=ms.map(m=>`<option value="${esc(m.name)}"${m.name===keep?" selected":""}>${esc(m.displayName||m.name)}${/pro/i.test(m.name)?" (thường phải trả phí)":""}</option>`).join("");$("gmsg").textContent=msg};
+  try{
+    const r=await gfetch(`/v1beta/models?pageSize=200`,{},k);
+    if(r.status===400){const t=await r.text();if(/API key not valid|API_KEY_INVALID/i.test(t))throw new Error("Key không hợp lệ. Copy lại key trong Google AI Studio.")}
+    if(!r.ok){fill(FALLBACK_MODELS,"Google không cho xem danh sách model với key này, tool dùng sẵn model Flash. Bấm Lưu rồi thử Phân tích bằng AI.");return}
+    const ms=((await r.json()).models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")&&/gemini/i.test(m.name)&&!/embed|image|tts|audio|live|vision|aqa|native|robot|computer/i.test(m.name));
+    const ver=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0}, score=m=>ver(m.name)*10+(/flash/i.test(m.name)?3:0)-(/lite/i.test(m.name)?1:0)-(/preview|exp/i.test(m.name)?4:0)-(/pro/i.test(m.name)?6:0);
+    ms.sort((a,b)=>score(b)-score(a));
+    if(!ms.length){fill(FALLBACK_MODELS,"Tool dùng sẵn model Flash. Bấm Lưu rồi thử Phân tích bằng AI.");return}
+    fill(ms,"Key dùng được. Model Flash là lựa chọn miễn phí tốt nhất.");
+  }catch(e){sel.innerHTML='<option value="">–</option>';$("gmsg").textContent=/fetch|Load failed/i.test(e.message)?"Không kết nối được Google.":e.message}
+}
+function saveAIset(){const k=$("gkey").value.trim(),m=$("gmodelsel").value;
+  if(!k||!m){$("gmsg").textContent="Cần key hợp lệ và chọn model.";return}
+  ls.set("tti_gkey",k);ls.set("tti_gmodel",m);closeAIset();toast("Đã lưu. Bấm Phân tích bằng AI.")}
+function clearAIset(){ls.set("tti_gkey","");ls.set("tti_gmodel","");$("gkey").value="";fillModels(true);$("gmsg").textContent="Đã xoá key khỏi trình duyệt này."}
+
+
+/* ---------- xuất ảnh JPEG của kết quả ---------- */
+const loadJs=src=>new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Không tải được "+src));document.head.appendChild(s)});
+async function exportJpg(){
+  const det=document.querySelector(".det"); if(!det||!detail)return;
+  toast("Đang dựng ảnh…");
+  try{
+    if(!window.html2canvas)await loadJs("html2canvas.min.js");
+    const bg=getComputedStyle(document.body).backgroundColor, W=1040;
+    const box=document.createElement("div"); box.className="snap"; box.style.cssText=`position:fixed;left:-20000px;top:0;width:${W}px;padding:28px;background:${bg};`;
+    const m=detail.meta||{}, now=new Date();
+    box.innerHTML=`<div class="snap-h"><b>TikTok Insight</b><span>Khám kênh @${esc(m.handle)} · ${now.toLocaleDateString("vi-VN")}${ranged()?" · "+esc(TTI.rangeLabel(range)):""}</span></div>`;
+    const c=det.cloneNode(true); box.appendChild(c);
+    c.querySelectorAll(".acts,.empty-ai,.ai-h .row,.ai-prog,.errs").forEach(e=>e.remove());
+    c.querySelectorAll(".ai-body").forEach(e=>{e.style.maxHeight="none";e.style.overflow="visible";e.classList.remove("busy")});
+    c.querySelectorAll(".tw").forEach(e=>e.style.overflow="visible");
+    // bảng clip: chỉ giữ 5 clip ăn nhất + 5 clip kém nhất (không tính clip ads, clip mới)
+    const r0=c.querySelector("tr.r"), tb=r0&&r0.parentElement;
+    if(tb){
+      const live=[...document.querySelectorAll(".det tr.r")], clones=[...tb.querySelectorAll("tr.r")];
+      const rows=detail.rows.map((r,k)=>({r,el:clones[k]})).filter(x=>x.el&&x.r.kind==="ORGANIC"&&x.r.label!=="MỚI"&&typeof x.r.x_med==="number");
+      // detail.rows có thể đang sắp theo kiểu khác bảng → khớp theo thứ tự hiển thị
+      const shown=sortBy==="x"?[...detail.rows].sort((a,b)=>b.x_med-a.x_med):sortBy==="er"?[...detail.rows].sort((a,b)=>(b.er||0)-(a.er||0)):detail.rows;
+      const pair=shown.map((r,k)=>({r,el:clones[k]})).filter(x=>x.el&&x.r.kind==="ORGANIC"&&x.r.label!=="MỚI"&&typeof x.r.x_med==="number");
+      const byX=[...pair].sort((a,b)=>b.r.x_med-a.r.x_med), top=byX.slice(0,5), bot=byX.slice(-5).reverse().filter(x=>!top.includes(x));
+      const head=t=>{const tr=document.createElement("tr");tr.innerHTML=`<td colspan="8" class="snap-sec">${t}</td>`;return tr};
+      tb.innerHTML="";tb.appendChild(head("5 clip ăn nhất"));top.forEach(x=>tb.appendChild(x.el));
+      if(bot.length){tb.appendChild(head("5 clip kém nhất"));bot.forEach(x=>tb.appendChild(x.el))}
+    }
+    const f=document.createElement("div");f.className="snap-f";f.textContent="Tạo bằng TikTok Insight · "+location.host+location.pathname;box.appendChild(f);
+    document.body.appendChild(box);
+    const H=box.scrollHeight, scale=Math.max(1,Math.min(2,Math.sqrt(16e6/(W*H))));   // Safari giới hạn ~16 triệu điểm ảnh mỗi ảnh
+    const cv=await html2canvas(box,{backgroundColor:bg,scale,logging:false,useCORS:true});
+    box.remove();
+    const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.92));
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`kham-kenh-${m.handle}-${now.toISOString().slice(0,10)}.jpg`;a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),3000);toast("Đã tải ảnh "+a.download);
+  }catch(e){document.querySelectorAll(".snap").forEach(x=>x.remove());toast("Không xuất được ảnh: "+e.message)}
+}
+
+/* ---------- sổ tay ---------- */
+function gTab(k){document.querySelectorAll(".gtabs button").forEach(b=>b.classList.toggle("on",b.dataset.g===k));document.querySelectorAll(".gpane").forEach(p=>p.classList.toggle("on",p.dataset.g===k));ls.set("tti_gtab",k)}
+function openGuide(k){gTab(k||ls.get("tti_gtab","start"));$("gmodal").classList.add("show");$("gmodal").querySelector(".guide").scrollTop=0}
+function closeGuide(){$("gmodal").classList.remove("show")}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeGuide();closeModal();closeBrief();closeMarks();closeAIset()}});
+function toggleSetup(on){$("setup").style.display=on?"":"none";ls.set("tti_setup_hidden",on?"":"1");if(on)window.scrollTo({top:0,behavior:"smooth"})}
+if(ls.get("tti_setup_hidden","")==="1")$("setup").style.display="none";
+$("url").addEventListener("keydown",e=>{if(e.key==="Enter")openChannel()});
+try{const md=ls.get("tti_mode","fast");if([...$("mode").options].some(o=>o.value===md))$("mode").value=md}catch(e){}
+renderRange();
+loadChannels();
+</script>
+</body>
+</html>
