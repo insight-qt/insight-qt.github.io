@@ -238,6 +238,24 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
+
+/* ===== điện thoại ===== */
+.phone-note{display:none}
+@media (max-width:700px){
+ header .ghost:first-child{padding-left:0}
+ .scan{padding:10px;gap:8px}.scan input{flex:1 1 100%;padding:6px 6px}.scan select,.scan .btn{flex:1 1 0;min-width:0}
+ .range{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.range::-webkit-scrollbar{display:none}.range .seg{flex:none}.range>small{flex:none}
+ .phone-note{display:block}
+ table.ct thead{display:none}table.ct,table.ct tbody{display:block;width:100%}
+ table.ct tr.r{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"d v x" "c c c" "l l l";column-gap:10px;row-gap:6px;padding:12px 0;border-bottom:1px solid var(--line)}
+ table.ct tr.r>td{padding:0;border:0;max-width:none}
+ table.ct tr.r>td:nth-child(1){grid-area:d;color:var(--mute);font-size:12.5px}
+ table.ct tr.r>td:nth-child(2){grid-area:c;color:var(--ink)}
+ table.ct tr.r>td:nth-child(3){grid-area:v;text-align:right}
+ table.ct tr.r>td:nth-child(4){grid-area:x}
+ table.ct tr.r>td:nth-child(5){grid-area:l}
+ .tw{overflow-x:visible}
+}
 </style>
 </head>
 <body>
@@ -254,6 +272,7 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
     <div class="eyebrow">Khám kênh TikTok</div>
     <h2>Biết mình biết kênh, đăng đâu trúng đó.</h2>
     <p class="lead">Tool so từng clip với chính kênh của nó, đọc cả comment lẫn reply, rồi gói lại cho AI đọc giùm. <b>Không cài app. Không đăng ký. Không tốn token ở đây.</b></p>
+    <p class="note phone-note">Nút ⚡ chỉ chạy trên máy tính. Điện thoại chỉ xem được kênh đã quét ngay trên trình duyệt này. Kết quả quét trên máy tính thì bấm <b>Xuất ảnh JPEG</b> hoặc <b>Xuất .md</b> rồi gửi sang điện thoại.</p>
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
