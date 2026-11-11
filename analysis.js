@@ -4,7 +4,7 @@
   const WEEKDAY = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
   const HOURS = [[0, 6, "0–6h"], [6, 11, "6–11h"], [11, 14, "11–14h"], [14, 18, "14–18h"], [18, 22, "18–22h"], [22, 24, "22–24h"]];
   const DURS = [[0, 16, "<15s"], [16, 31, "15–30s"], [31, 61, "30–60s"], [61, 181, "1–3 phút"], [181, 1e9, ">3 phút"]];
-  const PAID_TAG = /#(ad|ads|advert|sponsored|sponsor|quangcao|qc|hoptac|hợptác|collab|partner|brandpartner|paidpartnership|taitro|tàitrợ|booking)\b/i;
+  const PAID_TAG = /#(ad|ads|advert|sponsored|sponsor|quangcao|qc|hoptac|hợptác|partner|brandpartner|paidpartnership|taitro|tàitrợ|booking)\b/i;
   // comment cho thấy người xem nhận ra quảng cáo
   const AD_TALK = /qu[ảa]ng c[áa]o|\bqc\b|\bads?\b|t[àa]i tr[ợo]|sponsor|booking|nh[ậa]n bao nhi[êe]u|bao nhi[êe]u (ti[ềe]n|c[áa]t)|\bpr\b|seeding|đ[ưu][ợo]c tr[ảa] ti[ềe]n|clip (qc|pr)|l[ạa]i (qc|pr|qu[ảa]ng)/i;
   // caption kiểu bán hàng / kêu gọi mua
@@ -81,10 +81,16 @@
     v.hist = h.slice(-30); return v;
   }
   /* Clip bạn tự xác nhận: marks = {id: "paid" | "organic"} */
-  function applyMarks(vids, marks) {
-    if (!marks || !Object.keys(marks).length) return vids;
+  // marks: đánh dấu tay; accounts: hồ sơ các tài khoản được tag trong caption (brand / creator), do nút ⚡ kiểm
+  function applyMarks(vids, marks, accounts) {
+    marks = marks || {}; accounts = accounts || {};
+    if (!Object.keys(marks).length && !Object.keys(accounts).length) return vids;
     const out = {};
-    for (const k in vids) out[k] = marks[k] ? { ...vids[k], mark: marks[k] } : vids[k];
+    for (const k in vids) {
+      const v = vids[k], acc = {};
+      (v.mentions || []).forEach(m => { const a = accounts[String(m).toLowerCase()]; if (a) acc[String(m).toLowerCase()] = a; });
+      out[k] = marks[k] || Object.keys(acc).length ? { ...v, ...(marks[k] ? { mark: marks[k] } : {}), ...(Object.keys(acc).length ? { ment_acc: acc } : {}) } : v;
+    }
     return out;
   }
   const idOf = u => (String(u).match(/\/(?:video|photo)\/(\d+)/) || String(u).match(/^(\d{15,})$/) || [])[1] || null;
@@ -223,14 +229,22 @@
             sig.push([2, `view vẫn tăng ${Math.round(g * 100)}% (+${Math.round(gain).toLocaleString("vi-VN")}) trong ${Math.round(days)} ngày dù clip đã đăng ${v.growth.ageAt} ngày`]);
         }
       }
+      // 1b. Caption tag tài khoản brand: TikTok xác nhận là tổ chức (isOrganization) → gần như chắc là hợp tác có trả tiền
+      const acc = v.ment_acc || {};
+      const brands = Object.keys(acc).filter(x => x !== me && acc[x].org);
+      const bizTag = Object.keys(acc).filter(x => x !== me && !acc[x].org && acc[x].biz);
+      if (brands.length) sig.push([2, `caption tag tài khoản brand ${brands.slice(0, 3).map(x => "@" + x).join(", ")} (TikTok xác nhận là tổ chức)`]);
+      else if (bizTag.length) sig.push([0.5, `caption tag tài khoản business ${bizTag.slice(0, 3).map(x => "@" + x).join(", ")}`]);
       // Kiểm trên kênh thật: isAd bật cả ở clip vài nghìn view, nhất là clip gắn TikTok Shop → nghĩa là clip được đưa vào
       // quảng cáo (thường là quảng cáo tự động cho clip bán hàng), không cho biết bao nhiêu view đến từ ads. Cần thêm dấu hiệu khác.
       if (!v.lite) {
         // 2. Tài khoản doanh nghiệp / tài khoản được tag vào comment
         const ment = new Set((v.mentions || []).map(x => String(x).toLowerCase()).filter(x => x && x !== me));
         const all = (v.comments || []).flatMap(c => [c, ...(c.reply_list || [])]);
-        const bizBy = [...new Set(all.filter(c => c.by && c.by.toLowerCase() !== me && (c.biz || ment.has(c.by.toLowerCase()))).map(c => "@" + c.by))];
-        if (bizBy.length) sig.push([1.5, `tài khoản doanh nghiệp hoặc được tag (${bizBy.slice(0, 3).join(", ")}) vào comment`]);
+        // Chỉ tài khoản doanh nghiệp (TikTok xác minh) mới là dấu hiệu ads. Creator được tag rồi vào comment là collab, không phải ads.
+        const bizSet = new Set(all.filter(c => c.by && c.biz && c.by.toLowerCase() !== me).map(c => c.by.toLowerCase()));
+        const bizBy = [...bizSet].map(x => "@" + x);
+        if (bizBy.length) sig.push([1.5, `tài khoản doanh nghiệp ${bizBy.slice(0, 3).join(", ")} vào comment${[...bizSet].some(x => ment.has(x)) ? " (cũng là tài khoản được tag trong caption)" : ""}`]);
         // 3. Người xem nhắc tới quảng cáo
         const talk = (v.comments || []).filter(c => AD_TALK.test(c.text)).length;
         if (talk >= 2) sig.push([talk >= 4 ? 1.5 : 1, `${talk} comment nhắc tới quảng cáo, tài trợ`]);
@@ -240,10 +254,12 @@
           else if (medShareAll && v.share_r != null && v.share_r <= 0.3 * medShareAll) sig.push([1, `view gấp ${(v.views / medAll).toFixed(1).replace(".", ",")} lần clip thường, nhưng gần như không ai share`]);
         }
         // 5. Dấu vết thương mại (yếu, chỉ cộng thêm)
-        if (ment.size) sig.push([0.5, `caption tag ${[...ment].slice(0, 3).map(x => "@" + x).join(", ")}`]);
+        if ([...ment].some(x => bizSet.has(x))) sig.push([0.5, "caption tag tài khoản doanh nghiệp"]);
         if (v.shop) sig.push([0.5, "gắn giỏ hàng / sản phẩm"]);
         if (SALE_CTA.test(v.caption || "")) sig.push([0.5, "caption kiểu bán hàng"]);
       }
+      { const biz = new Set((v.comments || []).flatMap(c => [c, ...(c.reply_list || [])]).filter(c => c.biz && c.by).map(c => c.by.toLowerCase()));
+        v.collab = [...new Set((v.mentions || []).map(x => String(x).toLowerCase()).filter(x => x && x !== me && !biz.has(x) && !(acc[x] && acc[x].org)))]; }
       v.ad_score = sig.reduce((a, x) => a + x[0], 0);
       v.ad_reasons = sig.sort((a, b) => b[0] - a[0]).map(x => x[1]);
       v.suspect = !v.declared && v.mark !== "organic" && v.ad_score >= 2;
@@ -398,13 +414,14 @@
       "- Tương tác = (like + comment + share + save) / view. Mọi clip đều đủ số liệu; comment, reply và phụ đề chỉ đọc ở các clip đại diện (mục D4).",
       "- Clip được đọc comment là clip đại diện: nhiều view nhất, ít view nhất, mới nhất và rải đều ở giữa.",
       "- **PAID** = đã chạy ads: TikTok gắn cờ quảng cáo cho clip (lý do ghi rõ tương tác thấp hẳn hay vẫn tự nhiên), creator tự ghi trong caption (#ad #quangcao #hoptac #taitro…), hoặc người dùng tool xác nhận. TikTok không công khai clip nào được boost (kể cả Spark Ads brand chạy bằng mã của creator), và view từ ads được cộng thẳng vào clip.",
-      "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp / được tag vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
+      "- **collab @x** = caption tag một creator khác (không phải tài khoản doanh nghiệp): clip hợp tác giữa 2 creator, view có thể đến từ tệp fan của người kia. Không tính là ads.",
+      "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp (TikTok xác minh) vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
     o.push("## D2. Bảng toàn bộ clip (mới → cũ)", "",
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
       v._i = i + 1;
-      const lab = (v.super ? "SIÊU VIRAL" : v.label) + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
+      const lab = (v.super ? "SIÊU VIRAL" : v.label) + (v.er_high ? " · ER cao" : "") + (v.shop ? " · giỏ hàng" : "") + (v.collab && v.collab.length ? " · collab " + v.collab.slice(0, 2).map(x => "@" + x).join(" ") : "") + (v.is_ad_flag && v.kind === "ORGANIC" ? " · cờ ads" : "") + (v.pinned ? " · ghim" : "");
       const dur = v.is_photo ? "ảnh" : v.duration ? v.duration + "s" : "–";
       o.push(`| ${v._i} | ${date_(v.ts, false, true)} | ${dur} | ${n_(v.views)} | ${x_(v.x_med)} | ${lab} | ${p_(v.er)} | ${p_(v.share_r, 2)} | ${p_(v.save_r, 2)} | ${n_(v.comments_count)} | ${(v.hook || "").replace(/[|\n]/g, " ").slice(0, 70)} |`);
     });

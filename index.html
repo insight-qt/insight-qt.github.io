@@ -118,7 +118,7 @@ td.hk{color:var(--mute);max-width:360px}
 @keyframes shine{0%,60%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
 @media (prefers-reduced-motion:reduce){.pill.VIRAL,.pill.VIRAL::after{animation:none}} .pill.MỚI{background:var(--accent-soft);color:var(--accent)}
 .pill.PAID{background:var(--warn-soft);color:var(--warn)} .pill.NGHI{background:var(--warn-soft);color:var(--warn);border:1px dashed var(--warn)}
-.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.pin{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.adf{background:var(--adf-soft);color:var(--adf);margin-left:4px}
+.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.pin,.pill.collab{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.adf{background:var(--adf-soft);color:var(--adf);margin-left:4px}
 .xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--accent);opacity:.75}
 .guide{max-height:86vh;overflow:auto}
 .ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -313,6 +313,7 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
         <dt><span class="pill PAID">PAID</span></dt><dd>Đã chạy ads: TikTok gắn cờ quảng cáo, creator tự ghi trong caption (#ad, #quangcao…), hoặc bạn tự đánh dấu. Không chấm WIN/FLOP, vì view có tiền chen vào. Clip viral thật mà vẫn bị TikTok gắn cờ? Bấm “Không chạy ads?” ngay dưới caption.</dd>
         <dt><span class="pill NGHI">NGHI ADS</span></dt><dd>Không ai khai, nhưng số liệu “có mùi tiền”. Mỗi clip kèm lý do, đọc ngay dưới caption.</dd>
         <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip không chạy ads, nên tool chấm như clip thường.</dd>
+        <dt><span class="pill collab">Collab</span></dt><dd>Caption tag một creator khác: clip hợp tác. View có thể mượn từ tệp fan của người kia, nên WIN ở clip này chưa chắc là nhờ content. Không tính là ads.</dd>
         <dt><span class="pill shop">Giỏ hàng</span></dt><dd>Clip có gắn sản phẩm TikTok Shop hoặc link bán hàng. Chỉ để biết, không ảnh hưởng nhãn.</dd>
       </dl>
       <h4>Tool bắt clip chạy ads ngầm bằng cách nào?</h4>
@@ -459,7 +460,7 @@ window.addEventListener("message",e=>{
     const nowS=Math.floor(Date.now()/1000);
     // ảnh chụp lần khám trước để so "thay đổi từ lần trước" (chỉ chụp khi lần trước cách đây > 6 giờ)
     if(Object.keys(rec.vids).length&&(!rec.meta.scannedAt||nowS-rec.meta.scannedAt>6*3600)){
-      const a0=TTI.analyze(TTI.applyMarks(rec.vids,rec.marks),rec.meta.followers);
+      const a0=TTI.analyze(TTI.applyMarks(rec.vids,rec.marks,rec.accounts),rec.meta.followers);
       rec.last={at:rec.meta.scannedAt||null,followers:rec.meta.followers||null,labels:Object.fromEntries(a0.rows.map(r=>[r.id,r.label])),views:Object.fromEntries(a0.rows.map(r=>[r.id,r.views]))};
     }
     rec.meta={...rec.meta,...meta,handle:h,scanned:new Date().toLocaleString("vi-VN"),scannedAt:nowS,partial:!!m.blocked};
@@ -470,7 +471,7 @@ window.addEventListener("message",e=>{
     await DB.put(rec);
     job={...(job||{}),handle:h,state:m.blocked?"ask":"run",todo:urls.length,done:0,errors:[],total:(m.links||[]).length,
       msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}: TikTok chỉ cho tải tới đó, đăng nhập TikTok rồi quét lại để đủ hơn)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")};
-    reply({type:"plan",urls,mode:pmode});cur=h;renderJob();await loadChannels();loadDetail(h,true);
+    reply({type:"plan",urls,mode:pmode,known:Object.keys(rec.accounts||{})});cur=h;renderJob();await loadChannels();loadDetail(h,true);
   });
   if(m.type==="video")return queue(async()=>{
     const v=TTI.videoFrom(m.data),h=(v.channel||(job&&job.handle)||"").toLowerCase();if(!h)return;
@@ -478,6 +479,10 @@ window.addEventListener("message",e=>{
     const old=rec.vids[v.id];v.hist=(old&&old.hist)||[];if(old){if(!(v.labels||[]).length&&(old.labels||[]).length)v.labels=old.labels;if(!(v.kw||[]).length&&(old.kw||[]).length)v.kw=old.kw;if(old.pinned)v.pinned=true}TTI.snap(v,v.views);rec.vids[v.id]=v;await DB.put(rec);
     if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";if(!job.handle)job.handle=h}
     renderJob();throttleDetail(h);
+  });
+  if(m.type==="accounts")return queue(async()=>{
+    const h=((job&&job.handle)||cur||"").toLowerCase();if(!h)return;const rec=await DB.get(h);if(!rec)return;
+    rec.accounts={...(rec.accounts||{}),...(m.data||{})};await DB.put(rec);if(cur===h)loadDetail(h,true);
   });
   if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
   if(m.type==="finished"){if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
@@ -501,7 +506,7 @@ function renderJob(){
 /* ---------- hiển thị ---------- */
 async function loadChannels(){
   const all=await DB.all();
-  const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.keys(fv).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
+  const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.keys(fv).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
   CHS=cs.map(c=>c.handle); MSEL.forEach(h=>{if(!CHS.includes(h))MSEL.delete(h)}); renderChBar();
   $("chs").classList.toggle("manage",MANAGE);
   $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
@@ -513,7 +518,7 @@ async function loadChannels(){
 }
 async function loadDetail(h,quiet){
   const r=await DB.get(h); if(!r){$("det").innerHTML="";return}
-  cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),r.meta.followers); detail={meta:r.meta,last:r.last,...a};
+  cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),r.meta.followers); detail={meta:r.meta,last:r.last,...a};
   renderDetail(); if(!quiet)document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("on",e.textContent.includes("@"+h+" ")));
 }
 // một cột nhãn chung cho mọi khung bên phải → mọi thanh bắt đầu cùng một chỗ
@@ -589,7 +594,7 @@ function renderDetail(){
     <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
       <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}${r.flag_paid?` <button class="fix" onclick="event.stopPropagation();markOne('${r.id}','organic')">Không chạy ads? Chấm như clip thường</button>`:""}</div>`:r.is_ad_flag&&r.mark==="organic"?`<div class="why ok">Bạn đã xác nhận không chạy ads <button class="fix" onclick="event.stopPropagation();markOne('${r.id}',null)">Hoàn tác</button></div>`:""}</td><td class="num">${fmt(r.views)}</td>
       <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*60))}px"></i>${xm(r.x_med)}</span></td>
-      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
+      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.collab&&r.collab.length?`<span class="pill collab" title="Hợp tác với ${esc(r.collab.map(x=>"@"+x).join(", "))}: view có thể đến từ tệp fan của người kia">Collab</span>`:""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
       <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
       <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
   </section>`;
@@ -608,7 +613,7 @@ function saveBrief(){ls.set("tti_brief",$("btext").value);closeBrief();toast("Đ
 function resetBrief(){$("btext").value=BRIEF_DEFAULT}
 async function exportMd(){
   const r=await DB.get(cur); if(!r)return;
-  const md=TTI.buildMd(r.meta,TTI.applyMarks(r.vids,r.marks),$("depth").value,brief(),range);
+  const md=TTI.buildMd(r.meta,TTI.applyMarks(r.vids,r.marks,r.accounts),$("depth").value,brief(),range);
   last={md,name:`channel-${cur}${ranged()?"-"+(range.preset==="custom"?"tuychon":range.preset+"d"):""}-${new Date().toISOString().slice(0,16).replace(/[-:T]/g,"")}.md`};
   $("mfile").textContent=`${last.name} · ${Math.round(new Blob([md]).size/1024)} KB · khoảng ${Math.round(md.length/3/1000)} nghìn token`;
   $("modal").classList.add("show");

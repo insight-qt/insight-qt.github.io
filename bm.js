@@ -224,6 +224,35 @@
     return { links: links, blocked: !links.length && !Object.keys(CAP).length && meta.videos > 0 };
   }
 
+
+  /* ---------- kiểm tài khoản được tag trong caption: brand (tổ chức) hay creator ---------- */
+  var MENT = {};
+  function noteMentions(list) { (list || []).forEach(function (x) { x = String(x || '').toLowerCase(); if (x) MENT[x] = (MENT[x] || 0) + 1; }); }
+  async function checkAccounts(owner, known) {
+    owner = String(owner || '').toLowerCase(); known = known || [];
+    Object.keys(CAP).forEach(function (k) { noteMentions((CAP[k].textExtra || []).map(function (x) { return x.userUniqueId; })); });
+    var todo = Object.keys(MENT).filter(function (x) { return x !== owner && known.indexOf(x) < 0; })
+      .sort(function (a, b) { return MENT[b] - MENT[a]; }).slice(0, 12);
+    if (!todo.length) return;
+    var out = {};
+    for (var i = 0; i < todo.length && !S.stop; i++) {
+      say('Đang kiểm tài khoản được tag ' + (i + 1) + '/' + todo.length + ': brand hay creator…', 0.99);
+      var f = document.createElement('iframe'); f.src = '/@' + todo[i];
+      f.style.cssText = 'position:fixed;left:-3000px;top:0;width:800px;height:600px;opacity:0;pointer-events:none;border:0';
+      document.body.appendChild(f);
+      await new Promise(function (r) { f.onload = r; setTimeout(r, 12000); });
+      var us = null;
+      for (var t = 0; t < 10 && !us; t++) {
+        try { us = JSON.parse(f.contentDocument.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__').textContent).__DEFAULT_SCOPE__['webapp.user-detail'].userInfo.user; }
+        catch (e) { await sleep(500); }
+      }
+      f.remove();
+      if (us && us.uniqueId) out[todo[i]] = { org: +us.isOrganization === 1, biz: !!(us.commerceUserInfo && us.commerceUserInfo.commerceUser),
+        verified: !!us.verified, cat: (us.commerceUserInfo && us.commerceUserInfo.category) || '', name: us.nickname || '' };
+    }
+    if (Object.keys(out).length) send({ type: 'accounts', data: out });
+  }
+
   /* ---------- chạy ---------- */
   (async function () {
     say('Đang kết nối với trang TikTok Insight…');
@@ -291,7 +320,7 @@
       var plan = await waitFor('plan', 15000);
       urls = (plan && plan.urls) || [];
       if (plan && plan.mode === 'fast') O = { pages: 2, repTop: 5, repMax: 10 };   // chế độ Nhanh: 100 comment + 5 chuỗi reply mỗi clip
-      if (!urls.length) { send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
+      if (!urls.length) { await checkAccounts(meta.handle, plan && plan.known); send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
     }
     /* soi sâu song song, tự giảm tốc khi TikTok từ chối */
     var i = 0, n = 0, K = 3, pause = 500, blocks = 0, slow = false, t0 = Date.now();
@@ -309,12 +338,14 @@
           await sleep(15000); continue;
         }
         n++;
+        if (!r.error) noteMentions(r.mentions);
         send(r.error ? { type: 'error', url: u, error: r.error, of: urls.length, eta: eta() } : { type: 'video', data: r, of: urls.length, eta: eta() });
         say('Đang đọc comment ' + n + '/' + urls.length + ' clip' + etaTxt(eta()), 0.15 + 0.85 * n / urls.length);
         await sleep(pause + Math.random() * 900);
       }
     }
     var ws = []; for (var w = 0; w < K; w++) ws.push(worker(w)); await Promise.all(ws);
+    if (!S.blockedOut) await checkAccounts(meta && meta.handle, plan && plan.known);
     send({ type: 'finished', stopped: S.stop, blocked: !!S.blockedOut });
     done(S.blockedOut ? 'TikTok tạm từ chối (đọc nhiều quá). Dữ liệu đã lấy vẫn dùng được, thử lại sau ít phút.'
       : S.stop ? 'Đã dừng. Dữ liệu đã lấy được đã lưu ở tab TikTok Insight.' : 'Xong ' + n + ' clip. Quay lại tab TikTok Insight để xem.');
