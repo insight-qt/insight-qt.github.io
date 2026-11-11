@@ -58,6 +58,7 @@ Tối đa 5 insight, xếp từ mạnh tới yếu. Mỗi insight viết theo kh
 Kèm bằng chứng (#clip, trích comment) và độ mạnh 1–5.
 
 ### G. Việc nên làm tiếp
+Mở đầu bằng việc chấm mục **D1b. Kê đơn của tool**: mỗi đơn ghi *đồng ý / bác bỏ / chỉnh lại* kèm một câu lý do dựa trên transcript, comment (dẫn #clip). Tool chỉ nhìn số, bạn nhìn được nội dung.
 - **Nhân bản:** 3 việc nên làm nhiều hơn.
 - **Dừng:** 2 việc nên bỏ.
 - **Thử:** 2 thứ chưa làm nhưng dữ liệu gợi ý sẽ ăn.

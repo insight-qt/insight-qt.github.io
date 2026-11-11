@@ -89,6 +89,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .groups{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;margin:18px 0 6px;align-items:start}
 .side{display:flex;flex-direction:column;gap:10px}
 .grp{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.rx{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:16px 0 4px}.rx h4{margin:0 0 10px;font-size:12.5px;color:var(--mute);font-weight:600}
+.rx ol{margin:0;padding:0;list-style:none;counter-reset:rx;display:grid;gap:12px}
+.rx li{counter-increment:rx;display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:10px;row-gap:2px}
+.rx li::before{content:counter(rx);grid-row:span 2;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.rx li b{font-size:13.5px;line-height:20px}.rx li span{color:var(--mute);font-size:12.5px;line-height:1.5}.rx .hint{margin-top:12px}
 .grp h4,.heat h4{margin:0 0 8px;font-size:12.5px;color:var(--mute);font-weight:600}
 .gr{display:grid;grid-template-columns:var(--lw,72px) minmax(40px,1fr) 44px;gap:8px;align-items:center;font-size:12.5px;margin:3px 0}
 .gr .t{height:6px;background:var(--soft);border-radius:99px;overflow:hidden} .gr .t i{display:block;height:100%;background:var(--accent)}
@@ -218,6 +223,10 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .chip .cv{margin-top:auto;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.chip .cv em{display:inline;margin:0}
 
 .acts{align-items:center}
+@media (min-width:701px){.det .chips{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .det .chips+.acts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+ .det .chips+.acts>.btn{width:100%;min-width:0;padding:0 10px;white-space:nowrap}
+ .det .chips+.acts .scanned{grid-column:4/6;padding-left:12px}.det .chips+.acts .del{grid-column:6;justify-self:end;padding-right:12px}}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
@@ -533,6 +542,11 @@ function grp(title,rows){
   const mx=Math.max(...rows.map(r=>r.med_x||0),1);
   return `<div class="grp"><h4>${title}</h4>${rows.map(r=>`<div class="gr" title="${r.n} clip · TV ${fmt(r.med_views)} · ${r.win} win / ${r.flop} flop"><span>${esc(r.key)}</span><span class="t"><i style="width:${Math.round((r.med_x||0)/mx*100)}%"></i></span><span>${xm(r.med_x)}</span></div>`).join("")}</div>`;
 }
+function rxCard(d){
+  const rx=TTI.prescribe(d);if(!rx.length)return"";
+  return `<div class="rx"><h4>Kê đơn · ${rx.length} việc nên làm cho kênh</h4><ol>${rx.map(r=>`<li><b>${esc(r.t)}</b><span>${esc(r.d)}</span></li>`).join("")}</ol>
+    <div class="hint">Rút thẳng từ số liệu. Muốn biết vì sao clip thắng, kèm ý tưởng clip mới: Xuất .md cho AI.</div></div>`;
+}
 function heat(h,t){
   if(!h||!h.rows)return"";
   const short={"Thứ 2":"T2","Thứ 3":"T3","Thứ 4":"T4","Thứ 5":"T5","Thứ 6":"T6","Thứ 7":"T7","Chủ nhật":"CN"};
@@ -584,15 +598,19 @@ function renderDetail(){
       <div class="chip"><small>Tương tác/view</small><span class="cv"><b>${pct(s.med_er)}</b></span></div>
       ${s.med_share!=null?`<div class="chip" title="Mốc tham khảo cho ${esc(s.share_bench.tier)}: ${pct(s.share_bench.rate,2)} (nguồn bên thứ ba)"><small>Share/view</small><span class="cv"><b>${pct(s.med_share,2)}</b><em class="${s.med_share>=s.share_bench.rate*1.2?"up":s.med_share<=s.share_bench.rate*0.8?"down":""}">mốc ${pct(s.share_bench.rate,2)}</em></span></div>`:""}
       <div class="chip"><small>Viral · Win · Flop</small><span class="cv"><b><span style="color:var(--win)">${s.viral??0} · ${s.win??0}</span> · <span style="color:var(--flop)">${s.flop??0}</span></b></span></div>
-      <div class="chip"><small>Organic · Paid · Nghi ads</small><span class="cv"><b>${s.organic??0} · ${s.paid??0} · ${s.suspect??0}</b></span></div>
-      ${s.per_week?`<div class="chip"><small>Tần suất</small><span class="cv"><b>${String(s.per_week).replace(".",",")}/tuần</b></span></div>`:""}
+      <div class="chip" title="Organic · Paid (có chạy ads) · Nghi chạy ads"><small>Organic · Ads · Nghi</small><span class="cv"><b>${s.organic??0} · ${s.paid??0} · ${s.suspect??0}</b></span></div>
+      <div class="chip"><small>Tần suất</small><span class="cv"><b>${s.per_week?String(s.per_week).replace(".",",")+"/tuần":"–"}</b></span></div>
+      <div class="chip" title="Save/view trung vị: người xem lưu lại để xem sau, dấu hiệu clip có ích"><small>Save/view</small><span class="cv"><b>${s.med_save!=null?pct(s.med_save,2):"–"}</b></span></div>
+      <div class="chip" title="View trung vị chia số follower: clip bình thường chạm tới bao nhiêu phần tệp fan"><small>View / follower</small><span class="cv"><b>${s.reach!=null?pct(s.reach,s.reach<0.1?1:0):"–"}</b></span></div>
+      <div class="chip" title="10% clip nhiều view nhất chiếm bao nhiêu tổng view organic. Càng cao càng sống nhờ vài clip nổ"><small>10% clip gánh</small><span class="cv"><b>${s.conc!=null?Math.round(s.conc*100)+"% view":"–"}</b></span></div>
     </div>
     <div class="acts"><a class="btn" href="https://www.tiktok.com/@${esc(m.handle)}" target="_blank" onclick="job={handle:'${esc(m.handle)}',state:'wait',mode:$('mode').value,msg:'Sang tab TikTok vừa mở, bấm ⚡ để cập nhật và soi tiếp.',done:0,todo:0,errors:[]};renderJob()" style="text-decoration:none">Cập nhật / soi tiếp</a>
       <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button>
-      <span class="hint">Quét lần cuối ${esc(m.scanned||"–")}</span><span style="flex:1"></span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
+      <span class="hint scanned">Quét lần cuối ${esc(m.scanned||"–")}</span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
     ${diffCard(d)}
     <div class="groups">${heat(t.heat,t)}<div class="side" style="--lw:${sideLw([t.duration,(t.topic||[]).slice(0,6),t.kind])}px">${grp("Theo độ dài",t.duration)}${grp("Chủ đề TikTok tự gắn",(t.topic||[]).slice(0,6))}${grp("Organic vs paid",t.kind)}</div></div>
     <div class="hint">Thanh = view trung vị của nhóm so với mức thường (×TV). Clip PAID và NGHI ADS không được tính vào mức thường. Quét lại kênh sau vài ngày để tool bắt được clip đang chạy ads.</div>
+    ${rxCard(d)}
     <div class="tfil"><div class="seg">${FL.map(f=>{const n=d.rows.filter(f[2]).length;return n||f[0]==="all"?`<button class="${f[0]===fsel[0]?"on":""}" onclick="labFilter='${f[0]}';renderDetail()">${f[1]} <span class="hint">${n}</span></button>`:""}).join("")}</div></div>
     <div class="tw"><table class="ct"><thead><tr><th onclick="sortDet('date')">Ngày${sortBy==="date"?" ↓":""}</th><th>Hook / caption</th><th class="num">View</th><th onclick="sortDet('x')">×TV${sortBy==="x"?" ↓":""}</th><th>Nhãn</th>
       <th class="num hide-s" onclick="sortDet('er')">Tương tác${sortBy==="er"?" ↓":""}</th><th class="num hide-s">Share</th><th class="num hide-s" title="Comment đã lấy / tổng TikTok hiển thị">Cmt lấy / tổng</th></tr></thead>

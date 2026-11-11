@@ -332,7 +332,7 @@
     const tl = rows.filter(v => !v.pinned), ts = tl.map(v => v.ts).filter(Boolean), span = ts.length > 1 ? (Math.max(...ts) - Math.min(...ts)) / 86400 : 0;
     const views = rows.map(v => v.views);
     const summary = {
-      n: rows.length, base_n: n, thin_base: n < MIN_BASE, super_viral: rows.filter(v => v.super).length, base_organic: baseOrganic, med_views: med,
+      n: rows.length, base_n: n, conc: (() => { const vs = base.filter(v => !v.pinned).map(v => v.views).sort((a, b) => b - a), tt = vs.reduce((a, b) => a + b, 0), k = Math.max(1, Math.round(vs.length * 0.1)); return vs.length >= 10 && tt ? vs.slice(0, k).reduce((a, b) => a + b, 0) / tt : null; })(), reach: followers ? med / followers : null, thin_base: n < MIN_BASE, super_viral: rows.filter(v => v.super).length, base_organic: baseOrganic, med_views: med,
       mean_views: views.reduce((a, b) => a + b, 0) / views.length, max_views: Math.max(...views), min_views: Math.min(...views),
       med_er: median(base.filter(v => v.er != null).map(v => v.er)), med_share: medShare,
       med_save: median(base.filter(v => v.save_r != null).map(v => v.save_r)),
@@ -348,6 +348,70 @@
       own_cmts: rows.reduce((a, v) => a + (v.comments || []).filter(c => c.by && String(c.by).toLowerCase() === String(v.channel || "").toLowerCase()).length, 0),
     };
     return { rows, summary, tables };
+  }
+
+
+  /* ---------- Kê đơn: giải pháp rút thẳng từ số liệu, chỉ đưa khi đủ bằng chứng ---------- */
+  function prescribe(a) {
+    const { rows, summary: s, tables: t } = a, out = [];
+    if (!rows || !rows.length) return out;
+    const X = v => (v == null ? "–" : v.toFixed(1).replace(".", ",") + "×");
+    const P = (v, d = 1) => (v * 100).toFixed(d).replace(".", ",") + "%";
+    const day = v => { if (!v.ts) return ""; const d = new Date(v.ts * 1000); return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(2); };
+    const cap = v => { const c = String(v.caption || v.vtt || "").replace(/#\S+/g, "").replace(/\s+/g, " ").trim(); return c.length > 54 ? c.slice(0, 54) + "…" : c || "(không caption)"; };
+    const ref = v => `“${cap(v)}” (${day(v)}, ${X(v.x_med)})`;
+    const org = rows.filter(v => v.kind === "ORGANIC" && !v.isNew && !v.pinned);
+    if (org.length < 6) return [{ k: "data", score: 9, t: "Chưa đủ dữ liệu để kê đơn", d: `Mới có ${org.length} clip organic đủ ${NEW_DAYS} ngày. Quét rộng khoảng ngày hơn hoặc chờ kênh đăng thêm.` }];
+    // 1. Nhân bản clip thắng
+    const wins = org.filter(v => v.label === "WIN" || v.label === "VIRAL").sort((a, b) => b.x_med - a.x_med);
+    if (wins.length >= 2) out.push({ k: "win", score: 8, t: "Làm tiếp kiểu clip đang thắng",
+      d: `${wins.length} clip vượt hẳn mặt bằng. Mổ 3 clip đầu: hook, đề tài, format giống nhau ở đâu, rồi làm thêm 3–5 clip cùng công thức: ${wins.slice(0, 3).map(ref).join(" · ")}.` });
+    // 2. Đăng lại clip khán giả mê mà thuật toán bỏ qua
+    const sleepers = org.filter(v => v.er_high && (v.label === "ỔN" || v.label === "FLOP")).sort((a, b) => b.er - a.er);
+    if (sleepers.length >= 2) out.push({ k: "er", score: 7, t: "Đăng lại clip bị ngủ quên, thay hook",
+      d: `${sleepers.length} clip ai xem cũng tương tác mạnh nhưng không được đẩy. Nội dung ổn, 3 giây đầu chưa giữ được người lướt. Giữ ruột, quay lại câu mở: ${sleepers.slice(0, 3).map(v => `${ref(v)}, tương tác ${P(v.er)}`).join(" · ")}.` });
+    // 3. Độ dài
+    const dur = (t.duration || []).filter(g => g.n >= 4 && g.med_x != null);
+    if (dur.length >= 2) {
+      const best = [...dur].sort((a, b) => b.med_x - a.med_x)[0], most = [...dur].sort((a, b) => b.n - a.n)[0], tot = dur.reduce((a, g) => a + g.n, 0);
+      if (best.key !== most.key && best.med_x >= most.med_x * 1.4) out.push({ k: "dur", score: 6 + Math.min(2, best.med_x / most.med_x - 1),
+        t: `Dồn về clip ${best.key}`, d: `Clip ${best.key} ra ${X(best.med_x)} (${best.n} clip), trong khi ${most.key} chỉ ${X(most.med_x)} mà đang chiếm ${Math.round(most.n / tot * 100)}% số clip.` });
+    }
+    // 4. Giờ đăng
+    const cells = []; ((t.heat || {}).rows || []).forEach(r => r.cells.forEach((c, i) => { if (c.n >= 3 && c.x != null) cells.push({ day: r.day, hour: t.heat.hours[i], n: c.n, x: c.x }); }));
+    if (cells.length >= 3) {
+      const best = [...cells].sort((a, b) => b.x - a.x)[0], most = [...cells].sort((a, b) => b.n - a.n)[0];
+      if (best.x >= 1.3 && (best.day !== most.day || best.hour !== most.hour) && best.x >= most.x * 1.4) out.push({ k: "time", score: 5 + Math.min(2, best.x / most.x - 1),
+        t: "Dời lịch đăng", d: `Kênh đăng nhiều nhất vào ${most.day} ${most.hour} (${most.n} clip, ${X(most.x)}). Khung ${best.day} ${best.hour} ra ${X(best.x)} (${best.n} clip). Chuyển vài clip sang khung này trong 3–4 tuần rồi khám lại.` });
+    }
+    // 5. Chủ đề
+    const top = (t.topic || []).filter(g => g.n >= 3 && g.med_x != null);
+    if (top.length >= 2) {
+      const hi = top[0], lo = top[top.length - 1];
+      if (hi.med_x >= 1.5) out.push({ k: "topic", score: 5.5, t: `Đẩy mạnh chủ đề ${hi.key}`, d: `TikTok xếp ${hi.n} clip vào “${hi.key}”, trung vị ${X(hi.med_x)}.${lo.med_x <= 0.7 && lo.key !== hi.key ? ` Ngược lại “${lo.key}” chỉ ${X(lo.med_x)} (${lo.n} clip): bớt, hoặc đổi góc kể.` : ""}` });
+    }
+    // 6. Share
+    if (s.med_share != null && s.share_bench && s.med_share < s.share_bench.rate * 0.8) {
+      const sh = org.filter(v => v.share_r != null).sort((a, b) => b.share_r - a.share_r).slice(0, 2);
+      out.push({ k: "share", score: 6, t: "Làm clip để người ta gửi cho nhau",
+        d: `Share/view ${P(s.med_share, 2)}, dưới mốc ${P(s.share_bench.rate, 2)} của ${s.share_bench.tier}. Share là tín hiệu TikTok dùng để đẩy ra ngoài tệp fan. Cần nhiều clip kiểu “gửi cho đứa bạn”: tình huống ai cũng từng gặp, mẹo dùng được ngay.${sh.length ? ` Clip được share nhiều nhất: ${sh.map(v => `${ref(v)}, share ${P(v.share_r, 2)}`).join(" · ")}.` : ""}` });
+    }
+    // 7. Phụ thuộc vài clip nổ
+    const vs = org.map(v => v.views).sort((a, b) => b - a), tot = vs.reduce((a, b) => a + b, 0), k = Math.max(1, Math.round(vs.length * 0.1));
+    const conc = tot ? vs.slice(0, k).reduce((a, b) => a + b, 0) / tot : 0;
+    if (vs.length >= 10 && conc >= 0.6) out.push({ k: "conc", score: 6.5, t: "Bớt sống nhờ vài clip nổ",
+      d: `${k} clip (10% số clip) gánh ${Math.round(conc * 100)}% tổng view organic. Phần còn lại view thấp và không đều. Ưu tiên một format lặp lại được (series, chuyên mục cố định) để nâng mặt bằng, thay vì chờ clip nổ tiếp.` });
+    // 8. Flop nhiều
+    const fl = org.filter(v => v.label === "FLOP");
+    if (fl.length >= 3 && fl.length / org.length >= 0.3) out.push({ k: "flop", score: 5, t: "Cắt bớt kiểu clip hay hụt",
+      d: `${Math.round(fl.length / org.length * 100)}% clip organic là FLOP. Xem điểm chung của nhóm này trước khi đăng tiếp: ${fl.sort((a, b) => a.x_med - b.x_med).slice(0, 3).map(ref).join(" · ")}.` });
+    // 9. Nhịp đăng
+    if (s.per_week != null && s.per_week < 2) out.push({ k: "freq", score: 4.5, t: "Đăng đều hơn", d: `${String(s.per_week).replace(".", ",")} clip/tuần là thưa, thuật toán khó học được tệp người xem. Thử 3–4 clip/tuần trong 4 tuần rồi khám lại.` });
+    // 10. Ads gánh view
+    const kd = Object.fromEntries((t.kind || []).map(g => [g.key, g]));
+    if (kd.PAID && kd.ORGANIC && kd.PAID.n >= 3 && kd.PAID.n >= 0.25 * (kd.PAID.n + kd.ORGANIC.n)) out.push({ k: "paid", score: 4, t: "Tách bạch view organic với view ads",
+      d: `${kd.PAID.n} clip chạy ads, chiếm ${Math.round(kd.PAID.n / (kd.PAID.n + kd.ORGANIC.n) * 100)}% số clip. Đọc độ khoẻ của kênh qua clip organic, đừng nhìn tổng view.` });
+    return out.sort((a, b) => b.score - a.score).slice(0, 5);
   }
 
   /* ---------- lọc comment khi xuất ---------- */
@@ -404,8 +468,7 @@
       `- Loại clip: ${s.organic} organic · ${s.paid} paid có công bố · ${s.suspect} nghi chạy ads · ${s.shop} clip gắn giỏ hàng / sản phẩm`,
       `- ${s.viral} clip VIRAL · ${s.win} clip WIN · ${s.flop} clip FLOP · ${s.new} clip MỚI (chưa đủ ${NEW_DAYS} ngày) · ${s.with_transcript}/${s.deep} clip đọc comment có phụ đề · ${n_(s.comments_got)} comment của khán giả đã lấy${s.own_cmts ? ` (bỏ ${s.own_cmts} comment của chính kênh)` : ""}`,
       "", "**Cách gắn nhãn** (đã tính sẵn, không cần tính lại):",
-      "- `×TV` = view của clip chia view trung vị của kênh. 1,0× là mức bình thường của kênh này.",
-      "- **×TV** = view của clip ÷ view trung vị của ~20 clip organic đăng cùng giai đoạn (gần nhất trước và sau nó), nên kênh đang lên hay đang xuống vẫn so công bằng.",
+            "- **×TV** = view của clip ÷ view trung vị của ~20 clip organic đăng cùng giai đoạn (gần nhất trước và sau nó), nên kênh đang lên hay đang xuống vẫn so công bằng.",
       "- **WIN** = ≥ 3×TV, hoặc ≥ 2×TV và thuộc 10% clip vượt chuẩn mạnh nhất. **FLOP** = ≤ 0,4×TV. Còn lại **ỔN**.",
       "- **VIRAL** = ≥ 5×TV **và** view ≥ số follower của kênh (đã lan ra ngoài tệp fan), share/view không thấp hơn mức thường. **SIÊU VIRAL** = VIRAL và ≥ 10×TV hoặc view ≥ 5 lần follower. VIRAL tính riêng, không đếm vào WIN.",
       ...(s.thin_base ? [`- ⚠️ **Mẫu mỏng:** chỉ có ${s.base_n} clip organic đủ ${NEW_DAYS} ngày để làm chuẩn (cần ≥ 10). Nhãn chỉ để tham khảo, đừng kết luận chắc.`] : []),
@@ -417,6 +480,8 @@
       "- **collab @x** = caption tag một creator khác (không phải tài khoản doanh nghiệp): clip hợp tác giữa 2 creator, view có thể đến từ tệp fan của người kia. Không tính là ads.",
       "- **NGHI ADS** = không ai khai nhưng cộng đủ dấu hiệu: view vẫn tăng đều khi clip đã cũ, tài khoản doanh nghiệp (TikTok xác minh) vào comment, người xem nhắc tới quảng cáo, view cao mà tương tác thấp, dấu vết bán hàng. Là suy luận, mỗi clip kèm lý do. **Khi phân tích: đừng coi clip NGHI ADS là bằng chứng content tốt.**",
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
+    const rx = prescribe({ rows, summary: s, tables: t });
+    if (rx.length) o.push("## D1b. Kê đơn của tool", "", "_Rút thẳng từ số liệu bằng luật đơn giản. AI kiểm lại bằng transcript + comment ở mục G: đồng ý, bác bỏ, hoặc đào sâu._", "", ...rx.map((r, i) => `${i + 1}. **${r.t}.** ${r.d}`), "");
     o.push("## D2. Bảng toàn bộ clip (mới → cũ)", "",
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
@@ -494,5 +559,5 @@
     return o.join("\n").trim() + "\n";
   }
 
-  G.TTI = { mergeItems, shareBench, analyze, buildMd, plan, snap, applyMarks, idOf, rangeBounds, rangeLabel, filterRange, RANGE_NAMES, mergeLinks, videoFrom, kNum, idTs, cleanVtt, pickComments, NEW_DAYS };
+  G.TTI = { mergeItems, shareBench, analyze, buildMd, plan, snap, applyMarks, idOf, rangeBounds, rangeLabel, filterRange, RANGE_NAMES, mergeLinks, prescribe, videoFrom, kNum, idTs, cleanVtt, pickComments, NEW_DAYS };
 })(window);
