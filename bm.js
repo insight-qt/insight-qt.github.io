@@ -206,7 +206,8 @@
       if (S.stop) break;
       links = gridLinks(h, D);
       var t = D.body.innerText.slice(0, 6000);
-      if (!links.length && /Something went wrong|Đã xảy ra lỗi|Có lỗi xảy ra/i.test(t)) {
+      if (!links.length && Object.keys(CAP).length) { stable++; if (stable >= 6) break; }
+      if (!links.length && !Object.keys(CAP).length && /Something went wrong|Đã xảy ra lỗi|Có lỗi xảy ra/i.test(t)) {
         if (++refresh > 4) return { blocked: true, links: [] };
         var b = [].slice.call(D.querySelectorAll('button')).filter(function (x) { return /^(Refresh|Làm mới|Thử lại|Tải lại)$/i.test(x.innerText.trim()); })[0];
         if (b) b.click(); say('TikTok báo lỗi danh sách clip, đang thử lại…'); await sleep(3500); continue;
@@ -220,7 +221,7 @@
       say('Đang đọc danh sách clip: ' + links.length + '/' + (meta.videos || '?') + (S.from && oldest ? ' · đã tới ' + new Date(oldest * 1000).toLocaleDateString('vi-VN') : ''), meta.videos ? links.length / meta.videos * 0.15 : 0);
       W.scrollTo(0, D.body.scrollHeight); await sleep(1300);
     }
-    return { links: links, blocked: !links.length && meta.videos > 0 };
+    return { links: links, blocked: !links.length && !Object.keys(CAP).length && meta.videos > 0 };
   }
 
   /* ---------- chạy ---------- */
@@ -264,10 +265,21 @@
       var wasFrame = !!frame;
       if (hookIv) clearInterval(hookIv);
       if (frame) { frame.remove(); frame = null; }
+      // Khung ẩn bị TikTok chặn (hay gặp ở Safari) nhưng đang đứng ngay trên trang kênh → đọc thẳng lưới clip của trang đang mở
+      if (wasFrame && !isVideo && !L.links.length && !Object.keys(CAP).length) {
+        say('Đang đọc thẳng trên trang kênh này…');
+        hook(window); W.scrollTo && W.scrollTo(0, 0);
+        L = await listChannel(meta, document, window); wasFrame = false;
+      }
       if (wasFrame && !L.links.length && !L.blocked && !Object.keys(CAP).length) {
         var go2 = box.querySelector('#tti-go'); go2.textContent = 'Mở trang kênh @' + meta.handle + ' →';
         go2.onclick = function () { location.href = '/@' + meta.handle; };
         done('Không đọc được danh sách clip từ trang này. Bấm nút bên dưới để mở trang kênh, rồi bấm ⚡ lần nữa.'); return;
+      }
+      if (L.blocked && isVideo) {
+        var go3 = box.querySelector('#tti-go'); go3.textContent = 'Mở trang kênh @' + meta.handle + ' →';
+        go3.onclick = function () { location.href = '/@' + meta.handle; };
+        done('TikTok không cho đọc kênh từ trang clip lúc này. Bấm nút bên dưới để mở trang kênh, rồi bấm ⚡ lần nữa.'); return;
       }
       if (L.blocked) {
         send({ type: 'channel', meta: meta, links: [], blocked: true });

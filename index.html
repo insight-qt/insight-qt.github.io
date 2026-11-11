@@ -39,9 +39,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 /* onboarding */
 .setup{padding:22px;margin-bottom:14px}
 .setup h2{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
-.setup p.lead{margin:0 0 18px;color:var(--mute);font-size:13.5px;max-width:640px}
+.setup p.lead{margin:0 0 18px;color:var(--mute);font-size:13.5px}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.step{background:var(--soft);border-radius:12px;padding:14px}
+.step{background:var(--soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:flex-start}
 .step b{display:block;font-size:13px;margin-bottom:4px} .step span{color:var(--mute);font-size:12.5px}
 .step .stepn{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:700;align-items:center;justify-content:center;margin-bottom:8px}
 .bm{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:650;font-size:13px;text-decoration:none;cursor:grab;margin-top:10px}
@@ -200,7 +200,7 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
 /* ---------- chuẩn kích thước chung: nút 36 · nút phụ 28 · nhãn 20 ---------- */
 :root{--ctl:36px;--ctl-s:28px;--pill:20px}
 .btn,.scan select,.acts select,.bm{height:var(--ctl);box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;line-height:1;margin:0}
-.btn{padding:0 16px}.scan select,.acts select{padding:0 30px 0 12px}.bm{padding:0 16px}
+.step .bm{margin-top:16px}.btn{padding:0 16px}.scan select,.acts select{padding:0 30px 0 12px}.bm{padding:0 16px}
 .ghost,.link,.seg button{height:var(--ctl-s);box-sizing:border-box;display:inline-flex;align-items:center;line-height:1}
 .ghost{padding:0 11px}.link{padding:0 8px}.seg button{padding:0 11px}
 .range input[type=date]{height:var(--ctl-s);box-sizing:border-box;padding:0 8px}
@@ -232,7 +232,7 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
     <h2>10K view là kỳ tích với kênh này, là báo động với kênh kia.</h2>
     <p class="lead">Nên tool không chấm clip theo con số tuyệt đối. Nó đọc hết clip, comment, reply của một kênh, so từng clip với mặt bằng của chính kênh đó, rồi gói lại thành một file để AI đọc giùm bạn. Không cài app. Không đăng ký. Không tốn token.</p>
     <div class="steps">
-      <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><br><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
+      <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
       <div class="step"><span class="stepn">3</span><b>Sang tab TikTok, bấm ⚡</b><span>Rồi để đó. Tab này tự đầy dần. Đang xem clip nào cũng được: ⚡ tự quét cả kênh của người đăng. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
     </div>
