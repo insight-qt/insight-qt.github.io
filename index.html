@@ -213,6 +213,7 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
 .chip .cv{margin-top:auto;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.chip .cv em{display:inline;margin:0}
 
 .acts{align-items:center}
+.tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 </style>
 </head>
 <body>
@@ -307,9 +308,9 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
         <dt><span class="pill FLOP">FLOP</span></dt><dd>Hụt hơi: từ 0,4× trở xuống, hoặc nằm trong 20% đáy. Thứ cần mổ xẻ, không phải thứ cần xoá.</dd>
         <dt><span class="pill MỚI">MỚI</span></dt><dd>Đăng chưa đủ 7 ngày, view còn đang chạy. Chưa chấm, kẻo oan.</dd>
         <dt><span class="pill er">ER cao</span></dt><dd>View không nổi, nhưng ai xem cũng tương tác. Chủ đề này có fan cứng, chỉ chưa có đường ra.</dd>
-        <dt><span class="pill PAID">PAID</span></dt><dd>Đã chắc chắn chạy ads: creator tự ghi trong caption (#ad, #quangcao, #taitro…), hoặc bạn tự đánh dấu.</dd>
+        <dt><span class="pill PAID">PAID</span></dt><dd>Đã chạy ads: TikTok gắn cờ quảng cáo cho clip, creator tự ghi trong caption (#ad, #quangcao…), hoặc bạn tự đánh dấu. Không chấm WIN/FLOP, vì view có tiền chen vào.</dd>
         <dt><span class="pill NGHI">NGHI ADS</span></dt><dd>Không ai khai, nhưng số liệu “có mùi tiền”. Mỗi clip kèm lý do, đọc ngay dưới caption.</dd>
-        <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok có gắn cờ quảng cáo cho clip, nhưng chưa có dấu hiệu nào khác. Clip đã được đưa vào ads, chưa rõ nhiều hay ít, nên vẫn tính là organic.</dd>
+        <dt><span class="pill adf">Cờ ads</span></dt><dd>TikTok có gắn cờ quảng cáo, nhưng bạn đã đánh dấu clip này là organic, nên tool vẫn chấm như clip thường.</dd>
         <dt><span class="pill shop">Giỏ hàng</span></dt><dd>Clip có gắn sản phẩm TikTok Shop hoặc link bán hàng. Chỉ để biết, không ảnh hưởng nhãn.</dd>
       </dl>
       <h4>Tool bắt clip chạy ads ngầm bằng cách nào?</h4>
@@ -319,7 +320,6 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
         <dt>Brand vào comment</dt><dd>Tài khoản doanh nghiệp, hoặc tài khoản được tag trong caption, xuất hiện trong phần comment.</dd>
         <dt>Người xem đã nhận ra</dt><dd>Comment kiểu “lại quảng cáo”, “clip này nhận bao nhiêu vậy”.</dd>
         <dt>Xem nhiều, thờ ơ nhiều</dt><dd>View cao gấp ba mức thường mà tương tác, share chỉ lèo tèo.</dd>
-        <dt>Cờ quảng cáo của TikTok</dt><dd>Trong dữ liệu clip có cờ <code>isAd</code>. Thử trên kênh thật thì cờ này bật cả ở clip vài nghìn view, nhất là clip gắn TikTok Shop: clip đã được đưa vào quảng cáo, nhưng chưa nói được bao nhiêu view là tiền. Nên nó chỉ là một dấu hiệu, cần thêm dấu hiệu khác mới thành NGHI ADS.</dd>
         <dt>Dấu vết bán hàng</dt><dd>Tag tài khoản khác, gắn giỏ hàng, caption giảm giá hay link bio. Dấu hiệu yếu, chỉ cộng thêm, một mình không đủ để nghi.</dd>
       </dl>
       <p class="gnote">Clip nghi ads bị tách khỏi mức chuẩn, để tiền không làm đẹp giùm content. Biết chắc clip nào chạy ads hay chắc chắn organic? Mở kênh, bấm <b>Đánh dấu clip ads</b>.</p>
@@ -438,7 +438,7 @@ function setDates(){range={...range,from:$("rf").value,to:$("rt").value};if(rang
 const ranged=()=>!!TTI.rangeBounds(range);
 
 /* ---------- quét ---------- */
-let detailMarks={}; let job=null, cur=null, detail=null, sortBy="date", last=null;
+let detailMarks={}, labFilter="all", SHOWN=[]; let job=null, cur=null, detail=null, sortBy="date", last=null;
 function openChannel(){
   const h=handleOf($("url").value);
   if(!h){toast("Dán link dạng tiktok.com/@tenkenh");return $("url").focus()}
@@ -550,8 +550,11 @@ function heat(h,t){
 }
 function renderDetail(){
   const d=detail,m=d.meta||{},s=d.summary||{},t=d.tables||{};
-  let rows=[...d.rows];
+  const FL=[["all","Tất cả",()=>true],["VIRAL","Viral",r=>r.label==="VIRAL"],["WIN","Win",r=>r.label==="WIN"],["FLOP","Flop",r=>r.label==="FLOP"],["ADS","Ads",r=>r.kind!=="ORGANIC"],["MỚI","Mới",r=>r.label==="MỚI"]];
+  const fsel=FL.find(f=>f[0]===labFilter)||FL[0];
+  let rows=d.rows.filter(fsel[2]);
   if(sortBy==="x")rows.sort((a,b)=>b.x_med-a.x_med); if(sortBy==="er")rows.sort((a,b)=>(b.er||0)-(a.er||0));
+  SHOWN=rows;
   const mx=Math.max(...rows.map(r=>r.x_med||0),1);
   $("det").innerHTML=`<section class="card det">
     <div class="det-head">
@@ -577,12 +580,13 @@ function renderDetail(){
     ${diffCard(d)}
     <div class="groups">${heat(t.heat,t)}<div class="side" style="--lw:${sideLw([t.duration,(t.topic||[]).slice(0,6),t.kind])}px">${grp("Theo độ dài",t.duration)}${grp("Chủ đề TikTok tự gắn",(t.topic||[]).slice(0,6))}${grp("Organic vs paid",t.kind)}</div></div>
     <div class="hint">Thanh = view trung vị của nhóm so với mức thường (×TV). Clip PAID và NGHI ADS không được tính vào mức thường. Quét lại kênh sau vài ngày để tool bắt được clip đang chạy ads.</div>
+    <div class="tfil"><div class="seg">${FL.map(f=>{const n=d.rows.filter(f[2]).length;return n||f[0]==="all"?`<button class="${f[0]===fsel[0]?"on":""}" onclick="labFilter='${f[0]}';renderDetail()">${f[1]} <span class="hint">${n}</span></button>`:""}).join("")}</div></div>
     <div class="tw"><table><thead><tr><th onclick="sortDet('date')">Ngày${sortBy==="date"?" ↓":""}</th><th>Hook / caption</th><th class="num">View</th><th onclick="sortDet('x')">×TV${sortBy==="x"?" ↓":""}</th><th>Nhãn</th>
       <th class="num hide-s" onclick="sortDet('er')">Tương tác${sortBy==="er"?" ↓":""}</th><th class="num hide-s">Share</th><th class="num hide-s" title="Comment đã lấy / tổng TikTok hiển thị">Cmt lấy / tổng</th></tr></thead>
-    <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào trong khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
+    <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
       <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}</div>`:""}</td><td class="num">${fmt(r.views)}</td>
       <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*60))}px"></i>${xm(r.x_med)}</span></td>
-      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.paid_src||"")}">${r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?'<span class="pill adf" title="TikTok gắn cờ isAd: clip đã được đưa vào quảng cáo, chưa rõ nhiều hay ít">Cờ ads</span>':""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
+      <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.paid_src||"")}">${r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?'<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này organic">Cờ ads</span>':""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
       <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
       <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
   </section>`;
@@ -698,7 +702,7 @@ async function exportJpg(){
       const live=[...document.querySelectorAll(".det tr.r")], clones=[...tb.querySelectorAll("tr.r")];
       const rows=detail.rows.map((r,k)=>({r,el:clones[k]})).filter(x=>x.el&&x.r.kind==="ORGANIC"&&x.r.label!=="MỚI"&&typeof x.r.x_med==="number");
       // detail.rows có thể đang sắp theo kiểu khác bảng → khớp theo thứ tự hiển thị
-      const shown=sortBy==="x"?[...detail.rows].sort((a,b)=>b.x_med-a.x_med):sortBy==="er"?[...detail.rows].sort((a,b)=>(b.er||0)-(a.er||0)):detail.rows;
+      const shown=SHOWN;   // đúng thứ tự + bộ lọc đang hiển thị
       const pair=shown.map((r,k)=>({r,el:clones[k]})).filter(x=>x.el&&x.r.kind==="ORGANIC"&&x.r.label!=="MỚI"&&typeof x.r.x_med==="number");
       const byX=[...pair].sort((a,b)=>b.r.x_med-a.r.x_med), top=byX.slice(0,5), bot=byX.slice(-5).reverse().filter(x=>!top.includes(x));
       const head=t=>{const tr=document.createElement("tr");tr.innerHTML=`<td colspan="8" class="snap-sec">${t}</td>`;return tr};
