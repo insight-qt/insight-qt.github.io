@@ -909,7 +909,17 @@ async function openClip(){
   const url=(raw.match(/https?:\/\/[^\s,"]+/)||[])[0]||"";
   let desc="";const dm=raw.match(/"desc":"((?:[^"\\]|\\.)*)"/);if(dm){try{desc=JSON.parse('"'+dm[1]+'"')}catch(e){desc=dm[1]}}
   const v={views:num("playCount"),likes:num("diggCount"),cm:num("commentCount"),sh:num("shareCount"),sv:num("collectCount"),ts:num("createTime"),fol:num("followerCount"),dur:num("duration"),h:get("uniqueId")||""};
-  const idm=(url.match(/\/video\/(\d+)/)||raw.match(/"id":"(\d{15,})"/)||[])[1]||"";
+  // Phím tắt bản mới gửi nguyên khối "itemStruct" (JSON của clip) → đọc được nhiều hơn
+  let it=null;{const i=raw.indexOf('"itemStruct":');if(i>=0){const j=raw.indexOf("{",i);let d=0,q=false,e=false,k=j;for(;k<raw.length;k++){const c=raw[k];if(q){if(e)e=false;else if(c==="\\")e=true;else if(c==='"')q=false;continue}if(c==='"')q=true;else if(c==="{")d++;else if(c==="}"){d--;if(!d)break}}try{it=JSON.parse(raw.slice(j,k+1))}catch(err){it=null}}}
+  const X={};
+  if(it){const st=it.statsV2||it.stats||{},st1=it.stats||{},as=it.authorStatsV2||it.authorStats||{},au=it.author||{};const n=x=>x==null||x===""?null:+x;
+    Object.assign(v,{views:n(st.playCount??st1.playCount),likes:n(st.diggCount??st1.diggCount),cm:n(st.commentCount??st1.commentCount),sh:n(st.shareCount??st1.shareCount),sv:n(st.collectCount??st1.collectCount),ts:n(it.createTime),fol:n(as.followerCount),dur:n(it.video&&it.video.duration),h:au.uniqueId||v.h});
+    desc=it.desc||desc;
+    Object.assign(X,{hearts:n(as.heartCount??as.heart),vids:n(as.videoCount),labels:(it.diversificationLabels||[]).filter(x=>typeof x==="string"),kw:(it.suggestedWords||[]).map(x=>typeof x==="string"?x:(x&&(x.word||x.text))||"").filter(Boolean).slice(0,8),
+      music:(it.music&&it.music.title)||"",orig:!!(it.music&&it.music.original),isAd:!!it.isAd,shop:!!((it.anchors&&it.anchors.length)||+it.isECVideo===1),loc:it.locationCreated||"",poi:(it.poi&&it.poi.name)||"",photo:!!it.imagePost,
+      tags:(it.textExtra||[]).map(x=>x.userUniqueId).filter(Boolean),verified:!!au.verified,id:it.id||""});
+  }
+  const idm=X.id||(url.match(/\/video\/(\d+)/)||raw.match(/"id":"(\d{15,})"/)||[])[1]||"";
   if(v.views==null){
     $("sharebar").innerHTML="Không đọc được số liệu clip. TikTok có thể đã chặn Phím tắt đọc trang clip, hoặc link không phải link clip. Thử lại, hoặc mở clip trên máy tính rồi bấm ⚡.";
     $("det").innerHTML="";return true;
@@ -927,13 +937,25 @@ async function openClip(){
   if(reach!=null){if(reach>=5)say.push(`View gấp <b>${times(reach)}</b> số follower: TikTok đã đẩy clip ra xa ngoài tệp fan. Giới phân tích coi mức 5–10 lần follower là viral.`);else if(reach>=1)say.push(`View vượt số follower (${times(reach)}): clip đã chạm tới người ngoài tệp fan.`);else say.push(`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower: clip chưa chạm tới số người bằng tệp fan kênh đang có. Clip được TikTok đẩy rộng thường vượt 100%.`)}
   if(shr!=null)say.push(shr>=bt.rate*1.2?`Share/view ${pct(shr,2)}, cao hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: người xem muốn gửi clip cho người khác.`:shr<=bt.rate*0.8?`Share/view ${pct(shr,2)}, thấp hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: xem xong ít ai gửi đi.`:`Share/view ${pct(shr,2)}, ngang mốc ${pct(bt.rate,2)} của ${bt.tier}.`);
   if(brand.length)say.push(`Có brand: ${esc(brand.join(" · "))}.`);
+  if(X.isAd)say.push(`TikTok gắn cờ quảng cáo cho clip này: có thể đã chạy ads, view không hoàn toàn tự nhiên.`);
+  const avgLike=X.hearts&&X.vids?X.hearts/X.vids:null;
+  if(avgLike&&v.likes!=null){const r=v.likes/avgLike;say.unshift(`Clip được <b>${fmt(v.likes)}</b> tim, ${r>=1?`gấp <b>${times(r)}</b>`:`chỉ bằng <b>${pct(r,0)}</b>`} mức tim trung bình mỗi clip của kênh (${fmt(X.hearts)} tim ÷ ${fmt(X.vids)} clip)${r>=3?": clip nổi hẳn so với kênh":r<=0.4?": clip hụt so với kênh":""}. Trung bình dễ bị vài clip nổ kéo lên, nên chỉ để tham khảo.`)}
+  if(v.ts&&age>=1)say.push(`Trung bình <b>${fmt(Math.round(v.views/Math.max(1,age)))}</b> view mỗi ngày kể từ khi đăng.`);
+  if(X.labels&&X.labels.length)say.push(`TikTok xếp clip vào chủ đề: <b>${esc(X.labels.slice(0,5).join(", "))}</b>. Đây là cách thuật toán hiểu clip, quyết định clip được đẩy cho ai.`);
+  if(X.kw&&X.kw.length)say.push(`Từ khoá tìm kiếm TikTok gợi ý dưới clip: ${esc(X.kw.join(" · "))}. Clip có cửa lên từ tìm kiếm, không chỉ từ lướt.`);
+  if(X.music)say.push(X.orig?`Dùng âm thanh gốc (“${esc(X.music)}”).`:`Dùng nhạc có sẵn: “${esc(X.music)}”. Sound đang trend có thể kéo thêm view.`);
+  if(X.tags&&X.tags.length)say.push(brand.length?`Caption tag ${esc(X.tags.slice(0,3).map(x=>"@"+x).join(", "))}.`:`Caption tag ${esc(X.tags.slice(0,3).map(x=>"@"+x).join(", "))}: nhiều khả năng là clip hợp tác, view có thể mượn từ tệp fan người kia.`);
+  if(X.shop)say.push(`Clip gắn giỏ hàng / sản phẩm.`);
+  if(X.poi||X.loc)say.push(`Vị trí: ${esc([X.poi,X.loc].filter(Boolean).join(" · "))}.`);
+  if(v.ts){const d=new Date(v.ts*1000);say.push(`Đăng lúc ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}, ${["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"][d.getDay()]}.`)}
   $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
   const chip=(k,val,extra="")=>`<div class="chip"><small>${k}</small><span class="cv"><b>${val}</b>${extra}</span></div>`;
   $("det").innerHTML=`<section class="card det">
-    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div></div></div>
+    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${X.labels||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
     <div class="chips">
       ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
       ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
+      ${X.hearts&&X.vids?chip("Tim so với TB kênh",v.likes!=null?xm(v.likes/(X.hearts/X.vids)):"–")+chip("Comment",fmt(v.cm)):""}
     </div>
     <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}
       <p class="hint" style="margin:12px 0 0">Cách tính: View / follower = view ÷ follower kênh. Tương tác/view = (tim + comment + share + lưu) ÷ view. Share/view, Save/view = số share, số lưu ÷ view. Mốc share là trung bình của kênh cùng cỡ follower (số liệu bên thứ ba, để định hướng).</p></div>
