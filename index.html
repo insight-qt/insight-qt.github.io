@@ -618,7 +618,19 @@ async function exportMd(){
   $("mfile").textContent=`${last.name} · ${Math.round(new Blob([md]).size/1024)} KB · khoảng ${Math.round(md.length/3/1000)} nghìn token`;
   $("modal").classList.add("show");
 }
-async function copyMd(){try{await navigator.clipboard.writeText(last.md);toast("Đã copy, dán thẳng vào Claude / ChatGPT / Gemini")}catch(e){toast("Không copy được, dùng Tải file .md")}}
+function copyMd(){
+  if(!last||!last.md){toast("Chưa có nội dung, bấm Xuất .md cho AI trước");return}
+  const ok=()=>toast("Đã copy, dán thẳng vào Claude / ChatGPT / Gemini");
+  // Cách cũ chạy ngay trong cú bấm: Safari và trình duyệt chặn Clipboard API vẫn copy được
+  const ta=document.createElement("textarea");ta.value=last.md;ta.setAttribute("readonly","");
+  ta.style.cssText="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0";
+  document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);
+  let done=false;try{done=document.execCommand("copy")}catch(e){}
+  ta.remove();
+  if(done)return ok();
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(last.md).then(ok,()=>toast("Trình duyệt chặn copy. Bấm Tải file .md rồi kéo file vào khung chat AI"));
+  else toast("Trình duyệt chặn copy. Bấm Tải file .md rồi kéo file vào khung chat AI");
+}
 function downloadMd(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([last.md],{type:"text/markdown"}));a.download=last.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 function closeModal(){$("modal").classList.remove("show")}
 
