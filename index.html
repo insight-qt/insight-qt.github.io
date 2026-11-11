@@ -249,7 +249,7 @@ body.shared .sharebar{display:block;margin-bottom:14px}
 .sh-sec{border-bottom:0!important}.rx p.say{margin:0 0 8px;font-size:13.5px;line-height:1.55}.rx p.say:last-child{margin:0}body.shared footer button{display:none}
 .snap-sec,.sh-sec{font-weight:600;font-size:12.5px;color:var(--mute);padding:14px 0 6px!important}
 /* ===== điện thoại ===== */
-.phone-note{display:none}
+.phone-note{display:none}.phone-note ol.pn{margin:8px 0;padding-left:20px}.phone-note ol.pn li{margin:4px 0}.phone-note .link{padding:0;font:inherit;font-weight:600;color:var(--accent);text-decoration:underline}
 @media (max-width:700px){
  header .ghost:first-child{padding-left:0}
  .scan{padding:10px;gap:8px}.scan input{flex:1 1 100%;padding:6px 6px}.scan select,.scan .btn{flex:1 1 0;min-width:0}
@@ -281,7 +281,13 @@ body.shared .sharebar{display:block;margin-bottom:14px}
     <div class="eyebrow">Khám kênh TikTok</div>
     <h2>Biết mình biết kênh, đăng đâu trúng đó.</h2>
     <p class="lead">Tool so từng clip với chính kênh của nó, đọc cả comment lẫn reply, rồi gói lại cho AI đọc giùm. <b>Không cài app. Không đăng ký. Không tốn token ở đây.</b></p>
-    <p class="note phone-note">Nút ⚡ chỉ chạy trên máy tính. Điện thoại chỉ xem được kênh đã quét ngay trên trình duyệt này. Kết quả quét trên máy tính thì bấm <b>Xuất ảnh JPEG</b> hoặc <b>Xuất .md</b> rồi gửi sang điện thoại.</p>
+    <div class="note phone-note"><b>Trên điện thoại:</b> nút ⚡ quét cả kênh chỉ chạy trên máy tính. Muốn khám nhanh 1 clip ngay trên iPhone, cài nút <b>Khám clip</b> một lần:
+      <ol class="pn">
+        <li>Bấm <button class="link" onclick="copyClipBm()">Copy mã nút Khám clip</button></li>
+        <li>Ở Safari, bấm <b>Chia sẻ → Thêm dấu trang</b>, đặt tên <b>Khám clip</b>, Lưu.</li>
+        <li>Mở <b>Dấu trang → Sửa</b>, chạm vào <b>Khám clip</b>, xoá ô địa chỉ, dán mã vừa copy.</li>
+      </ol>
+      Dùng: trong app TikTok bấm <b>Chia sẻ → Sao chép liên kết</b>, dán vào thanh địa chỉ Safari để mở clip, rồi gõ <b>Khám</b> trên thanh địa chỉ và chọn dấu trang <b>Khám clip</b>.</div>
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
@@ -897,6 +903,9 @@ async function openShared(){
 }
 
 
+
+const CLIP_BM="javascript:(function(){var s=document.createElement('script');s.src='https://insight-qt.github.io/clip.js?v='+Date.now();document.body.appendChild(s)})()";
+function copyClipBm(){const ta=document.createElement("textarea");ta.value=CLIP_BM;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();if(ok)return toast("Đã copy mã, giờ tạo dấu trang và dán vào ô địa chỉ");navigator.clipboard&&navigator.clipboard.writeText(CLIP_BM).then(()=>toast("Đã copy mã"),()=>toast("Không copy được"))}
 /* ---------- khám nhanh 1 clip (từ Phím tắt iPhone) ---------- */
 async function openClip(){
   const h=location.hash;if(!h.startsWith("#c="))return false;
