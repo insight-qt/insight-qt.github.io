@@ -246,6 +246,12 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .sharebar{display:none}
 body.shared #setup,body.shared .scan,body.shared #range,body.shared #job,body.shared .chsec,body.shared #chs,body.shared header .row,body.shared .det .acts,body.shared .det .tfil{display:none!important}
 body.shared .sharebar{display:block;margin-bottom:14px}
+.verdict{border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:14.5px;line-height:1.5;background:var(--soft)}.verdict small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.verdict.t-up{background:var(--win-soft)}.verdict.t-up small,.verdict.t-up b{color:var(--win)}.verdict.t-down{background:var(--flop-soft)}.verdict.t-down small,.verdict.t-down b{color:var(--flop)}.verdict.t-warn{background:var(--adf-soft)}.verdict.t-warn small,.verdict.t-warn b{color:var(--adf)}.verdict.t-mid{background:var(--new-soft)}.verdict.t-mid small,.verdict.t-mid b{color:var(--new)}
+ul.qr{list-style:none;margin:0;padding:0}ul.qr li{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}ul.qr li:first-child{border-top:0;padding-top:2px}ul.qr li::before{display:none;content:none}
+ul.qr i{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent)}ul.qr svg{width:16px;height:16px}
+ul.qr li>div>b{display:block;font-size:12.5px;font-weight:650;margin-bottom:1px;color:var(--mute)}ul.qr span{display:block;font-size:13.5px;line-height:1.5}
+ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up>div>b{color:var(--win)}ul.qr .t-down i{background:var(--flop-soft);color:var(--flop)}ul.qr .t-down>div>b{color:var(--flop)}ul.qr .t-warn i{background:var(--adf-soft);color:var(--adf)}ul.qr .t-warn>div>b{color:var(--adf)}ul.qr .t-mid i{background:var(--new-soft);color:var(--new)}ul.qr .t-mid>div>b{color:var(--new)}
 .sh-sec{border-bottom:0!important}.rx p.say{margin:0 0 8px;font-size:13.5px;line-height:1.55}.rx p.say:last-child{margin:0}body.shared footer button{display:none}
 .snap-sec,.sh-sec{font-weight:600;font-size:12.5px;color:var(--mute);padding:14px 0 6px!important}
 /* ===== điện thoại ===== */
@@ -947,23 +953,37 @@ async function openClip(){
   // nếu kênh này đã được quét trên trình duyệt này → so với mặt bằng kênh
   let base=null;try{const rec=v.h&&await DB.get(v.h.toLowerCase());if(rec){const a=TTI.analyze(TTI.applyMarks(rec.vids,rec.marks,rec.accounts),rec.meta.followers);base=a.summary.med_views}}catch(e){}
   const times=x=>x>=10?Math.round(x)+" lần":String(Math.round(x*10)/10).replace(".",",")+" lần";
-  const say=[];
-  if(age!=null&&age<7)say.push(`Clip mới đăng ${age} ngày, view còn đang chạy. Vài ngày nữa khám lại sẽ chuẩn hơn.`);
-  if(base){const x=v.views/base;say.push(`So với kênh (đã quét trên máy này): view gấp <b>${xm(x)}</b> clip bình thường của kênh${x>=3?", đủ chuẩn <b>WIN</b>":x<=0.4?", thuộc nhóm <b>FLOP</b>":""}.`)}
-  if(reach!=null){if(reach>=5)say.push(`View gấp <b>${times(reach)}</b> số follower: TikTok đã đẩy clip ra xa ngoài tệp fan. Giới phân tích coi mức 5–10 lần follower là viral.`);else if(reach>=1)say.push(`View vượt số follower (${times(reach)}): clip đã chạm tới người ngoài tệp fan.`);else say.push(`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower: clip chưa chạm tới số người bằng tệp fan kênh đang có. Clip được TikTok đẩy rộng thường vượt 100%.`)}
-  if(shr!=null)say.push(shr>=bt.rate*1.2?`Share/view ${pct(shr,2)}, cao hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: người xem muốn gửi clip cho người khác.`:shr<=bt.rate*0.8?`Share/view ${pct(shr,2)}, thấp hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: xem xong ít ai gửi đi.`:`Share/view ${pct(shr,2)}, ngang mốc ${pct(bt.rate,2)} của ${bt.tier}.`);
-  if(brand.length)say.push(`Có brand: ${esc(brand.join(" · "))}.`);
-  if(X.isAd)say.push(`TikTok gắn cờ quảng cáo cho clip này: có thể đã chạy ads, view không hoàn toàn tự nhiên.`);
+  const nice=n=>{const r=Math.round(n);if(r<100)return Math.max(1,r);const k=Math.pow(10,String(r).length-2);return Math.round(r/k)*k};
+  const oneIn=r=>"cứ "+nice(1/r).toLocaleString("vi-VN")+" người xem";
+  const kfmt=n=>fmt(n).replace(/,0([KM])$/,"$1");
+  const IC={clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.8 3 2.6 3.5 5.2"/>',share:'<path d="M14 5l7 7-7 7v-4c-5 0-8 1.5-11 5 1-5.5 4-9.5 11-10z"/>',ad:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7.5 15l2.2-6 2.2 6M8.2 13.3h3M15 9v6h1.2a2.5 2.5 0 0 0 0-5H15"/>',heart:'<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',bolt:'<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',music:'<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',at:'<circle cx="12" cy="12" r="3.5"/><path d="M15.5 12v1.5a2.5 2.5 0 0 0 5 0V12a8.5 8.5 0 1 0-3.3 6.7"/>',cart:'<path d="M3 4h2.5l2.2 11h10.6L20.5 8H6.5"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',pin:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',cal:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',brand:'<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'};
+  const say=[],it2=(tone,ic,lab,txt)=>say.push({tone,ic,lab,txt});
+  const shHi=shr!=null&&shr>=bt.rate*1.2, shLo=shr!=null&&shr<=bt.rate*0.8, likeR=v.views&&v.likes!=null?v.likes/v.views:null;
+  let verdict=null;
+  if(base){const x=v.views/base;verdict=x>=3?["up",`Clip <b>thắng</b>: view gấp ${times(x)} một clip bình thường của kênh.`]:x<=0.4?["down",`Clip <b>hụt</b>: view chỉ bằng ${pct(x,0)} một clip bình thường của kênh.`]:["mid",`Clip <b>ngang sức</b>: view tương đương clip bình thường của kênh (${times(x)}).`]}
+  else if(X.isAd&&shLo)verdict=["warn","Nhiều view nhưng rất ít người tim và share, lại bị TikTok gắn cờ quảng cáo. Phần lớn view có thể là <b>view chạy ads</b>. Đừng lấy clip này làm mẫu."];
+  else if(reach>=1&&shHi)verdict=["up","Clip <b>lan tốt</b>: ra khỏi tệp fan và được chia sẻ nhiều. Đáng làm thêm clip cùng kiểu."];
+  else if(reach>=1)verdict=["mid","Clip <b>được TikTok đẩy</b> ra ngoài tệp fan, nhưng người xem ít gửi cho người khác. Xem được, chưa đủ hay để chia sẻ."];
+  else if(shHi)verdict=["up","Clip <b>chưa được đẩy rộng</b> nhưng ai xem cũng hay chia sẻ. Nội dung tốt, có thể còn lên tiếp."];
+  else if(reach!=null)verdict=["down","Clip <b>chưa lan</b>: view còn ít hơn số follower và ít người chia sẻ."];
+  if(age!=null&&age<7)it2("info","clock","Mới đăng",`Clip mới ${age} ngày, view còn đang tăng. Vài ngày nữa khám lại sẽ chuẩn hơn.`);
+  if(reach!=null){if(reach>=5)it2("up","users","Ra khỏi tệp fan",`View gấp <b>${times(reach)}</b> số follower. TikTok đẩy clip đi rất xa, mức này được coi là viral.`);else if(reach>=1)it2("up","users","Ra khỏi tệp fan",`View gấp <b>${times(reach)}</b> số follower: nhiều người chưa theo dõi kênh cũng đã xem.`);else it2("down","users","Chưa ra khỏi tệp fan",`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower. Clip được đẩy rộng thường vượt 100%.`)}
+  if(shr!=null)it2(shHi?"up":shLo?"down":"mid","share","Chia sẻ",`${shr>0?oneIn(shr).replace(/^c/,"C")+" mới có <b>1 người</b> gửi clip đi.":"Chưa ai gửi clip đi."} Kênh cùng cỡ (${bt.tier.replace(/^kênh /,"")} follower) trung bình ${oneIn(bt.rate)} có 1 người.${shHi?" Clip này hơn hẳn.":shLo?" Clip này kém hơn.":""}`);
+  if(likeR!=null)it2(likeR>=0.04?"up":likeR<0.01?"down":"mid","heart","Thả tim",`${likeR<0.02?`Cứ 1.000 người xem có <b>${Math.round(likeR*1000)} người</b>`:`Cứ 100 người xem có <b>${Math.round(likeR*100)} người</b>`} thả tim${likeR>=0.04?", khá cao":likeR<0.01?", rất thấp: đa số lướt qua":""}.`);
+  if(X.isAd)it2("warn","ad","Có chạy quảng cáo","TikTok gắn cờ quảng cáo cho clip này. Một phần view là mua, không hoàn toàn tự nhiên.");
+  if(brand.length)it2("warn","brand","Có brand",esc(brand.join(" · ")));
+  if(v.ts&&age>=1)it2("info","bolt","Tốc độ",`Trung bình <b>${kfmt(Math.round(v.views/Math.max(1,age)))} view</b> mỗi ngày từ lúc đăng.`);
   const avgLike=X.hearts&&X.vids?X.hearts/X.vids:null;
-  if(avgLike&&v.likes!=null){const r=v.likes/avgLike;say.push(`Clip được ${fmt(v.likes)} tim, ${r>=1?`gấp ${times(r)}`:`bằng ${pct(r,0)}`} mức tim trung bình cả đời kênh (${fmt(X.hearts)} tim ÷ ${fmt(X.vids)} clip). Mức này bị các clip nổ cũ kéo lên rất mạnh, nên đừng dùng để chấm thắng thua. Muốn biết chắc: quét cả kênh trên máy tính.`)}
-  if(v.ts&&age>=1)say.push(`Trung bình <b>${fmt(Math.round(v.views/Math.max(1,age)))}</b> view mỗi ngày kể từ khi đăng.`);
-  if(X.labels&&X.labels.length)say.push(`TikTok xếp clip vào chủ đề: <b>${esc(X.labels.slice(0,5).join(", "))}</b>. Đây là cách thuật toán hiểu clip, quyết định clip được đẩy cho ai.`);
-  if(X.kw&&X.kw.length)say.push(`Từ khoá tìm kiếm TikTok gợi ý dưới clip: ${esc(X.kw.join(" · "))}. Clip có cửa lên từ tìm kiếm, không chỉ từ lướt.`);
-  if(X.music)say.push(X.orig?`Dùng âm thanh gốc (“${esc(X.music)}”).`:`Dùng nhạc có sẵn: “${esc(X.music)}”. Sound đang trend có thể kéo thêm view.`);
-  if(X.tags&&X.tags.length)say.push(brand.length?`Caption tag ${esc(X.tags.slice(0,3).map(x=>"@"+x).join(", "))}.`:`Caption tag ${esc(X.tags.slice(0,3).map(x=>"@"+x).join(", "))}: nhiều khả năng là clip hợp tác, view có thể mượn từ tệp fan người kia.`);
-  if(X.shop)say.push(`Clip gắn giỏ hàng / sản phẩm.`);
-  if(X.poi||X.loc)say.push(`Vị trí: ${esc([X.poi,X.loc].filter(Boolean).join(" · "))}.`);
-  if(v.ts){const d=new Date(v.ts*1000);say.push(`Đăng lúc ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}, ${["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"][d.getDay()]}.`)}
+  if(avgLike&&v.likes!=null)it2("info","chart","So với cả kênh",`Clip có ${kfmt(v.likes)} tim, kênh trung bình ${kfmt(avgLike)} tim mỗi clip. Số trung bình này bị clip nổ cũ kéo lên nên chỉ để tham khảo. Muốn chấm thắng thua: quét cả kênh trên máy tính.`);
+  if(X.labels&&X.labels.length)it2("info","tag","TikTok hiểu clip là",`<b>${esc(X.labels.slice(0,5).join(", "))}</b>. Clip sẽ được đẩy cho người hay xem các chủ đề này.`);
+  if(X.kw&&X.kw.length)it2("info","search","Từ khoá tìm kiếm",`${esc(X.kw.join(" · "))}. TikTok gợi ý từ này dưới clip, nên clip còn lên được khi người ta tìm kiếm.`);
+  if(X.music)it2("info","music",X.orig?"Âm thanh gốc":"Nhạc",X.orig?(/^(âm thanh gốc|original sound|nhạc nền)/i.test(X.music)?"Kênh tự làm tiếng, không dùng nhạc có sẵn.":`“${esc(X.music)}”`):`“${esc(X.music)}”. Nếu sound đang trend, clip được kéo thêm view.`);
+  if(X.tags&&X.tags.length)it2("info","at","Có tag",`${esc(X.tags.slice(0,3).map(x=>"@"+x).join(", "))}${brand.length?"":". Có thể là clip hợp tác, view mượn thêm từ fan người kia."}`);
+  if(X.shop)it2("info","cart","Bán hàng","Clip có gắn giỏ hàng / sản phẩm.");
+  if(X.poi||X.loc)it2("info","pin","Vị trí",esc([X.poi,X.loc].filter(Boolean).join(" · ")));
+  if(v.ts){const d=new Date(v.ts*1000);it2("info","cal","Giờ đăng",`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}, ${["Chủ nhật","Thứ 2","Thứ 3","Thứ 4","Thứ 5","Thứ 6","Thứ 7"][d.getDay()]}`)}
+  const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+  const sayHtml=(verdict?`<div class="verdict t-${verdict[0]}"><small>Tóm lại</small>${verdict[1]}</div>`:"")+`<ul class="qr">${say.map(x=>`<li class="t-${x.tone}"><i>${svg(x.ic)}</i><div><b>${x.lab}</b><span>${x.txt}</span></div></li>`).join("")}</ul>`;
   $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
   const chip=(k,val,extra="")=>`<div class="chip"><small>${k}</small><span class="cv"><b>${val}</b>${extra}</span></div>`;
   $("det").innerHTML=`<section class="card det">
@@ -973,8 +993,8 @@ async function openClip(){
       ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
       ${X.hearts&&X.vids?chip("Tim TB mỗi clip của kênh",fmt(X.hearts/X.vids))+chip("Comment",fmt(v.cm)):""}
     </div>
-    <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}
-      <p class="hint" style="margin:12px 0 0">Cách tính: View / follower = view ÷ follower kênh. Tương tác/view = (tim + comment + share + lưu) ÷ view. Share/view, Save/view = số share, số lưu ÷ view. Mốc share là trung bình của kênh cùng cỡ follower (số liệu bên thứ ba, để định hướng).</p></div>
+    <div class="rx"><h4>Đọc nhanh</h4>${sayHtml}
+      <p class="hint" style="margin:12px 0 0">Cách tính: số người share, tim chia cho số view. Mốc so sánh là trung bình của các kênh cùng cỡ follower (số liệu bên thứ ba, để tham khảo).</p></div>
     ${url||idm?`<div class="row" style="margin-top:14px"><a class="btn primary" style="text-decoration:none" href="${esc(url||("https://www.tiktok.com/@"+v.h+"/video/"+idm))}" target="_blank">Mở clip trên TikTok</a></div>`:""}
   </section>`;
   return true;
