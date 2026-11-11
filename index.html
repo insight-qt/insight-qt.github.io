@@ -902,7 +902,9 @@ async function openClip(){
   const h=location.hash;if(!h.startsWith("#c="))return false;
   document.body.classList.add("shared");
   let raw="";try{raw=decodeURIComponent(h.slice(3))}catch(e){raw=h.slice(3)}
-  const get=k=>{const m=raw.match(new RegExp('"'+k+'":"?([^",}]*)'));return m?m[1]:null};
+  // trang clip có cả thông tin tài khoản đang đăng nhập (đứng trước) → tên kênh và follower lấy lần xuất hiện CUỐI (của người đăng clip)
+  const LAST=["uniqueId","followerCount"];
+  const get=k=>{const all=[...raw.matchAll(new RegExp('"'+k+'":"?([^",}]*)','g'))];if(!all.length)return null;return (LAST.includes(k)?all[all.length-1]:all[0])[1]};
   const num=k=>{const v=get(k);return v!=null&&v!==""&&!isNaN(+v)?+v:null};
   const url=(raw.match(/https?:\/\/[^\s,"]+/)||[])[0]||"";
   let desc="";const dm=raw.match(/"desc":"((?:[^"\\]|\\.)*)"/);if(dm){try{desc=JSON.parse('"'+dm[1]+'"')}catch(e){desc=dm[1]}}
