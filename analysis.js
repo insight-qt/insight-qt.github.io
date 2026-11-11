@@ -11,6 +11,8 @@
   const PREFIX3 = new Set(["ysl", "omo", "kfc", "bmw", "fpt", "7up"]);
   const brandOf = h => { h = String(h).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/[^a-z0-9]/g, "");
     for (const b of BRANDS) { if (b.length >= 6 ? h.includes(b) : b.length >= 4 ? (h.startsWith(b) || h.endsWith(b)) : h === b || h === b + "vn" || h === b + "vietnam" || (PREFIX3.has(b) && h.startsWith(b))) return b; } return null; };
+  // câu công bố tài trợ viết thường trong caption
+  const SPONSOR_TXT = /(được|do)\s+tài\s*trợ|nội\s+dung\s+(được\s+)?tài\s*trợ|hợp\s+tác\s+(cùng|với)\s+\S|sponsored\s+by|paid\s+partnership|in\s+partnership\s+with/i;
   // hashtag chung chung, viết hoa kiểu CamelCase nhưng không phải brand
   const GENERIC_TAG = /^(fyp|foryou|foryoupage|xuhuong|trend|trending|viral|tiktok|tiktokawards|tiktokvietnam|capcut|learnontiktok|tiktokgiaitri|worldcup|backtoschool|tet|giangsinh|christmas|noel|halloween|valentine|trungthu)/i;
   // comment cho thấy người xem nhận ra quảng cáo
@@ -207,7 +209,7 @@
       v.brand_src = [];
       const disc = [...new Set(((v.hashtags || []).map(h => "#" + h)).filter(h => PAID_TAG.test(h)))];
       if (disc.length) v.brand_src.push("công bố hợp tác " + disc.slice(0, 2).join(" "));
-      else if (PAID_TAG.test(tags)) v.brand_src.push("caption công bố hợp tác / tài trợ");
+      else if (PAID_TAG.test(tags) || SPONSOR_TXT.test(v.caption || "")) v.brand_src.push("caption ghi rõ là nội dung tài trợ / hợp tác");
       if (v.paid_flags.length) v.brand_src.push("TikTok ghi nhãn hợp tác thương hiệu");
       v.self_declared = false;
       v.declared = v.mark === "paid";   // cờ isAd xét ở vòng sau, khi đã có mức tương tác chuẩn
