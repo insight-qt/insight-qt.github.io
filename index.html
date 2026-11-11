@@ -924,7 +924,7 @@ async function openClip(){
   const say=[];
   if(age!=null&&age<7)say.push(`Clip mới đăng ${age} ngày, view còn đang chạy. Vài ngày nữa khám lại sẽ chuẩn hơn.`);
   if(base){const x=v.views/base;say.push(`So với kênh (đã quét trên máy này): view gấp <b>${xm(x)}</b> clip bình thường của kênh${x>=3?", đủ chuẩn <b>WIN</b>":x<=0.4?", thuộc nhóm <b>FLOP</b>":""}.`)}
-  if(reach!=null){if(reach>=5)say.push(`View gấp <b>${times(reach)}</b> số follower: TikTok đã đẩy clip ra xa ngoài tệp fan. Giới phân tích coi mức 5–10 lần follower là viral.`);else if(reach>=1)say.push(`View vượt số follower (${times(reach)}): clip đã chạm tới người ngoài tệp fan.`);else say.push(`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower: clip chủ yếu nằm trong tệp fan.`)}
+  if(reach!=null){if(reach>=5)say.push(`View gấp <b>${times(reach)}</b> số follower: TikTok đã đẩy clip ra xa ngoài tệp fan. Giới phân tích coi mức 5–10 lần follower là viral.`);else if(reach>=1)say.push(`View vượt số follower (${times(reach)}): clip đã chạm tới người ngoài tệp fan.`);else say.push(`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower: clip chưa chạm tới số người bằng tệp fan kênh đang có. Clip được TikTok đẩy rộng thường vượt 100%.`)}
   if(shr!=null)say.push(shr>=bt.rate*1.2?`Share/view ${pct(shr,2)}, cao hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: người xem muốn gửi clip cho người khác.`:shr<=bt.rate*0.8?`Share/view ${pct(shr,2)}, thấp hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: xem xong ít ai gửi đi.`:`Share/view ${pct(shr,2)}, ngang mốc ${pct(bt.rate,2)} của ${bt.tier}.`);
   if(brand.length)say.push(`Có brand: ${esc(brand.join(" · "))}.`);
   $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
@@ -935,7 +935,8 @@ async function openClip(){
       ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
       ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
     </div>
-    <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}</div>
+    <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}
+      <p class="hint" style="margin:12px 0 0">Cách tính: View / follower = view ÷ follower kênh. Tương tác/view = (tim + comment + share + lưu) ÷ view. Share/view, Save/view = số share, số lưu ÷ view. Mốc share là trung bình của kênh cùng cỡ follower (số liệu bên thứ ba, để định hướng).</p></div>
     ${url||idm?`<div class="row" style="margin-top:14px"><a class="btn primary" style="text-decoration:none" href="${esc(url||("https://www.tiktok.com/@"+v.h+"/video/"+idm))}" target="_blank">Mở clip trên TikTok</a></div>`:""}
   </section>`;
   return true;
