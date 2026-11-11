@@ -246,7 +246,7 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .sharebar{display:none}
 body.shared #setup,body.shared .scan,body.shared #range,body.shared #job,body.shared .chsec,body.shared #chs,body.shared header .row,body.shared .det .acts,body.shared .det .tfil{display:none!important}
 body.shared .sharebar{display:block;margin-bottom:14px}
-.sh-sec{border-bottom:0!important}body.shared footer button{display:none}
+.sh-sec{border-bottom:0!important}.rx p.say{margin:0 0 8px;font-size:13.5px;line-height:1.55}.rx p.say:last-child{margin:0}body.shared footer button{display:none}
 .snap-sec,.sh-sec{font-weight:600;font-size:12.5px;color:var(--mute);padding:14px 0 6px!important}
 /* ===== điện thoại ===== */
 .phone-note{display:none}
@@ -896,6 +896,49 @@ async function openShared(){
   return true;
 }
 
+
+/* ---------- khám nhanh 1 clip (từ Phím tắt iPhone) ---------- */
+async function openClip(){
+  const h=location.hash;if(!h.startsWith("#c="))return false;
+  document.body.classList.add("shared");
+  let raw="";try{raw=decodeURIComponent(h.slice(3))}catch(e){raw=h.slice(3)}
+  const get=k=>{const m=raw.match(new RegExp('"'+k+'":"?([^",}]*)'));return m?m[1]:null};
+  const num=k=>{const v=get(k);return v!=null&&v!==""&&!isNaN(+v)?+v:null};
+  const url=(raw.match(/https?:\/\/[^\s,"]+/)||[])[0]||"";
+  let desc="";const dm=raw.match(/"desc":"((?:[^"\\]|\\.)*)"/);if(dm){try{desc=JSON.parse('"'+dm[1]+'"')}catch(e){desc=dm[1]}}
+  const v={views:num("playCount"),likes:num("diggCount"),cm:num("commentCount"),sh:num("shareCount"),sv:num("collectCount"),ts:num("createTime"),fol:num("followerCount"),dur:num("duration"),h:get("uniqueId")||""};
+  const idm=(url.match(/\/video\/(\d+)/)||raw.match(/"id":"(\d{15,})"/)||[])[1]||"";
+  if(v.views==null){
+    $("sharebar").innerHTML="Không đọc được số liệu clip. TikTok có thể đã chặn Phím tắt đọc trang clip, hoặc link không phải link clip. Thử lại, hoặc mở clip trên máy tính rồi bấm ⚡.";
+    $("det").innerHTML="";return true;
+  }
+  const er=v.views?((v.likes||0)+(v.cm||0)+(v.sh||0)+(v.sv||0))/v.views:null, shr=v.views?(v.sh||0)/v.views:null, svr=v.views?(v.sv||0)/v.views:null, cmr=v.views?(v.cm||0)/v.views:null;
+  const reach=v.fol?v.views/v.fol:null, age=v.ts?Math.floor((Date.now()/1000-v.ts)/86400):null, bt=TTI.shareBench(v.fol);
+  // brand / hợp tác: dùng đúng luật của tool
+  let brand=[];try{const id=idm||"1";const a=TTI.analyze({[id]:{id,url,channel:v.h,ts:v.ts,views:v.views,likes:v.likes,comments_count:v.cm,shares:v.sh,saves:v.sv,caption:desc,hashtags:(desc.match(/#[\p{L}\p{N}_]+/gu)||[]).map(x=>x.slice(1)),mentions:[]}},v.fol);brand=(a.rows[0]&&a.rows[0].brand_src)||[]}catch(e){}
+  // nếu kênh này đã được quét trên trình duyệt này → so với mặt bằng kênh
+  let base=null;try{const rec=v.h&&await DB.get(v.h.toLowerCase());if(rec){const a=TTI.analyze(TTI.applyMarks(rec.vids,rec.marks,rec.accounts),rec.meta.followers);base=a.summary.med_views}}catch(e){}
+  const times=x=>x>=10?Math.round(x)+" lần":String(Math.round(x*10)/10).replace(".",",")+" lần";
+  const say=[];
+  if(age!=null&&age<7)say.push(`Clip mới đăng ${age} ngày, view còn đang chạy. Vài ngày nữa khám lại sẽ chuẩn hơn.`);
+  if(base){const x=v.views/base;say.push(`So với kênh (đã quét trên máy này): view gấp <b>${xm(x)}</b> clip bình thường của kênh${x>=3?", đủ chuẩn <b>WIN</b>":x<=0.4?", thuộc nhóm <b>FLOP</b>":""}.`)}
+  if(reach!=null){if(reach>=5)say.push(`View gấp <b>${times(reach)}</b> số follower: TikTok đã đẩy clip ra xa ngoài tệp fan. Giới phân tích coi mức 5–10 lần follower là viral.`);else if(reach>=1)say.push(`View vượt số follower (${times(reach)}): clip đã chạm tới người ngoài tệp fan.`);else say.push(`View mới bằng <b>${pct(reach,reach<0.1?1:0)}</b> số follower: clip chủ yếu nằm trong tệp fan.`)}
+  if(shr!=null)say.push(shr>=bt.rate*1.2?`Share/view ${pct(shr,2)}, cao hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: người xem muốn gửi clip cho người khác.`:shr<=bt.rate*0.8?`Share/view ${pct(shr,2)}, thấp hơn mốc ${pct(bt.rate,2)} của ${bt.tier}: xem xong ít ai gửi đi.`:`Share/view ${pct(shr,2)}, ngang mốc ${pct(bt.rate,2)} của ${bt.tier}.`);
+  if(brand.length)say.push(`Có brand: ${esc(brand.join(" · "))}.`);
+  $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
+  const chip=(k,val,extra="")=>`<div class="chip"><small>${k}</small><span class="cv"><b>${val}</b>${extra}</span></div>`;
+  $("det").innerHTML=`<section class="card det">
+    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div></div></div>
+    <div class="chips">
+      ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
+      ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
+    </div>
+    <div class="rx"><h4>Đọc nhanh</h4>${say.map(x=>`<p class="say">${x}</p>`).join("")}</div>
+    ${url||idm?`<div class="row" style="margin-top:14px"><a class="btn primary" style="text-decoration:none" href="${esc(url||("https://www.tiktok.com/@"+v.h+"/video/"+idm))}" target="_blank">Mở clip trên TikTok</a></div>`:""}
+  </section>`;
+  return true;
+}
+
 /* ---------- sổ tay ---------- */
 function gTab(k){document.querySelectorAll(".gtabs button").forEach(b=>b.classList.toggle("on",b.dataset.g===k));document.querySelectorAll(".gpane").forEach(p=>p.classList.toggle("on",p.dataset.g===k));ls.set("tti_gtab",k)}
 function openGuide(k){gTab(k||ls.get("tti_gtab","start"));$("gmodal").classList.add("show");$("gmodal").querySelector(".guide").scrollTop=0}
@@ -905,7 +948,7 @@ function toggleSetup(on){$("setup").style.display=on?"":"none";ls.set("tti_setup
 if(ls.get("tti_setup_hidden","")==="1")$("setup").style.display="none";
 $("url").addEventListener("keydown",e=>{if(e.key==="Enter")openChannel()});
 try{const md=ls.get("tti_mode","fast");if([...$("mode").options].some(o=>o.value===md))$("mode").value=md}catch(e){}
-openShared().then(sh=>{if(!sh){renderRange();loadChannels()}});
+openShared().then(sh=>sh||openClip()).then(sh=>{if(!sh){renderRange();loadChannels()}});
 window.addEventListener("hashchange",()=>location.reload());
 </script>
 </body>

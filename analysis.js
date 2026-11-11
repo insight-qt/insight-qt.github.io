@@ -226,7 +226,7 @@
     for (const v of rows) {
       const hs = (v.hashtags || []).filter(h => !PAID_TAG.test("#" + h));
       // bỏ brand trùng tên kênh (kênh chính chủ của brand) và hashtag kênh dùng ở gần nửa số clip
-      const known = [...new Set(hs.filter(h => { const b = brandOf(h); return b && !meN.includes(b) && (tagCnt[h.toLowerCase()] || 0) <= rows.length * 0.4; }))];
+      const known = [...new Set(hs.filter(h => { const b = brandOf(h); return b && !meN.includes(b) && (rows.length < 5 || (tagCnt[h.toLowerCase()] || 0) <= rows.length * 0.4); }))];
       const camp = [...new Set(hs.filter(h => !brandOf(h) && (tagCnt[h.toLowerCase()] || 0) < ownCut && h.length >= 4 && /\p{Lu}/u.test(h.slice(1)) && /\p{Ll}/u.test(h) && !GENERIC_TAG.test(h)))];
       if (known.length) v.brand_src.push("hashtag brand " + known.slice(0, 3).map(h => "#" + h).join(" "));
       if (camp.length) v.brand_src.push("hashtag kiểu chiến dịch " + camp.slice(0, 3).map(h => "#" + h).join(" "));
