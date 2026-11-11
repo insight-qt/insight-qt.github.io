@@ -205,7 +205,6 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
     <div class="row">
       <button class="ghost" onclick="openGuide()">Sổ tay</button>
       <button class="ghost" onclick="openBrief()">Sửa brief</button>
-      <button class="ghost" onclick="openAIset()">Cài đặt AI</button>
     </div>
   </header>
 
@@ -319,13 +318,6 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
 
     <div class="gpane" data-g="ai">
       <p class="gl">Tool đếm. AI đọc. Bạn quyết.</p>
-      <h4>Cách nhanh: AI đọc ngay trong trang</h4>
-      <ol class="gsteps">
-        <li>Bấm <b>Cài đặt AI</b> ở góc trên, dán key Gemini. Key miễn phí, lấy ở Google AI Studio trong 1 phút.</li>
-        <li>Mở kênh, bấm <b>Phân tích bằng AI</b>. Báo cáo chạy ra ngay dưới phần số liệu và được lưu lại theo kênh.</li>
-      </ol>
-      <p class="gnote">Key chỉ nằm trong trình duyệt của bạn. Với key miễn phí, Google có thể dùng nội dung để cải thiện sản phẩm, nên chỉ phân tích dữ liệu công khai. Hết lượt trong ngày thì đổi sang model Flash-Lite.</p>
-      <h4>Cách tự chọn AI: xuất file</h4>
       <ol class="gsteps">
         <li>Mở kênh, bấm <b>Xuất .md cho AI</b>.</li>
         <li>Copy nội dung hoặc tải file, dán vào Claude, ChatGPT hay Gemini.</li>
@@ -370,19 +362,6 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
       <div><label>Chắc chắn organic → bỏ NGHI ADS</label><textarea id="korg" placeholder="https://www.tiktok.com/@kenh/video/…"></textarea></div>
     </div>
     <div class="row" style="margin-top:14px"><span class="hint" id="kmsg" style="flex:1"></span><button class="btn" onclick="closeMarks()">Huỷ</button><button class="btn primary" onclick="saveMarks()">Lưu</button></div>
-  </div>
-</div>
-<div class="modal" id="amodal" onclick="if(event.target===this)closeAIset()">
-  <div class="card mbox">
-    <h3>Cài đặt AI</h3>
-    <p>Tool dùng Gemini của Google để viết báo cáo. Key miễn phí, lấy trong 1 phút: vào <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>, bấm <b>Create API key</b>, copy rồi dán vào đây. Key mới bắt đầu bằng <b>AQ.</b></p>
-    <label class="fl">API key</label>
-    <input id="gkey" type="password" placeholder="AQ.…" autocomplete="off" onchange="fillModels()" onpaste="setTimeout(()=>fillModels(),50)">
-    <label class="fl">Model</label>
-    <select id="gmodelsel"><option value="">Dán key trước</option></select>
-    <div class="hint" id="gmsg" style="min-height:18px;margin:8px 0 4px"></div>
-    <div class="note small">Key chỉ lưu trong trình duyệt này và gửi thẳng tới Google, không qua máy chủ nào. Với key miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm: chỉ phân tích dữ liệu công khai, đừng gửi số liệu nội bộ.</div>
-    <div class="row" style="margin-top:14px"><button class="link del" onclick="clearAIset()">Xoá key</button><span style="flex:1"></span><button class="btn" onclick="closeAIset()">Huỷ</button><button class="btn primary" onclick="saveAIset()">Lưu</button></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -515,7 +494,7 @@ async function loadChannels(){
 }
 async function loadDetail(h,quiet){
   const r=await DB.get(h); if(!r){$("det").innerHTML="";return}
-  cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),r.meta.followers); detail={meta:r.meta,last:r.last,ai:r.ai,...a};
+  cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks),r.meta.followers); detail={meta:r.meta,last:r.last,...a};
   renderDetail(); if(!quiet)document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("on",e.textContent.includes("@"+h+" ")));
 }
 // một cột nhãn chung cho mọi khung bên phải → mọi thanh bắt đầu cùng một chỗ
@@ -579,7 +558,6 @@ function renderDetail(){
       <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button>
       <span class="hint">Quét lần cuối ${esc(m.scanned||"–")}</span><span style="flex:1"></span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
     ${diffCard(d)}
-    <div id="aibox">${aiCard()}</div>
     <div class="groups">${heat(t.heat,t)}<div class="side" style="--lw:${sideLw([t.duration,(t.topic||[]).slice(0,6),t.kind])}px">${grp("Theo độ dài",t.duration)}${grp("Chủ đề TikTok tự gắn",(t.topic||[]).slice(0,6))}${grp("Organic vs paid",t.kind)}</div></div>
     <div class="hint">Thanh = view trung vị của nhóm so với mức thường (×TV). Clip PAID và NGHI ADS không được tính vào mức thường. Quét lại kênh sau vài ngày để tool bắt được clip đang chạy ads.</div>
     <div class="tw"><table><thead><tr><th onclick="sortDet('date')">Ngày${sortBy==="date"?" ↓":""}</th><th>Hook / caption</th><th class="num">View</th><th onclick="sortDet('x')">×TV${sortBy==="x"?" ↓":""}</th><th>Nhãn</th>
@@ -679,139 +657,8 @@ function remind(h){
 }
 const CH0=new URLSearchParams(location.search).get("ch");
 
-/* ---------- Gemini: báo cáo AI ngay trong trang ---------- */
-const GAPI=(new URLSearchParams(location.search).get("gemini"))||"https://generativelanguage.googleapis.com";
-const gkey=()=>ls.get("tti_gkey",""), gmodel=()=>ls.get("tti_gmodel","");
-let aiRun=null;
-function mdHtml(src){
-  const e=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const il=t=>e(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g,"$1<i>$2</i>").replace(/_([^_\s][^_]*)_/g,"<i>$1</i>");
-  const L=String(src||"").replace(/\r/g,"").split("\n"), out=[]; let list=null, para=[];
-  const flush=()=>{if(para.length){out.push("<p>"+para.map(il).join("<br>")+"</p>");para=[]}if(list){out.push(`</${list}>`);list=null}};
-  for(let i=0;i<L.length;i++){
-    const l=L[i], t=l.trim();
-    if(!t){flush();continue}
-    let m;
-    if((m=t.match(/^(#{1,4})\s+(.*)/))){flush();const n=Math.min(4,m[1].length+1);out.push(`<h${n}>${il(m[2])}</h${n}>`);continue}
-    if(/^(-{3,}|\*{3,})$/.test(t)){flush();out.push("<hr>");continue}
-    if(t.startsWith("|")&&L[i+1]&&/^\|?\s*:?-{2,}/.test(L[i+1].trim())){flush();
-      const cells=x=>x.trim().replace(/^\||\|$/g,"").split("|").map(c=>il(c.trim()));
-      let h=`<div class="tw"><table><thead><tr>${cells(t).map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;i+=2;
-      while(i<L.length&&L[i].trim().startsWith("|")){h+=`<tr>${cells(L[i]).map(c=>`<td>${c}</td>`).join("")}</tr>`;i++}
-      i--;out.push(h+"</tbody></table></div>");continue}
-    if((m=t.match(/^>\s?(.*)/))){flush();out.push(`<blockquote>${il(m[1])}</blockquote>`);continue}
-    if((m=t.match(/^([-*•]|\d+[.)])\s+(.*)/))){if(para.length){out.push("<p>"+para.map(il).join("<br>")+"</p>");para=[]}
-      const k=/\d/.test(m[1])?"ol":"ul";if(list!==k){if(list)out.push(`</${list}>`);out.push(`<${k}>`);list=k}
-      out.push(`<li>${il(m[2])}</li>`);continue}
-    if(list){out.push(`</${list}>`);list=null}
-    para.push(t);
-  }
-  flush();return out.join("");
-}
-function aiCard(){
-  const a=aiRun&&aiRun.handle===cur?aiRun:(detail&&detail.ai)||null;
-  if(!a)return `<div class="ai empty-ai"><div><b>Báo cáo AI</b><span class="hint">Gemini đọc toàn bộ dữ liệu kênh và brief, trả về TA, tuyến nội dung, công thức WIN, lý do FLOP, ý tưởng clip tiếp theo. Miễn phí với key Google của bạn.</span></div><button class="btn primary" onclick="runAI()">Phân tích bằng AI</button></div>`;
-  const busy=a.state==="run";
-  return `<div class="ai"><div class="ai-h"><div><b>Báo cáo AI</b><span class="hint">${busy?esc(a.model||""):`${esc(a.model||"")} · ${a.at?new Date(a.at).toLocaleString("vi-VN"):""}${a.secs&&a.text?" · viết trong "+a.secs+" giây":""}${a.range?" · "+esc(a.range):""}`}</span></div>
-    <div class="row">${busy?`<button class="btn" onclick="stopAI()">Dừng</button>`:`<button class="link" onclick="copyAI()">Copy</button><button class="btn" onclick="runAI()">Phân tích lại</button>`}</div></div>
-    ${a.error?`<div class="note">${esc(a.error)}</div>`:""}
-    ${busy?`<div class="ai-prog"><span class="dot"></span><b>${esc(a.phase||"")}</b><span class="hint">${Math.round((Date.now()-(a.t0||Date.now()))/1000)} giây</span>${a.thought?`<div class="hint th">${esc(a.thought)}</div>`:""}${!a.text?'<div class="hint">Kênh lớn thường mất 30–90 giây trước khi chữ đầu tiên hiện ra, vì Gemini đọc hết dữ liệu và suy nghĩ trước khi viết.</div>':""}</div>`:""}
-    <div class="ai-body ${busy?"busy":""}">${mdHtml(a.text||"")}</div></div>`;
-}
-const paintAI=()=>{const b=$("aibox");if(b)b.innerHTML=aiCard()};
-async function runAI(){
-  if(!gkey()||!gmodel())return openAIset("Dán key Gemini để bắt đầu. Lấy miễn phí trong 1 phút.");
-  if(keyKind(gkey()))return openAIset(keyKind(gkey()));
-  const r=await DB.get(cur); if(!r)return;
-  const h=cur, md=TTI.buildMd(r.meta,TTI.applyMarks(r.vids,r.marks),"vua",brief(),range);
-  const sys="Bạn là content strategist TikTok. Đọc brief ở đầu tài liệu và làm đúng phần Output (mục A → I), bằng tiếng Việt, định dạng Markdown: mỗi mục là một tiêu đề ##, dùng gạch đầu dòng và bảng khi cần. Chỉ dựa trên dữ liệu được cung cấp.";
-  const ctl=new AbortController(), t0=Date.now(), ktok=Math.round(md.length/3/1000);
-  aiRun={handle:h,state:"run",text:"",model:gmodel().replace(/^models\//,""),range:ranged()?TTI.rangeLabel(range):"",ctl,t0,
-    phase:`Đang gửi dữ liệu kênh cho Gemini (khoảng ${ktok} nghìn token)…`,thought:""};paintAI();
-  let last=0, lastByte=Date.now(), idleWhy="";
-  const tick=setInterval(()=>{ if(!aiRun||aiRun.handle!==h||aiRun.state!=="run")return clearInterval(tick);
-      if(Date.now()-lastByte>120000){idleWhy="Gemini không phản hồi trong 2 phút. Thử lại, hoặc chọn khoảng ngày hẹp hơn cho dữ liệu nhẹ đi, hoặc đổi sang model Flash-Lite trong Cài đặt AI.";ctl.abort()}
-      if(cur===h)paintAI() },1000);
-  const body=thinking=>JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{role:"user",parts:[{text:md}]}],
-    generationConfig:{temperature:0.6,maxOutputTokens:16384,...(thinking?{thinkingConfig:{includeThoughts:true}}:{})}});
-  try{
-    const call=(model,thinking)=>gfetch(`/v1beta/${model}:streamGenerateContent?alt=sse`,{method:"POST",signal:ctl.signal,
-      headers:{"Content-Type":"application/json"},body:body(thinking)},gkey());
-    // Google quá tải (503/500) → đợi rồi thử lại, sau đó tự chuyển sang model dự phòng
-    const models=[...new Set([gmodel(),"models/gemini-flash-latest","models/gemini-flash-lite-latest"])];
-    let res=null;
-    for(let mi=0;mi<models.length;mi++){
-      for(let attempt=0;attempt<2;attempt++){
-        if(mi||attempt){aiRun.phase=mi?`Model ${models[mi-1].replace(/^models\//,"")} đang quá tải, chuyển sang ${models[mi].replace(/^models\//,"")}…`:"Google đang quá tải, thử lại sau vài giây…";paintAI();await new Promise(r=>setTimeout(r,attempt?4000:1500))}
-        res=await call(models[mi],true);
-        if(res.status===400){const t=await res.clone().text();if(/think/i.test(t))res=await call(models[mi],false)}   // model không hỗ trợ suy nghĩ → gửi lại bản thường
-        if(![500,502,503,504].includes(res.status))break;
-      }
-      if(![500,502,503,504].includes(res.status)&&!(res.status===404)){aiRun.model=models[mi].replace(/^models\//,"");break}
-    }
-    lastByte=Date.now();
-    if(!res.ok){let m="";try{m=(await res.json()).error.message}catch(e){}
-      throw new Error(/API key not valid|API_KEY_INVALID/i.test(m)?"Key không hợp lệ. Kiểm tra lại trong Cài đặt AI.":/not supported|OAuth|ACCESS_TOKEN/i.test(m)?"Google chưa chấp nhận key này cho Gemini API. Tạo key mới trong Google AI Studio (aistudio.google.com/apikey) rồi thử lại.":/not found|is not supported for/i.test(m)?"Model này không còn dùng được. Vào Cài đặt AI chọn model khác.":[500,502,503,504].includes(res.status)?"Google đang quá tải tất cả model Flash. Đợi vài phút rồi bấm Phân tích lại.":res.status===429?"Hết lượt miễn phí của model này hôm nay (hoặc gửi quá nhanh). Đổi sang model Flash-Lite trong Cài đặt AI, hoặc thử lại sau.":res.status===403?"Key chưa được bật Gemini API, hoặc khu vực của bạn chưa được hỗ trợ.":`Gemini báo lỗi ${res.status}${m?": "+m:""}`)}
-    aiRun.phase="Gemini đang đọc dữ liệu và suy nghĩ…";paintAI();
-    const rd=res.body.getReader(), dec=new TextDecoder(); let buf="";
-    for(;;){const {done,value}=await rd.read();if(done)break;lastByte=Date.now();buf+=dec.decode(value,{stream:true});
-      let i;while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
-        if(!line.startsWith("data:"))continue;
-        try{const j=JSON.parse(line.slice(5));const p=(((j.candidates||[])[0]||{}).content||{}).parts||[];
-          const th=p.filter(x=>x.thought).map(x=>x.text||"").join(" ").trim();
-          if(th){aiRun.thought=th.replace(/\*\*/g,"").split("\n").filter(Boolean).slice(-1)[0].slice(0,160);aiRun.phase="Gemini đang suy nghĩ…"}
-          const tx=p.filter(x=>!x.thought).map(x=>x.text||"").join("");
-          if(tx){aiRun.text+=tx;aiRun.phase="Gemini đang viết…"}
-          const fr=((j.candidates||[])[0]||{}).finishReason; if(fr&&fr!=="STOP"&&fr!=="MAX_TOKENS")aiRun.error="Gemini dừng giữa chừng ("+fr+").";
-          if(j.promptFeedback&&j.promptFeedback.blockReason)aiRun.error="Gemini từ chối nội dung ("+j.promptFeedback.blockReason+").";
-        }catch(e){}}
-      if(Date.now()-last>250&&cur===h){last=Date.now();paintAI()}}
-    if(!aiRun.text&&!aiRun.error)aiRun.error="Gemini không trả về nội dung. Thử lại hoặc đổi model.";
-  }catch(e){aiRun.error=e.name==="AbortError"?(idleWhy||"Đã dừng."):/Failed to fetch|NetworkError|Load failed/i.test(e.message)?"Không kết nối được Gemini. Kiểm tra mạng.":e.message}
-  clearInterval(tick);
-  const done={state:"done",text:aiRun.text,model:aiRun.model,range:aiRun.range,at:Date.now(),error:aiRun.error||"",secs:Math.round((Date.now()-t0)/1000)};
-  if(done.text)await queue(async()=>{const rr=await DB.get(h);if(rr){rr.ai=done;await DB.put(rr)}});
-  if(detail&&cur===h&&done.text)detail.ai=done;
-  aiRun=done.text?null:{...done,handle:h};paintAI();
-}
-// Key AI Studio: "AQ." (loại mới, từ 2026) hoặc "AIza…" (loại cũ, đang bị khai tử). Chỉ cảnh báo khi không giống cả hai.
-function keyKind(k){k=String(k||"").trim();if(k&&!/^(AQ\.|AIza)/.test(k))return "Key Gemini thường bắt đầu bằng AQ. hoặc AIza… Kiểm tra lại, hoặc tạo key mới ở aistudio.google.com/apikey.";return ""}
-// Gọi Gemini: gửi key qua header; nếu bị từ chối kiểu "sai loại xác thực" thì thử lại bằng ?key=
-async function gfetch(path,opt,k){
-  const h={...(opt.headers||{}),"x-goog-api-key":k};
-  let r=await fetch(`${GAPI}${path}`,{...opt,headers:h});
-  if(r.status===401){const sep=path.includes("?")?"&":"?";const h2={...h};delete h2["x-goog-api-key"];r=await fetch(`${GAPI}${path}${sep}key=${encodeURIComponent(k)}`,{...opt,headers:h2})}
-  return r;
-}
-const FALLBACK_MODELS=[{name:"models/gemini-flash-latest",displayName:"Gemini Flash (mới nhất)"},{name:"models/gemini-flash-lite-latest",displayName:"Gemini Flash-Lite (mới nhất)"}];
-function stopAI(){if(aiRun&&aiRun.ctl)aiRun.ctl.abort()}
-async function copyAI(){const a=(detail&&detail.ai)||{};try{await navigator.clipboard.writeText(a.text||"");toast("Đã copy báo cáo")}catch(e){toast("Không copy được")}}
-/* cài đặt key */
-function openAIset(msg){$("gkey").value=gkey();$("gmsg").textContent=msg||"";fillModels(true);$("gmodal").classList.remove("show");$("amodal").classList.add("show")}
-function closeAIset(){$("amodal").classList.remove("show")}
-async function fillModels(quiet){
-  const k=$("gkey").value.trim(), sel=$("gmodelsel");
-  if(!k){sel.innerHTML='<option value="">Dán key trước</option>';return}
-  if(keyKind(k)){sel.innerHTML='<option value="">–</option>';$("gmsg").textContent=keyKind(k);return}
-  if(!quiet)$("gmsg").textContent="Đang kiểm tra key…";
-  const fill=(ms,msg)=>{const keep=gmodel()&&ms.some(m=>m.name===gmodel())?gmodel():ms[0].name;
-    sel.innerHTML=ms.map(m=>`<option value="${esc(m.name)}"${m.name===keep?" selected":""}>${esc(m.displayName||m.name)}${/pro/i.test(m.name)?" (thường phải trả phí)":""}</option>`).join("");$("gmsg").textContent=msg};
-  try{
-    const r=await gfetch(`/v1beta/models?pageSize=200`,{},k);
-    if(r.status===400){const t=await r.text();if(/API key not valid|API_KEY_INVALID/i.test(t))throw new Error("Key không hợp lệ. Copy lại key trong Google AI Studio.")}
-    if(!r.ok){fill(FALLBACK_MODELS,"Google không cho xem danh sách model với key này, tool dùng sẵn model Flash. Bấm Lưu rồi thử Phân tích bằng AI.");return}
-    const ms=((await r.json()).models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")&&/gemini/i.test(m.name)&&!/embed|image|tts|audio|live|vision|aqa|native|robot|computer/i.test(m.name));
-    const ver=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0}, score=m=>ver(m.name)*10+(/flash/i.test(m.name)?3:0)-(/lite/i.test(m.name)?1:0)-(/preview|exp/i.test(m.name)?4:0)-(/pro/i.test(m.name)?6:0);
-    ms.sort((a,b)=>score(b)-score(a));
-    if(!ms.length){fill(FALLBACK_MODELS,"Tool dùng sẵn model Flash. Bấm Lưu rồi thử Phân tích bằng AI.");return}
-    fill(ms,"Key dùng được. Model Flash là lựa chọn miễn phí tốt nhất.");
-  }catch(e){sel.innerHTML='<option value="">–</option>';$("gmsg").textContent=/fetch|Load failed/i.test(e.message)?"Không kết nối được Google.":e.message}
-}
-function saveAIset(){const k=$("gkey").value.trim(),m=$("gmodelsel").value;
-  if(!k||!m){$("gmsg").textContent="Cần key hợp lệ và chọn model.";return}
-  ls.set("tti_gkey",k);ls.set("tti_gmodel",m);closeAIset();toast("Đã lưu. Bấm Phân tích bằng AI.")}
-function clearAIset(){ls.set("tti_gkey","");ls.set("tti_gmodel","");$("gkey").value="";fillModels(true);$("gmsg").textContent="Đã xoá key khỏi trình duyệt này."}
-
+/* Bỏ tính năng báo cáo AI trong trang: xoá key đã lưu (nếu có) */
+try{localStorage.removeItem("tti_gkey");localStorage.removeItem("tti_gmodel")}catch(e){}
 
 /* ---------- xuất ảnh JPEG của kết quả ---------- */
 const loadJs=src=>new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("Không tải được "+src));document.head.appendChild(s)});
@@ -856,7 +703,7 @@ async function exportJpg(){
 function gTab(k){document.querySelectorAll(".gtabs button").forEach(b=>b.classList.toggle("on",b.dataset.g===k));document.querySelectorAll(".gpane").forEach(p=>p.classList.toggle("on",p.dataset.g===k));ls.set("tti_gtab",k)}
 function openGuide(k){gTab(k||ls.get("tti_gtab","start"));$("gmodal").classList.add("show");$("gmodal").querySelector(".guide").scrollTop=0}
 function closeGuide(){$("gmodal").classList.remove("show")}
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeGuide();closeModal();closeBrief();closeMarks();closeAIset()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeGuide();closeModal();closeBrief();closeMarks()}});
 function toggleSetup(on){$("setup").style.display=on?"":"none";ls.set("tti_setup_hidden",on?"":"1");if(on)window.scrollTo({top:0,behavior:"smooth"})}
 if(ls.get("tti_setup_hidden","")==="1")$("setup").style.display="none";
 $("url").addEventListener("keydown",e=>{if(e.key==="Enter")openChannel()});
