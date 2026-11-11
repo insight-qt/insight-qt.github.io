@@ -904,7 +904,7 @@ async function openShared(){
 
 
 
-const CLIP_BM="javascript:(function(){var s=document.createElement('script');s.src='https://insight-qt.github.io/clip.js?v='+Date.now();document.body.appendChild(s)})()";
+const CLIP_BM="javascript:void fetch('https://insight-qt.github.io/clip.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))";
 function copyClipBm(){const ta=document.createElement("textarea");ta.value=CLIP_BM;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();if(ok)return toast("Đã copy mã, giờ tạo dấu trang và dán vào ô địa chỉ");navigator.clipboard&&navigator.clipboard.writeText(CLIP_BM).then(()=>toast("Đã copy mã"),()=>toast("Không copy được"))}
 /* ---------- khám nhanh 1 clip (từ Phím tắt iPhone) ---------- */
 async function openClip(){
