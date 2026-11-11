@@ -61,10 +61,12 @@
     for (const rec of recs || []) {
       const v = videoFrom(rec), old = vids[v.id];
       if (old && !old.lite && !old.thin) {           // đã soi sâu: chỉ cập nhật số liệu, giữ comment + phụ đề
-        for (const k of ["views", "likes", "comments_count", "shares", "saves", "labels", "kw", "paid_flags", "shop", "pinned_api", "mentions"]) old[k] = v[k];
+        for (const k of ["views", "likes", "comments_count", "shares", "saves", "paid_flags", "shop", "pinned_api"]) old[k] = v[k];
+        for (const k of ["labels", "kw", "mentions"]) if ((v[k] || []).length) old[k] = v[k];   // dữ liệu khi cuộn không có chủ đề → giữ cái đã có
         old.pinned = !!(v.pinned || old.pinned); old.stale = false; snap(old, v.views);
       } else {
-        vids[v.id] = snap({ ...v, thin: true, lite: false, hist: (old && old.hist) || [], pinned: !!(v.pinned || (old && old.pinned)) }, v.views);
+        vids[v.id] = snap({ ...v, thin: true, lite: false, hist: (old && old.hist) || [], pinned: !!(v.pinned || (old && old.pinned)),
+          labels: (v.labels || []).length ? v.labels : (old && old.labels) || [], kw: (v.kw || []).length ? v.kw : (old && old.kw) || [] }, v.views);
       }
     }
     return vids;

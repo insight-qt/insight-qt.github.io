@@ -4,7 +4,7 @@
   var APP = '%%APP%%', APPURL = '%%APPURL%%', HOST = new RegExp('%%HOST%%');
   if (!HOST.test(location.hostname)) { alert('TikTok Insight: mở trang kênh TikTok (tiktok.com/@tenkenh) rồi bấm lại nút ⚡.'); return; }
   if (window.__tti && window.__tti.running) { window.__tti.show(); return; }
-  var S = window.__tti = { running: true, stop: false };
+  var S = window.__tti = { running: true, stop: false, labelBudget: 24 };
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var N = function (x) { return x == null || x === '' ? null : Number(x); };
 
@@ -86,6 +86,21 @@
   async function collect(url) {
     var path = new URL(url, location.origin).pathname, wantId = (path.match(/\/(?:video|photo)\/(\d+)/) || [])[1];
     var it = CAP[wantId] || null, code, why = '';
+    // Dữ liệu bắt khi cuộn không có chủ đề / từ khoá TikTok gắn → chỉ tải trang clip cho ~24 clip quan trọng nhất (đầu hàng đợi:
+    // nhóm ăn nhất + kém nhất). TikTok từ chối một lần là thôi hẳn, không làm chậm phần quét còn lại.
+    if (it && !it.diversificationLabels && S.labelBudget > 0) {
+      S.labelBudget--;
+      for (var tL = 0; tL < 2; tL++) {   // trang đôi khi trả khung trống lần đầu → thử lại 1 lần
+        try {
+          var rL = await fetch(location.origin + path, { credentials: 'include' });
+          if (rL.status === 403 || rL.status === 429) { S.labelBudget = 0; break; }
+          var mL = (await rL.text()).match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
+          var full = mL && pick(mL[1]).it;
+          if (full && String(full.id) === wantId) { it = Object.assign({}, it, { diversificationLabels: full.diversificationLabels, suggestedWords: full.suggestedWords, locationCreated: full.locationCreated || it.locationCreated }); break; }
+        } catch (e) {}
+        await sleep(1200);
+      }
+    }
     if (!it && location.pathname === path) { try { var p0 = pick(document.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__').textContent); it = p0.it; } catch (e) {} }
     for (var k = 0; k < 2 && !(it && String(it.id) === wantId); k++) {
       try {

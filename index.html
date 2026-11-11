@@ -456,7 +456,7 @@ window.addEventListener("message",e=>{
   if(m.type==="video")return queue(async()=>{
     const v=TTI.videoFrom(m.data),h=(v.channel||(job&&job.handle)||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{handle:h},vids:{}};
-    const old=rec.vids[v.id];v.hist=(old&&old.hist)||[];TTI.snap(v,v.views);rec.vids[v.id]=v;await DB.put(rec);
+    const old=rec.vids[v.id];v.hist=(old&&old.hist)||[];if(old){if(!(v.labels||[]).length&&(old.labels||[]).length)v.labels=old.labels;if(!(v.kw||[]).length&&(old.kw||[]).length)v.kw=old.kw;if(old.pinned)v.pinned=true}TTI.snap(v,v.views);rec.vids[v.id]=v;await DB.put(rec);
     if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";if(!job.handle)job.handle=h}
     renderJob();throttleDetail(h);
   });
