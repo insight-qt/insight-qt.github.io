@@ -137,22 +137,29 @@
   /* Chọn clip soi sâu: top view, bottom view, mới nhất, rải đều ở giữa. mode "all" = tất cả */
   function plan(vids, mode, range) {
     const DEEP_SMART = DEEP[mode] || DEEP.fast;
-    const all = Object.values(filterRange(vids, range)).filter(v => v.url);
+    const sub = filterRange(vids, range), all = Object.values(sub).filter(v => v.url);
+    const need = v => v.lite || v.thin;
     const stale = all.filter(v => v.stale && !v.lite && !v.thin).map(v => v.url);
-    if (mode === "all") return stale.concat(all.filter(v => v.lite || v.thin).map(v => v.url));
-    const withv = all.filter(v => typeof v.views === "number").sort((a, b) => b.views - a.views);
-    const newest = [...all].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    if (mode === "all") return stale.concat(all.filter(need).map(v => v.url));
+    // Ưu tiên đọc comment ở clip ORGANIC (đó mới là bằng chứng content), clip ads chỉ đọc vài cái để tham khảo
+    const rows = analyze(sub, 0).rows.filter(r => r.url), byId = new Map(rows.map(r => [r.id, r]));
+    const org = rows.filter(r => r.kind === "ORGANIC" && r.label !== "MỚI" && typeof r.x_med === "number").sort((a, b) => b.x_med - a.x_med);
+    const paid = rows.filter(r => r.kind !== "ORGANIC").sort((a, b) => (b.views || 0) - (a.views || 0));
+    const newest = [...rows].sort((a, b) => (b.ts || 0) - (a.ts || 0));
     const pick = [], seen = new Set();
-    const add = (vs, n) => { for (const v of vs) { if (n <= 0) break; if (seen.has(v.id)) continue; seen.add(v.id); n--; if (v.lite || v.thin) pick.push(v.url); } };
-    add(withv.slice(0, DEEP_SMART.top), DEEP_SMART.top);
-    add([...withv].reverse().slice(0, DEEP_SMART.bottom), DEEP_SMART.bottom);
+    const add = (vs, n) => { for (const r of vs) { if (n <= 0) break; if (seen.has(r.id)) continue; seen.add(r.id); n--; const v = sub[r.id] || r; if (need(v)) pick.push(v.url); } };
+    add(org.slice(0, DEEP_SMART.top), DEEP_SMART.top);
+    add([...org].reverse().slice(0, DEEP_SMART.bottom), DEEP_SMART.bottom);
     add(newest, DEEP_SMART.newest);
-    const mid = withv.slice(DEEP_SMART.top, Math.max(DEEP_SMART.top, withv.length - DEEP_SMART.bottom));
+    const mid = org.slice(DEEP_SMART.top, Math.max(DEEP_SMART.top, org.length - DEEP_SMART.bottom));
     const step = Math.max(1, Math.floor(mid.length / DEEP_SMART.spread));
-    add(mid.filter((_, i) => i % step === 0), DEEP_SMART.spread);
-    if (!withv.length) add(newest, DEEP_SMART.top + DEEP_SMART.bottom + DEEP_SMART.newest + DEEP_SMART.spread);
+    add(mid.filter((_, k) => k % step === 0), DEEP_SMART.spread);
+    add(paid, Math.min(5, Math.ceil(DEEP_SMART.spread / 2)));
+    if (!rows.length) add(newest, DEEP_SMART.top + DEEP_SMART.bottom + DEEP_SMART.newest + DEEP_SMART.spread);
+    void byId;
     return stale.concat(pick.filter(u => !stale.includes(u)));
   }
+
 
   /* Mốc share/view tham khảo theo cỡ kênh (ttcalculator.net, ~1,4 triệu clip 11/2025–01/2026, nguồn bên thứ ba) */
   function shareBench(f) {
