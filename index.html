@@ -117,7 +117,7 @@ td.hk{color:var(--mute);max-width:360px}
 .pill.VIRAL{position:relative;overflow:hidden;color:#3b2b60;text-shadow:0 1px 0 rgba(255,255,255,.6);
   background:linear-gradient(110deg,#ffc2d4,#ffdcb0,#fff3a8,#c9f7c4,#ade9ff,#cfbcff,#ffc2d4);background-size:300% 100%;animation:holo 6s linear infinite;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.65),0 1px 8px rgba(190,170,255,.55),0 0 16px rgba(255,190,215,.4)}
-.pill.VIRAL::before{content:"✦";margin-right:3px;font-size:9px;vertical-align:1px}
+.pill.VIRAL{display:inline-flex;align-items:center;gap:4px}.pill.VIRAL::before{content:"";flex:none;width:8px;height:8px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0C5.4 3 7 4.6 10 5 7 5.4 5.4 7 5 10 4.6 7 3 5.4 0 5 3 4.6 4.6 3 5 0Z' fill='%233b2b60'/%3E%3C/svg%3E") center/contain no-repeat}
 .pill.VIRAL::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.9) 48%,transparent 64%);transform:translateX(-130%);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
 @keyframes holo{to{background-position:300% 0}}
 @keyframes shine{0%,60%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
@@ -192,6 +192,8 @@ td.hk .why{font-size:11.5px;color:var(--warn);margin-top:3px;line-height:1.35}
 .ai-prog .hint{font-size:12px}.ai-prog .th,.ai-prog div.hint{flex-basis:100%;margin:0}.ai-prog .th{font-style:italic}
 .ai-prog .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:blink 1s infinite}
 .snap *{animation:none!important;transition:none!important}.snap .pill.VIRAL::after{display:none}
+.snap .pill.VIRAL{background:linear-gradient(100deg,#ffd0de 0%,#ffe6bf 30%,#fff6c2 50%,#d6f5d2 72%,#d2e6ff 100%)!important;background-size:100% 100%!important;background-position:0 0!important;text-shadow:none!important;box-shadow:0 0 0 1px rgba(255,255,255,.7),0 0 10px rgba(200,180,255,.45)!important;display:inline-flex!important;align-items:center;gap:4px}
+.snap .pill.VIRAL::before{display:none!important}.snap .pill.VIRAL svg{flex:none;display:block}
 .snap-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 14px;font-size:13px;color:var(--mute)}.snap-h b{font-size:17px;color:var(--ink);letter-spacing:-.01em}
 .snap .snap-sec{padding:16px 4px 6px!important;font-size:12px;font-weight:650;color:var(--mute);border-bottom:1px solid var(--line)}
 .snap-f{margin:14px 4px 0;font-size:11.5px;color:var(--faint);text-align:right}
@@ -215,7 +217,7 @@ footer{margin-top:48px;color:var(--faint);font-size:12.5px;line-height:1.6}
 .ghost{padding:0 11px}.link{padding:0 8px}.seg button{padding:0 11px}
 .range input[type=date]{height:var(--ctl-s);box-sizing:border-box;padding:0 8px}
 .pill{display:inline-flex;align-items:center;justify-content:center;height:var(--pill);padding:0 8px;line-height:1;box-sizing:border-box;vertical-align:middle;margin:0!important;white-space:nowrap}
-.pill.VIRAL::before{vertical-align:0;margin-right:4px}
+
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:172px}
 /* bảng clip: cột cố định để luôn vừa khung, caption ăn phần còn lại, nhãn tự xuống dòng */
 @media (min-width:701px){table.ct{table-layout:fixed}table.ct th:nth-child(1){width:76px}table.ct th:nth-child(3){width:62px}table.ct th:nth-child(4){width:92px}table.ct th:nth-child(5){width:184px}table.ct th:nth-child(6){width:74px}table.ct th:nth-child(7){width:60px}table.ct th:nth-child(8){width:92px}
@@ -758,6 +760,7 @@ async function exportJpg(){
     c.querySelectorAll(".acts,.empty-ai,.ai-h .row,.ai-prog,.errs,.tfil").forEach(e=>e.remove());
     c.querySelectorAll(".ai-body").forEach(e=>{e.style.maxHeight="none";e.style.overflow="visible";e.classList.remove("busy")});
     c.querySelectorAll(".tw").forEach(e=>e.style.overflow="visible");
+    c.querySelectorAll(".pill.VIRAL").forEach(p=>p.insertAdjacentHTML("afterbegin",'<svg width="8" height="8" viewBox="0 0 10 10"><path d="M5 0C5.4 3 7 4.6 10 5 7 5.4 5.4 7 5 10 4.6 7 3 5.4 0 5 3 4.6 4.6 3 5 0Z" fill="#3b2b60"/></svg>'));
     // bảng clip: chỉ giữ 5 clip ăn nhất + 5 clip kém nhất (không tính clip ads, clip mới)
     const r0=c.querySelector("tr.r"), tb=r0&&r0.parentElement;
     if(tb){
