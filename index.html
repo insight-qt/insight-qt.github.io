@@ -721,7 +721,7 @@ async function exportJpg(){
     const m=detail.meta||{}, now=new Date();
     box.innerHTML=`<div class="snap-h"><b>TikTok Insight</b><span>Khám kênh @${esc(m.handle)} · ${now.toLocaleDateString("vi-VN")}${ranged()?" · "+esc(TTI.rangeLabel(range)):""}</span></div>`;
     const c=det.cloneNode(true); box.appendChild(c);
-    c.querySelectorAll(".acts,.empty-ai,.ai-h .row,.ai-prog,.errs").forEach(e=>e.remove());
+    c.querySelectorAll(".acts,.empty-ai,.ai-h .row,.ai-prog,.errs,.tfil").forEach(e=>e.remove());
     c.querySelectorAll(".ai-body").forEach(e=>{e.style.maxHeight="none";e.style.overflow="visible";e.classList.remove("busy")});
     c.querySelectorAll(".tw").forEach(e=>e.style.overflow="visible");
     // bảng clip: chỉ giữ 5 clip ăn nhất + 5 clip kém nhất (không tính clip ads, clip mới)
