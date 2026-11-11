@@ -38,7 +38,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .hint{color:var(--faint);font-size:12.5px}
 /* onboarding */
 .setup{padding:22px;margin-bottom:14px}
-.setup h2{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
+.setup .eyebrow{font-size:12px;font-weight:600;color:var(--mute);margin:0 0 4px}.setup h2{margin:0 0 6px;font-size:22px;letter-spacing:-.02em}.setup p.lead b{display:block;margin-top:6px;color:var(--ink);font-weight:600}
+.setup .sfoot .link{padding-left:0;padding-right:0}@media (max-width:600px){.setup .sfoot{flex-direction:column;align-items:flex-start;gap:4px}.setup .sfoot .link{text-align:left}}
 .setup p.lead{margin:0 0 18px;color:var(--mute);font-size:13.5px}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .step{background:var(--soft);border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:flex-start}
@@ -250,14 +251,15 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
   </header>
 
   <section class="card setup" id="setup">
-    <h2>Cùng 10K view: kênh này chạm đỉnh, kênh kia chạm đáy.</h2>
-    <p class="lead">Nên tool không chấm clip theo con số tuyệt đối. Nó đọc hết clip, comment, reply của một kênh, so từng clip với mặt bằng của chính kênh đó, rồi gói lại thành một file để AI đọc giùm bạn. Không cài app. Không đăng ký. Không tốn token ở đây.</p>
+    <div class="eyebrow">Khám kênh TikTok</div>
+    <h2>Mỗi kênh mỗi cảnh.</h2>
+    <p class="lead">Nên tool không đem kênh này so với kênh khác. Nó so từng clip với chính kênh của nó, đọc cả comment lẫn reply, rồi gói lại cho AI đọc giùm. <b>Không cài app. Không đăng ký. Không tốn token ở đây.</b></p>
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome bấm ⌘⇧B. Safari vào Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
       <div class="step"><span class="stepn">3</span><b>Sang tab TikTok, bấm ⚡</b><span>Rồi để đó. Tab này tự đầy dần. Đang xem clip nào cũng được: ⚡ tự quét cả kênh của người đăng. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
     </div>
-    <div class="row" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
+    <div class="row sfoot" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
   </section>
 
   <section class="card scan">
