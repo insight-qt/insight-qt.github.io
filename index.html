@@ -100,6 +100,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .gr .t{height:6px;background:var(--soft);border-radius:99px;overflow:hidden} .gr .t i{display:block;height:100%;background:var(--accent)}
 .gr span:last-child{text-align:right;color:var(--mute)}
 .heat{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.hd2{display:grid;grid-template-columns:30px repeat(6,1fr);gap:4px;font-size:12px;align-items:center}.hd2 .hd{color:var(--mute);text-align:center;font-size:11px;padding-bottom:2px;white-space:nowrap;letter-spacing:-.02em}.heat .lg{vertical-align:middle;line-height:1.6}@media (max-width:420px){.hd2 .hd{font-size:10px}}.hd2 .dl{color:var(--mute)}
+.hd2 .d{display:flex;align-items:center;justify-content:center;height:30px}.hd2 .d i{display:block;border-radius:50%}.hd2 .d i.e{width:5px;height:5px;background:var(--line)}
+.hd2 i.up,.lg i.dot.up{background:var(--win)}.hd2 i.dn,.lg i.dot.dn{background:var(--flop)}.hd2 i.mid,.lg i.dot.mid{background:var(--faint);opacity:.55}.hd2 i.few{opacity:.4}.hd2 .ring{display:flex;padding:2px;border:2px solid var(--win);border-radius:50%}.lg i.dot{border-radius:50%}
 .hm{display:grid;grid-template-columns:34px repeat(6,1fr);gap:4px;font-size:12px}
 .hm .hd{color:var(--mute);text-align:center;font-size:11px;padding-bottom:2px}
 .hm .dl{color:var(--mute);display:flex;align-items:center}
@@ -627,16 +630,16 @@ function heat(h,t){
   if(top&&top.x>=1.2)say.push(`Giờ đăng tốt nhất: <b>${full[top.day]||top.day}, ${top.hour}</b>. Clip đăng lúc này được view gấp <b>${times(top.x)}</b> clip bình thường của kênh (dựa trên ${top.n} clip).`);
   else say.push(`Chưa có khung giờ nào nổi hẳn lên. Giờ đăng không phải lý do chính khiến clip ăn hay flop.`);
   const sub=[bd&&bd.med_x>=1.1&&`Nếu chỉ chọn ngày: <b>${full[bd.key]||bd.key}</b> (gấp ${times(bd.med_x)})`,bh&&bh.med_x>=1.1&&`Nếu chỉ chọn giờ: <b>${bh.key}</b> (gấp ${times(bh.med_x)})`].filter(Boolean).join(". ")+"";
-  // màu theo ×TV: đỏ = kém, vàng = ngang mức thường, xanh = ăn; xám = chưa đăng giờ này
-  const mx=Math.max(1.6,...all.map(c=>c.x||0)), isDark=matchMedia("(prefers-color-scheme: dark)").matches;
-  const tone=x=>x>=1.2?["31,170,110",0.3+0.62*Math.min(1,(x-1.2)/Math.max(0.3,mx-1.2))]:x>=0.8?["232,176,36",0.38]:["232,69,90",0.28+0.5*Math.min(1,(0.8-x)/0.6)];
-  const cell=c=>{if(!c.n)return `<div class="c"></div>`;
-    const x=c.x||0, [rgb,a]=tone(x), white=isDark&&a>0.45;
-    return `<div class="c ${c.n<2?"one":""}" style="background:rgba(${rgb},${a.toFixed(2)});color:${white?"#fff":"var(--ink)"}" title="${short[c.day]||""} ${c.hour||""} · ${c.n} clip · view trung vị ${fmt(c.med)} · ${xm(x)} so với mức thường"><b>${xm(x)}</b><small>${c.n} clip</small></div>`};
+  // lưới chấm: màu = ăn / ngang / kém so với clip thường; chấm to = nhiều clip; viền = khung tốt nhất
+  const isBest=c=>top&&top.x>=1.2&&c.day===top.day&&c.hour===top.hour;
+  const cell=c=>{if(!c.n)return `<div class="d"><i class="e"></i></div>`;
+    const x=c.x||0, sz=Math.round(9+Math.min(c.n,6)*2.6), k=x>=1.2?"up":x<0.8?"dn":"mid";
+    const dot=`<i class="${k}${c.n<3?" few":""}" style="width:${sz}px;height:${sz}px"></i>`;
+    return `<div class="d" title="${c.day} ${c.hour} · ${c.n} clip · view gấp ${xm(x)} clip thường">${isBest(c)?`<span class="ring">${dot}</span>`:dot}</div>`};
   return `<div class="heat">${title}${say.length?`<p class="hsay">${say.join(" ")}</p>`:""}${sub?`<p class="hsub">${sub}</p>`:""}
-    <div class="hm"><div></div>${h.hours.map(x=>`<div class="hd">${x}</div>`).join("")}
+    <div class="hd2"><div></div>${h.hours.map(x=>`<div class="hd">${x}</div>`).join("")}
     ${h.rows.map(r=>`<div class="dl">${short[r.day]||r.day}</div>${r.cells.map((c,k)=>cell({...c,day:r.day,hour:h.hours[k]})).join("")}`).join("")}</div>
-    <div class="hint" style="margin-top:8px"><span class="lg"><i style="background:rgba(31,170,110,.75)"></i>ăn (≥1,2×)</span><span class="lg"><i style="background:rgba(232,176,36,.45)"></i>ngang</span><span class="lg"><i style="background:rgba(232,69,90,.55)"></i>kém (&lt;0,8×)</span><span class="lg"><i></i>chưa đăng</span><br>Số trong ô = view trung vị so với mức thường của kênh. Ô mờ mới có 1 clip, chưa đủ để tin. Dựa trên ${N} clip.</div></div>`;
+    <div class="hint" style="margin-top:10px"><span class="lg"><i class="dot up"></i>ăn (≥1,2×)</span><span class="lg"><i class="dot mid"></i>ngang</span><span class="lg"><i class="dot dn"></i>kém (&lt;0,8×)</span><span class="lg">chấm to = nhiều clip</span><br>Chấm mờ: dưới 3 clip, chưa đủ để tin. Rê chuột vào chấm để xem số. Dựa trên ${N} clip.</div></div>`;
 }
 function renderDetail(){
   const d=detail,m=d.meta||{},s=d.summary||{},t=d.tables||{};
