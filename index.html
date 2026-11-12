@@ -64,7 +64,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .sec h2{font-size:15px;margin:0;font-weight:650}
 .chs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .ch{padding:14px 16px;cursor:pointer;transition:border-color .15s}
-.ch:hover{border-color:var(--faint)} .ch.on{border-color:var(--accent)}
+.ch:hover{border-color:var(--faint);transform:translateY(-1px)} .ch{transition:border-color .15s,transform .15s,background .15s}
+.ch.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--card) 85%);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent),var(--shadow)}
+.ch.on::after{content:"Đang xem";position:absolute;top:14px;right:14px;padding:2px 9px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:650}
+.chs.manage .ch.on::after{display:none}
+.cht{display:flex;align-items:center;gap:11px;padding-right:72px}.cht>div{min-width:0}.cht b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:hsl(var(--hue) 55% 32%);background:hsl(var(--hue) 70% 90%)}
+@media (prefers-color-scheme:dark){:root:not([data-x]) .av{color:hsl(var(--hue) 80% 82%);background:hsl(var(--hue) 35% 24%)}}
+.ch .m{margin-top:12px!important;padding-top:10px;border-top:1px solid var(--line)}
 .ch b{font-weight:650} .ch .h{color:var(--mute);font-size:12.5px}
 .ch .m{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--mute)} .ch .m span{white-space:nowrap} .ch .m b{color:var(--ink);font-weight:600}
 .empty{padding:40px 20px;text-align:center;color:var(--mute)}
@@ -622,7 +629,7 @@ async function loadChannels(){
   CHS=cs.map(c=>c.handle); MSEL.forEach(h=>{if(!CHS.includes(h))MSEL.delete(h)}); renderChBar();
   $("chs").classList.toggle("manage",MANAGE);
   $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
-      <b>${esc(c.meta.nickname||c.handle)}</b><div class="h">@${esc(c.handle)} · ${fmt(c.meta.followers)} follower</div>
+      <div class="cht"><span class="av" style="--hue:${[...c.handle].reduce((a,ch)=>(a*31+ch.charCodeAt(0))%360,7)}">${esc(([...(c.meta.nickname||c.handle).trim()][0]||"?").toUpperCase())}</span><div><b>${esc(c.meta.nickname||c.handle)}</b><div class="h">@${esc(c.handle)} · ${fmt(c.meta.followers)} follower</div></div></div>
       <div class="m"><span><b>${c.n}</b>${ranged()?" clip · "+esc(TTI.rangeLabel(range)):"/"+(c.meta.videos??"?")+" clip"} · đọc comment ${c.s.deep??0}</span><span>TV <b>${fmt(c.s.med_views)}</b></span>
       <span>${c.s.viral?`<b style="color:var(--win)">${c.s.viral}</b> viral · `:""}<b style="color:var(--win)">${c.s.win??0}</b> win · <b style="color:var(--flop)">${c.s.flop??0}</b> flop</span></div>
     </div>`).join(""):`<div class="card empty" style="grid-column:1/-1">Chưa có kênh nào. Làm theo 3 bước ở trên để quét kênh đầu tiên.</div>`;
