@@ -39,7 +39,8 @@
     stats: it.stats, statsV2: it.statsV2, authorStats: it.authorStats, authorStatsV2: it.authorStatsV2,
     diversificationLabels: it.diversificationLabels, suggestedWords: it.suggestedWords, isAd: it.isAd,
     isECVideo: it.isECVideo, anchors: (it.anchors || []).length ? [1] : [], locationCreated: it.locationCreated,
-    poi: it.poi && it.poi.name ? { name: it.poi.name } : undefined, imagePost: it.imagePost ? {} : undefined,
+    poi: it.poi && it.poi.name ? { name: it.poi.name } : undefined, imagePost: it.imagePost ? { title: it.imagePost.title || '' } : undefined,
+    stickersOnItem: (it.stickersOnItem || []).map(function (s) { return { stickerText: s.stickerText }; }).filter(function (s) { return s.stickerText && s.stickerText.length; }),
     textExtra: (it.textExtra || []).map(function (x) { return x.userUniqueId ? { userUniqueId: x.userUniqueId } : { hashtagName: x.hashtagName }; })
   };
   location.href = APP + '#c=' + encodeURIComponent(location.origin + location.pathname + '\n"itemStruct":' + JSON.stringify(slim));

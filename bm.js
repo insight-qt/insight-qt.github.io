@@ -143,10 +143,13 @@
     Object.keys(it).forEach(function (k2) { var v = it[k2]; if (/brand|commerc|paid|partner|sponsor|promot/i.test(k2) && v && !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)) paid.push(k2); });
     var anchors = (it.anchors || []).map(function (a) { try { return JSON.parse(a.logExtra || '{}').anchor_type || ''; } catch (e) { return ''; } }).filter(Boolean);
     var au = (it.author && it.author.uniqueId) || '';
+    // chữ gõ trên màn hình bằng công cụ Text của TikTok (+ tiêu đề post ảnh). Chữ dính sẵn trong video (CapCut) thì không đọc được.
+    var ost = []; if (it.imagePost && it.imagePost.title) ost.push(String(it.imagePost.title));
+    (it.stickersOnItem || []).forEach(function (s2) { (s2.stickerText || []).forEach(function (t) { t = String(t || '').replace(/\s+/g, ' ').trim(); if (t && ost.indexOf(t) < 0) ost.push(t); }); });
     return {
       id: id, url: 'https://www.tiktok.com/@' + au + '/' + (it.imagePost ? 'photo' : 'video') + '/' + id, channel: au, createTime: N(it.createTime),
       views: N(st.playCount), likes: N(st.diggCount), comments_count: N(st.commentCount), shares: N(st.shareCount), saves: N(st.collectCount),
-      duration: N(it.video && it.video.duration), caption: it.desc || '', vtt: vtt || '', comments: comments || [],
+      duration: N(it.video && it.video.duration), caption: it.desc || '', vtt: vtt || '', ost: ost, comments: comments || [],
       hashtags: (it.textExtra || []).map(function (x) { return x.hashtagName; }).filter(Boolean),
       mentions: (it.textExtra || []).map(function (x) { return x.userUniqueId; }).filter(Boolean),
       labels: (it.diversificationLabels || []).filter(function (x) { return typeof x === 'string'; }),
