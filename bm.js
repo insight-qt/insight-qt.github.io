@@ -260,6 +260,23 @@
     if (Object.keys(out).length) send({ type: 'accounts', data: out });
   }
 
+  function feedOwner() {
+    var vh = innerHeight, best = null, bs = 0;
+    document.querySelectorAll('video').forEach(function (v) {
+      var r = v.getBoundingClientRect(), vis = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0)) * Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0));
+      if (vis > bs) { bs = vis; best = v; }
+    });
+    for (var el = best, i = 0; el && i < 15; el = el.parentElement, i++) {
+      if (el.querySelectorAll('video').length > 1) break;   // đã leo ra tới cả danh sách feed → dừng, tránh lấy nhầm kênh clip khác
+      var as = el.querySelectorAll('a[href*="/@"]');
+      for (var j = 0; j < as.length; j++) {
+        var m = (as[j].getAttribute('href') || '').match(/\/@([^/?#]+)/);
+        if (m && !as[j].closest('nav,[data-e2e="nav-profile"],[class*="SideNav"]')) return m[1];
+      }
+    }
+    return null;
+  }
+
   /* ---------- chạy ---------- */
   (async function () {
     say('Đang kết nối với trang TikTok Insight…');
@@ -269,6 +286,8 @@
     var meta = userMeta(), D = document, W = window, frame = null;
     // Đang xem một clip → mở ngầm trang kênh của người đăng trong khung ẩn rồi quét cả kênh
     var owner = (location.pathname.match(/^\/@([^/?#]+)/) || [])[1];
+    // Đang lướt feed (For You, Following, Explore…) → lấy kênh của clip đang chiếu giữa màn hình
+    if (!owner) { owner = feedOwner(); if (owner) isVideo = true; }
     var hookIv = null;
     if (owner) {
       say('Đang mở ngầm kênh @' + decodeURIComponent(owner) + ' để đọc số liệu…');
@@ -288,7 +307,7 @@
       // chờ lưới clip trong khung ẩn hiện ra (Safari dựng chậm)
       if (frame) for (var g = 0; g < 20 && !gridLinks(meta.handle.toLowerCase(), D).length; g++) await sleep(700);
     }
-    if (!isVideo && !meta) { done('Hãy mở trang kênh (tiktok.com/@tenkenh) hoặc một clip rồi bấm ⚡.'); return; }
+    if (!isVideo && !meta) { done('Mở trang kênh, mở một clip, hoặc lướt feed tới clip của kênh muốn khám rồi bấm ⚡.'); return; }
     var urls = [];
     if (isVideo && !frame) {
       // trình duyệt không cho mở trang kênh ẩn → không đoán bừa, chỉ đường cho người dùng
