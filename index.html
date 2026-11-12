@@ -524,10 +524,9 @@ fetch("bm.js",{cache:"no-cache"}).then(r=>r.text()).then(code=>{
   const base=location.origin+location.pathname.replace(/[^/]*$/,""), appurl=base+(TEST_HOST?location.search:""), hostEsc=host.replace(/\\/g,"\\\\");
   const full=code.split("%%APPURL%%").join(appurl).split("%%APP%%").join(location.origin).split("%%HOST%%").join(hostEsc).trim();
   // Nút ⚡ tự cập nhật: mỗi lần bấm tải bm.js mới nhất từ trang này; không tải được thì chạy bản lưu sẵn trong nút.
-  // Mở sẵn tab tool ngay lúc bấm (trước khi tải) để trình duyệt không chặn cửa sổ bật lên.
+  // Không mở tab tool lúc bấm: quét xong bấm Xem kết quả mới mở (để người dùng ở lại TikTok).
     const loader="(function(){var F=function(){"+full+"};"
     +"if(window.__tti&&window.__tti.running)return F();"
-    +"if(!(window.opener&&!window.opener.closed)&&new RegExp("+JSON.stringify(host)+").test(location.hostname))window.__ttiWin=window.open("+JSON.stringify(appurl+"#from-tiktok")+",'tikinsight');"
     +"fetch("+JSON.stringify(base+"bm.js?v=")+"+Date.now()).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(c){"
     +"c=c.split('%%'+'APPURL%%').join("+JSON.stringify(appurl)+").split('%%'+'APP%%').join("+JSON.stringify(location.origin)+").split('%%'+'HOST%%').join("+JSON.stringify(hostEsc)+");(0,eval)(c)}).catch(F)})()";
   $("bm").href="javascript:"+encodeURIComponent(loader);

@@ -23,19 +23,24 @@
   box.querySelector('#tti-x').onclick = function () { S.stop = true; say('Đang dừng…'); };
   S.show = function () { box.style.display = 'block'; };
   function say(t, p) { $m.textContent = t; if (p != null) $b.style.width = Math.round(p * 100) + '%'; }
-  function done(t) { S.running = false; say(t, 1); var b = box.querySelector('#tti-x'); b.textContent = 'Đóng'; b.onclick = function () { box.remove(); }; }
+  function done(t) {
+    if ((!acked || !target || target.closed) && LOG.some(function (x) { return x.type === 'channel' && !x.blocked; })) {
+      box.querySelector('#tti-go').textContent = 'Xem kết quả →';
+      t = t.replace(/ Quay lại tab TikTok Insight để xem\.$/, '').replace(/ đã lưu ở tab TikTok Insight\./, ' vẫn giữ ở đây.') + ' Bấm Xem kết quả để mở trang TikTok Insight.';
+    }
+    S.running = false; say(t, 1); var b = box.querySelector('#tti-x'); b.textContent = 'Đóng'; b.onclick = function () { box.remove(); }; }
 
   /* ---------- kết nối với tab web ----------
      Mọi dữ liệu gửi đi đều được giữ lại trong tab này. Lỡ đóng tab TikTok Insight thì bấm nút trong khung:
      tool mở lại trang, kết nối lại và gửi bù toàn bộ, không mất clip nào. */
   var target = window.opener && !window.opener.closed ? window.opener : null;
   if (!target && window.__ttiWin && !window.__ttiWin.closed) target = window.__ttiWin;   // nút ⚡ đã mở sẵn lúc bấm
-  if (!target) target = window.open(APPURL + '#from-tiktok', 'tikinsight');
-  if (!target) { done('Trình duyệt chặn cửa sổ bật lên. Cho phép popup cho tiktok.com rồi bấm lại ⚡.'); return; }
+  // Không tự mở tab TikTok Insight (để bạn ở lại TikTok). Quét xong bấm "Xem kết quả" mới mở và gửi toàn bộ sang.
   var acked = false, waiters = [], LOG = [], $n = box.querySelector('#tti-n');
   function lost() { return !target || target.closed; }
   function send(m) {
     if (m.type !== 'hello') LOG.push(m);
+    if (!target) return;   // chưa nối với trang web: giữ lại, gửi hết khi bấm Xem kết quả
     if (lost()) { $n.style.display = 'block'; $n.textContent = 'Tab TikTok Insight đã đóng. Dữ liệu vẫn được giữ ở đây, bấm nút phía trên để mở lại và lưu.'; return; }
     try { target.postMessage(m, APP); } catch (e) {}
   }
@@ -47,7 +52,7 @@
     if (!acked) return;
     var copy = LOG.slice();
     for (var i = 0; i < copy.length; i++) { try { target.postMessage(copy[i], APP); } catch (e) {} if (i % 10 === 9) await sleep(50); }
-    $n.style.display = 'block'; $n.style.color = '#4cc38a'; $n.textContent = 'Đã mở lại và gửi bù ' + copy.length + ' mục. Không mất dữ liệu.';
+    $n.style.display = 'block'; $n.style.color = '#4cc38a'; $n.textContent = 'Đã gửi ' + copy.length + ' mục sang trang TikTok Insight.';
   }
   // Luôn mở (hoặc chuyển sang) tab tên 'tikinsight', kết nối lại rồi gửi bù: dù tab cũ còn hay mất, tab mở ra đều đủ dữ liệu.
   box.querySelector('#tti-go').onclick = function () { reconnect(); };
@@ -221,12 +226,19 @@
         if (b) b.click(); say('TikTok báo lỗi danh sách clip, đang thử lại…'); await sleep(3500); continue;
       }
       if (meta.videos && links.length >= meta.videos) break;
+      // TikTok hỏi xác minh (kéo mảnh ghép…) khi cuộn nhanh: trong khung ẩn thì không ai giải được → bỏ khung; trên trang thật thì chờ người giải
+      if ([].some.call(D.querySelectorAll('[id*="captcha" i],[class*="captcha" i]'), function (x) { var r = x.getBoundingClientRect(); return r.width > 100 && r.height > 100; })) {
+        if (D !== document) return { links: links, captcha: true, blocked: false };
+        say('TikTok đang hỏi xác minh. Giải xác minh trên trang này, tool sẽ đọc tiếp.'); stable = 0; await sleep(2000); continue;
+      }
       // có chọn khoảng ngày: lưới xếp mới → cũ, khi 6 clip cuối đều cũ hơn mốc bắt đầu thì thôi cuộn (clip ghim nằm đầu nên không ảnh hưởng)
       if (S.from && links.length >= 6 && links.slice(-6).every(function (l) { var t = idTs(l.url); return t && t < S.from; })) { S.reachedFrom = true; break; }
       stable = links.length === last ? stable + 1 : 0; last = links.length;
-      if ((stable >= 8 && links.length) || stable >= 12) break;
+      var lim = D === document ? 16 : 8;   // trang thật: kiên nhẫn hơn (TikTok tải chậm dần khi kênh nhiều clip)
+      if ((stable >= lim && links.length) || stable >= lim + 4) break;
       var oldest = links.length ? idTs(links[links.length - 1].url) : 0;
       say('Đang đọc danh sách clip: ' + links.length + '/' + (meta.videos || '?') + (S.from && oldest ? ' · đã tới ' + new Date(oldest * 1000).toLocaleDateString('vi-VN') : ''), meta.videos ? links.length / meta.videos * 0.15 : 0);
+      if (stable && stable % 3 === 0) { W.scrollBy(0, -600); await sleep(300); }   // nhích lên rồi xuống lại: đánh thức phần tải thêm
       W.scrollTo(0, D.body.scrollHeight); await sleep(1300);
     }
     return { links: links, blocked: !links.length && !Object.keys(CAP).length && meta.videos > 0 };
@@ -303,7 +315,8 @@
       var fin = function () {
         wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
         if (pr !== 'custom') S.from = pr === 'all' ? 0 : Math.floor(Date.now() / 1000) - Number(pr) * 86400;
-        send({ type: 'opts', preset: pr, mode: md }); res();
+        try { localStorage.setItem('tti_opts', JSON.stringify({ preset: pr === 'custom' ? 'all' : pr, mode: md })); } catch (e) {}
+        S.mode = md; send({ type: 'opts', preset: pr, mode: md }); res();
       };
       var key = function (e) { if (e.key === 'Enter') { e.preventDefault(); fin(); } };
       document.addEventListener('keydown', key, true);
@@ -312,11 +325,19 @@
     });
   }
 
+  /* chưa nối với trang web → tự chọn clip để đọc comment bằng chính bộ phân tích của tool */
+  async function localPlan(meta, links, items) {
+    try {
+      if (!window.TTI) { var code = await fetch(new URL('analysis.js?v=' + Date.now(), APPURL).href).then(function (r) { return r.text(); }); (0, eval)(code); }
+      var T = window.TTI, vids = {}; T.mergeLinks(vids, links, meta.handle.toLowerCase()); T.mergeItems(vids, items);
+      return { urls: T.plan(vids, S.mode || 'fast', { preset: S.preset && S.preset !== 'custom' ? S.preset : 'all' }), mode: S.mode, known: [] };
+    } catch (e) { return { urls: [], mode: S.mode, known: [] }; }
+  }
+
   /* ---------- chạy ---------- */
   (async function () {
-    say('Đang kết nối với trang TikTok Insight…');
-    for (var t = 0; t < 40 && !acked; t++) { send({ type: 'hello' }); await sleep(500); }
-    if (!acked) { done('Không kết nối được trang TikTok Insight. Mở trang web của tool rồi bấm lại ⚡.'); return; }
+    if (target) { say('Đang kết nối với trang TikTok Insight…'); for (var t = 0; t < 10 && !acked; t++) { send({ type: 'hello' }); await sleep(400); } }
+    if (!acked) { target = null; try { var sv = JSON.parse(localStorage.getItem('tti_opts') || '{}'); S.preset = sv.preset || 'all'; S.mode = sv.mode || 'fast'; } catch (e) { S.preset = 'all'; S.mode = 'fast'; } }
     // Chọn khoảng ngày + mức đọc comment ngay trên khung ⚡ (mặc định = lựa chọn đang lưu trên trang web)
     await choose();
     if (S.stop) { done('Đã huỷ.'); return; }
@@ -395,7 +416,8 @@
       var items = Object.keys(CAP).map(function (k) { return toRec(CAP[k]); });
       send({ type: 'channel', meta: meta, links: L.links, items: items });
       say((S.reachedFrom ? 'Đã đọc tới mốc ngày đã chọn. ' : 'Có ' + Math.max(L.links.length, items.length) + ' clip' + (items.length ? ', đủ số liệu ' + items.length + ' clip' : '') + '. ') + 'Đang chọn clip để đọc comment…', 0.15);
-      var plan = await waitFor('plan', 15000);
+      var plan = acked && !lost() ? await waitFor('plan', 15000) : null;
+      if (!plan) plan = await localPlan(meta, L.links, items);
       urls = (plan && plan.urls) || [];
       if (plan && plan.mode === 'fast') O = { pages: 2, repTop: 5, repMax: 10 };   // chế độ Nhanh: 100 comment + 5 chuỗi reply mỗi clip
       if (!urls.length) { await checkAccounts(meta.handle, plan && plan.known); send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
