@@ -192,6 +192,7 @@
     try {
       var u = JSON.parse(D.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__').textContent).__DEFAULT_SCOPE__['webapp.user-detail'];
       var i = u.userInfo || {}, us = i.user || {}, s = i.statsV2 || i.stats || {};
+      if (!us.uniqueId) return null;   // trang lỗi / chưa tải xong: không có tên kênh thì coi như chưa đọc được
       return { handle: us.uniqueId, nickname: us.nickname, bio: us.signature, verified: !!us.verified, private: !!us.privateAccount,
         followers: +s.followerCount || 0, hearts: +(s.heartCount || s.heart) || 0, videos: +s.videoCount || 0, link: (us.bioLink && us.bioLink.link) || '' };
     } catch (e) { return null; }
@@ -288,6 +289,8 @@
     var owner = (location.pathname.match(/^\/@([^/?#]+)/) || [])[1];
     // Đang lướt feed (For You, Following, Explore…) → lấy kênh của clip đang chiếu giữa màn hình
     if (!owner) { owner = feedOwner(); if (owner) isVideo = true; }
+    // TikTok là trang 1 lần tải: lướt từ kênh A sang kênh B thì dữ liệu nhúng trong trang vẫn là kênh A → bỏ, đọc lại đúng kênh
+    if (owner && meta && String(meta.handle || '').toLowerCase() !== decodeURIComponent(owner).toLowerCase()) meta = null;
     var hookIv = null;
     if (owner) {
       say('Đang mở ngầm kênh @' + decodeURIComponent(owner) + ' để đọc số liệu…');
@@ -305,6 +308,7 @@
       if (!meta) meta = await fetchMeta('/@' + owner);
       if (!meta) meta = await fetchMeta(location.pathname);
       if (!meta) meta = { handle: decodeURIComponent(owner), nickname: '', bio: '', followers: 0, hearts: 0, videos: 0, link: '' };
+      if (!meta.handle) meta.handle = decodeURIComponent(owner);
       // chờ lưới clip trong khung ẩn hiện ra (Safari dựng chậm)
       if (frame) for (var g = 0; g < 20 && !gridLinks(meta.handle.toLowerCase(), D).length; g++) await sleep(700);
     }
