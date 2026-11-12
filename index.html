@@ -247,6 +247,14 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
  .det .chips+.acts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
  .det .chips+.acts>.btn{width:100%;min-width:0;padding:0 10px;white-space:nowrap}
  .det .chips+.acts .scanned{grid-column:5/6;padding-left:12px}.det .chips+.acts .del{grid-column:6;justify-self:end;padding-right:12px}}
+.tfil .seg{background:transparent;padding:0;gap:8px}
+.tfil .seg button{--fc:var(--ink);--fs:var(--soft);border:1px solid transparent;background:var(--fs);color:var(--fc);border-radius:99px;padding:0 14px;gap:6px;font-weight:600;height:32px}
+.tfil .seg button .fd{display:none}
+.tfil .seg button .hint{color:inherit!important;opacity:.7;font-weight:600;margin-left:0!important}
+.tfil .seg button:hover{border-color:var(--fc);color:var(--fc)}
+.tfil .seg button.on{background:var(--fc);color:var(--card);border-color:var(--fc);box-shadow:none}.tfil .seg button.on .hint{opacity:.85}
+.fb-VIRAL{--fc:var(--accent)!important;--fs:var(--accent-soft)!important}.fb-WIN{--fc:var(--win)!important;--fs:var(--win-soft)!important}.fb-FLOP{--fc:var(--flop)!important;--fs:var(--flop-soft)!important}
+.fb-BRAND{--fc:var(--warn)!important;--fs:var(--warn-soft)!important}.fb-ADS{--fc:var(--adf)!important;--fs:var(--adf-soft)!important}.fb-MOI{--fc:var(--new)!important;--fs:var(--new-soft)!important}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
@@ -799,7 +807,7 @@ function renderDetail(){
     <div class="hint">Thanh = view trung vị của nhóm so với mức thường (×TV). Clip PAID và NGHI ADS không được tính vào mức thường. Quét lại kênh sau vài ngày để tool bắt được clip đang chạy ads.</div>
     ${rxCard(d)}
     ${digCard(d)}
-    <div class="tfil"><div class="seg">${FL.map(f=>{const n=d.rows.filter(f[2]).length;return n||f[0]==="all"?`<button class="${f[0]===fsel[0]?"on":""}" onclick="labFilter='${f[0]}';renderDetail()">${f[1]} <span class="hint">${n}</span></button>`:""}).join("")}</div></div>
+    <div class="tfil"><div class="seg">${FL.map(f=>{const n=d.rows.filter(f[2]).length;return n||f[0]==="all"?`<button class="fb-${f[0].replace("Ớ","O")} ${f[0]===fsel[0]?"on":""}" onclick="labFilter='${f[0]}';renderDetail()"><i class="fd"></i>${f[1]} <span class="hint">${n}</span></button>`:""}).join("")}</div></div>
     <div class="tw"><table class="ct"><thead><tr><th onclick="sortDet('date')">Ngày${sortBy==="date"?" ↓":""}</th><th>Hook / caption</th><th class="num">View</th><th onclick="sortDet('x')">×TV${sortBy==="x"?" ↓":""}</th><th>Nhãn</th>
       <th class="num hide-s" onclick="sortDet('er')">Tương tác${sortBy==="er"?" ↓":""}</th><th class="num hide-s">Share</th><th class="num hide-s" title="Comment đã lấy / tổng TikTok hiển thị">Cmt lấy / tổng</th></tr></thead>
     <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map(r=>`<tr class="r" onclick="window.open('${esc(r.url)}','_blank')"><td>${dfmt(r.ts)}</td>
