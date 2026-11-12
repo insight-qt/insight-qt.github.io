@@ -136,6 +136,10 @@
     if (sub && sub.Url) { try { vtt = await fetch(sub.Url).then(function (x) { return x.text(); }); } catch (e) {} }
     return toRec(it, comments, vtt);
   }
+  function coverOf(it) {
+    try { if (it.imagePost) { var c = it.imagePost.cover || (it.imagePost.images || [])[0]; return (c && c.imageURL && c.imageURL.urlList || [])[0] || ''; } } catch (e) {}
+    var v = it.video || {}; return v.originCover || v.cover || '';
+  }
   /* bản ghi 1 clip từ dữ liệu TikTok (itemStruct) */
   function toRec(it, comments, vtt) {
     var st = it.statsV2 || it.stats || {}, id = String(it.id);
@@ -149,7 +153,7 @@
     return {
       id: id, url: 'https://www.tiktok.com/@' + au + '/' + (it.imagePost ? 'photo' : 'video') + '/' + id, channel: au, createTime: N(it.createTime),
       views: N(st.playCount), likes: N(st.diggCount), comments_count: N(st.commentCount), shares: N(st.shareCount), saves: N(st.collectCount),
-      duration: N(it.video && it.video.duration), caption: it.desc || '', vtt: vtt || '', ost: ost, comments: comments || [],
+      duration: N(it.video && it.video.duration), caption: it.desc || '', vtt: vtt || '', ost: ost, cover: coverOf(it), comments: comments || [],
       hashtags: (it.textExtra || []).map(function (x) { return x.hashtagName; }).filter(Boolean),
       mentions: (it.textExtra || []).map(function (x) { return x.userUniqueId; }).filter(Boolean),
       labels: (it.diversificationLabels || []).filter(function (x) { return typeof x === 'string'; }),

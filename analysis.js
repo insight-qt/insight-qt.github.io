@@ -59,7 +59,7 @@
       caption: (d.caption || "").trim(), hashtags: d.hashtags || [], music: d.music || "", original_sound: !!d.original_sound,
       is_photo: !!d.is_photo, pinned: !!d.pinned, pinned_api: !!d.pinned, paid_flags: d.paid_flags || [], shop: !!d.shop, mentions: d.mentions || [],
       labels: d.labels || [], kw: d.kw || [], loc: d.loc || "",
-      transcript: cleanVtt(d.vtt), ost: d.ost || [],
+      transcript: cleanVtt(d.vtt), ost: d.ost || [], cover: d.cover || "", ocr: d.ocr,
       comments: cm.map(c => ({ text: c.text.trim(), likes: c.likes || 0, replies: c.replies || 0, by: c.by || "", biz: !!c.biz,
         reply_list: (c.reply_list || []).filter(r => (r.text || "").trim()).map(r => ({ text: r.text, likes: r.likes || 0, by_creator: !!r.by_creator, by: r.by || "", biz: !!r.biz })) })),
       scanned: new Date().toISOString(),
@@ -72,11 +72,12 @@
       const v = videoFrom(rec), old = vids[v.id];
       if (old && !old.lite && !old.thin) {           // đã soi sâu: chỉ cập nhật số liệu, giữ comment + phụ đề
         for (const k of ["views", "likes", "comments_count", "shares", "saves", "paid_flags", "shop", "pinned_api"]) old[k] = v[k];
+        if (v.cover) old.cover = v.cover; if ((v.ost || []).length) old.ost = v.ost;
         for (const k of ["labels", "kw", "mentions"]) if ((v[k] || []).length) old[k] = v[k];   // dữ liệu khi cuộn không có chủ đề → giữ cái đã có
         old.pinned = !!(v.pinned || old.pinned); old.stale = false; snap(old, v.views);
       } else {
         vids[v.id] = snap({ ...v, thin: true, lite: false, hist: (old && old.hist) || [], pinned: !!(v.pinned || (old && old.pinned)),
-          labels: (v.labels || []).length ? v.labels : (old && old.labels) || [], kw: (v.kw || []).length ? v.kw : (old && old.kw) || [] }, v.views);
+          ocr: old ? old.ocr : undefined, labels: (v.labels || []).length ? v.labels : (old && old.labels) || [], kw: (v.kw || []).length ? v.kw : (old && old.kw) || [] }, v.views);
       }
     }
     return vids;
@@ -197,7 +198,7 @@
       }
       const words = (v.transcript || "").split(/\s+/).filter(Boolean);
       v.wpm = v.duration && words.length ? Math.round(words.length / v.duration * 60) : null;
-      v.hook = words.slice(0, 22).join(" ") || (v.ost || []).join(" · ").slice(0, 90) || (v.caption || "").slice(0, 90);
+      v.hook = words.slice(0, 22).join(" ") || (v.ost || []).join(" · ").slice(0, 90) || (v.ocr || "").slice(0, 90) || (v.caption || "").slice(0, 90);
       const tags = (v.hashtags || []).map(h => "#" + h.toLowerCase()).join(" ") + " " + (v.caption || "").toLowerCase();
       // Chỉ tin dấu hiệu công bố rõ ràng. Cờ isAd của TikTok KHÔNG dùng: clip organic viral vẫn có thể mang cờ này
       // (nhiều khả năng chỉ là "cho phép dùng làm quảng cáo"), không có nghĩa là đã chạy ads.
@@ -572,6 +573,7 @@
       if (tr && !hot && trOk) { const w = tr.split(/\s+/); tr = w.slice(0, trOk).join(" ") + (w.length > trOk ? " …(rút gọn)" : ""); }
       o.push(`- Transcript (phụ đề tự động, có thể sai chính tả): ${tr || "(không có phụ đề: clip không có lời nói, hoặc TikTok chưa tạo phụ đề)"}`);
       if ((v.ost || []).length) o.push(`- Chữ trên màn hình (gõ bằng công cụ Text của TikTok): ${v.ost.slice(0, 8).map(t => "«" + t + "»").join(" · ")}`);
+      if (v.ocr) o.push(`- Chữ trên ảnh bìa (tool đọc bằng OCR, có thể sai chữ/dấu): «${v.ocr}»`);
       const P = pickComments(v.comments, hot ? capHot : capOk, h);
       if (P.own.length) o.push(`- Kênh tự comment dưới clip (không tính là khán giả): ${P.own.slice(0, 3).map(t => "«" + t + "»").join(" · ")}`);
       if (P.list.length || P.shorts.length) {
