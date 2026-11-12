@@ -18,7 +18,7 @@
   var box = document.createElement('div'); box.id = 'tti-box';
   box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;width:340px;background:#16151a;color:#f2f1f5;' +
     'font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35)';
-  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>⚡ TikTok Insight</b>' +
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>⚡ TikTok Insight <span style="font-weight:400;color:#9e9ba8;font-size:11px">bản %%BMDATE%%</span></b>' +
     '<button id="tti-x" style="background:#2a2830;color:#f2f1f5;border:0;border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit">Dừng</button></div>' +
     '<div id="tti-m" style="color:#c9c6d2">Đang chuẩn bị…</div>' +
     '<div style="height:5px;background:#2a2830;border-radius:9px;margin-top:10px;overflow:hidden"><i id="tti-b" style="display:block;height:100%;width:0;background:#9a74ff;transition:width .3s"></i></div>' +
