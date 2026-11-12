@@ -2,6 +2,8 @@
   /* TikTok Insight · nút ⚡ — chạy trên tab TikTok, đọc kênh rồi gửi dữ liệu về tab web.
      Địa chỉ trang web và tên miền TikTok được trang web điền vào khi tạo nút. */
   var APP = '%%APP%%', APPURL = '%%APPURL%%', HOST = new RegExp('%%HOST%%');
+  // Bộ phân tích được gói sẵn vào nút ⚡ lúc kéo nút (TikTok chặn tải file từ trang khác nên không tải lúc chạy được)
+  var ANALYSIS_SRC = null; /*%%ANALYSIS%%*/
   if (!HOST.test(location.hostname)) { alert('TikTok Insight: mở trang kênh TikTok (tiktok.com/@tenkenh) rồi bấm lại nút ⚡.'); return; }
   // Đang quét thật → chỉ hiện lại khung cũ. Còn lại (đã xong, đã bấm Dừng, hoặc đang ở bảng chọn) → bỏ khung cũ, mở khung mới: không chồng nhiều lớp
   if (window.__tti && window.__tti.running && !window.__tti.picking && !window.__tti.stop) { window.__tti.show(); return; }
@@ -64,7 +66,7 @@
     try { target.focus(); } catch (e) {}
     if (!target) { $n.style.display = 'block'; $n.textContent = 'Trình duyệt chặn cửa sổ bật lên. Cho phép popup cho tiktok.com rồi bấm lại.'; return; }
     acked = false;
-    for (var t = 0; t < 40 && !acked; t++) { try { target.postMessage({ type: 'hello' }, APP); } catch (e) {} await sleep(500); }
+    for (var t = 0; t < 40 && !acked; t++) { try { target.postMessage({ type: 'hello', ver: '%%VER%%' }, APP); } catch (e) {} await sleep(500); }
     if (!acked) return;
     var copy = LOG.slice();
     for (var i = 0; i < copy.length; i++) { try { target.postMessage(copy[i], APP); } catch (e) {} if (i % 10 === 9) await sleep(50); }
@@ -395,15 +397,21 @@
   /* chưa nối với trang web → tự chọn clip để đọc comment bằng chính bộ phân tích của tool */
   async function localPlan(meta, links, items) {
     try {
-      if (!window.TTI) { var code = await fetch(new URL('analysis.js?v=' + Date.now(), APPURL).href).then(function (r) { return r.text(); }); (0, eval)(code); }
-      var T = window.TTI, vids = {}; T.mergeLinks(vids, links, meta.handle.toLowerCase()); T.mergeItems(vids, items);
+      // nạp bộ phân tích vào biến riêng: trang TikTok có sẵn biến window.TTI của chính nó (đo tốc độ trang) → không dùng chung tên
+      if (!S.T) {
+        var G = {};
+        if (typeof ANALYSIS_SRC === 'function') ANALYSIS_SRC(G);
+        else { var code = await fetch(new URL('analysis.js?v=' + Date.now(), APPURL).href).then(function (r) { return r.text(); }); (new Function('window', code))(G); }
+        S.T = G.TTI;
+      }
+      var T = S.T, vids = {}; T.mergeLinks(vids, links, meta.handle.toLowerCase()); T.mergeItems(vids, items);
       return { urls: T.plan(vids, S.mode || 'fast', { preset: S.preset && S.preset !== 'custom' ? S.preset : 'all' }), mode: S.mode, known: [] };
-    } catch (e) { return { urls: [], mode: S.mode, known: [] }; }
+    } catch (e) { $n.style.display = 'block'; $n.textContent = 'Không chọn được clip để đọc comment (' + (e && e.message || e) + '). Bấm Xem kết quả rồi bấm ⚡ lại từ trang tool.'; return { urls: [], mode: S.mode, known: [] }; }
   }
 
   /* ---------- chạy ---------- */
   (async function () {
-    if (target) { say('Đang kết nối với trang TikTok Insight…'); for (var t = 0; t < 10 && !acked; t++) { send({ type: 'hello' }); await sleep(400); } }
+    if (target) { say('Đang kết nối với trang TikTok Insight…'); for (var t = 0; t < 10 && !acked; t++) { send({ type: 'hello', ver: '%%VER%%' }); await sleep(400); } }
     if (!acked) { target = null; try { var sv = JSON.parse(localStorage.getItem('tti_opts') || '{}'); S.preset = sv.preset || 'all'; S.mode = sv.mode || 'fast'; } catch (e) { S.preset = 'all'; S.mode = 'fast'; } }
     // Chọn khoảng ngày + mức đọc comment ngay trên khung ⚡ (mặc định = lựa chọn đang lưu trên trang web)
     // Không đứng ở kênh / clip / feed có clip → báo ngay, khỏi bắt chọn rồi mới báo lỗi

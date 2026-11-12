@@ -259,6 +259,7 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .tfil .seg button.fb-VIRAL.on .fd{display:inline-block;width:9px;height:9px;border-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0C5.4 3 7 4.6 10 5 7 5.4 5.4 7 5 10 4.6 7 3 5.4 0 5 3 4.6 4.6 3 5 0Z' fill='%233b2b60'/%3E%3C/svg%3E") center/contain no-repeat}
 @media (prefers-reduced-motion:reduce){.tfil .seg button.fb-VIRAL.on{animation:none}}
 .chlab{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;font-size:12.5px}.chlab .lt{border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--soft)}.chlab .lt b{color:var(--accent);font-weight:650}
+.oldbm{border-color:var(--warn)!important;background:var(--warn-soft)!important;padding:14px 18px!important;font-size:13.5px;margin-bottom:14px}.oldbm .link{margin-left:6px}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
@@ -531,13 +532,16 @@ const DB={db:null,
 let chain=Promise.resolve();
 const queue=fn=>(chain=chain.then(fn).catch(e=>console.error(e)));
 
+// TikTok chặn tải file từ trang khác nên nút ⚡ chạy đúng bản lúc kéo lên thanh bookmark → nút cũ thì nhắc kéo lại
+function alertOldBm(){const el=document.createElement("div");el.className="card oldbm";el.innerHTML=`<b>Nút ⚡ của bạn là bản cũ.</b> Tool vừa cập nhật nhưng TikTok không cho nút tự tải bản mới. Xoá nút ⚡ cũ trên thanh bookmark rồi kéo lại nút <b>⚡ TikTok Insight</b> ở bước 1 (cuộn lên đầu trang). <button class="link" onclick="this.parentNode.remove()">Đã hiểu</button>`;const j=$("job");j.parentNode.insertBefore(el,j)}
 /* ---------- nút ⚡ ---------- */
 try{if(!window.name)window.name="tikinsight"}catch(e){}   // để nút ⚡ tìm lại đúng tab này, không mở/tải lại tab mới
 const TEST_HOST=new URLSearchParams(location.search).get("testhost");
-fetch("bm.js",{cache:"no-cache"}).then(r=>r.text()).then(code=>{
+let BMVER="";const hash32=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)};
+Promise.all([fetch("bm.js",{cache:"no-cache"}).then(r=>r.text()),fetch("analysis.js",{cache:"no-cache"}).then(r=>r.text())]).then(([code,an])=>{
   const host=TEST_HOST?"^"+TEST_HOST.replace(/\./g,"\\.")+"$":"(^|\\.)tiktok\\.com$";
   const base=location.origin+location.pathname.replace(/[^/]*$/,""), appurl=base+(TEST_HOST?location.search:""), hostEsc=host.replace(/\\/g,"\\\\");
-  const full=code.split("%%APPURL%%").join(appurl).split("%%APP%%").join(location.origin).split("%%HOST%%").join(hostEsc).trim();
+  const full=code.split("%%APPURL%%").join(appurl).split("%%APP%%").join(location.origin).split("%%HOST%%").join(hostEsc).trim().split("%%VER%%").join(BMVER=hash32(code+an)).split("/*%%ANALYSIS%%*/").join("ANALYSIS_SRC=function(window){"+an+"\n};");
   // Nút ⚡ tự cập nhật: mỗi lần bấm tải bm.js mới nhất từ trang này; không tải được thì chạy bản lưu sẵn trong nút.
   // Không mở tab tool lúc bấm: quét xong bấm Xem kết quả mới mở (để người dùng ở lại TikTok).
     const loader="(function(){var F=function(){"+full+"};"
@@ -576,7 +580,7 @@ function openChannel(){
 window.addEventListener("message",e=>{
   if(!tiktokOrigin(e.origin)||!e.data||!e.data.type)return;
   const m=e.data, reply=x=>{try{e.source.postMessage(x,e.origin)}catch(err){}};
-  if(m.type==="hello"){const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0,preset:range.preset||"all",mode:$("mode").value,custom:range.preset==="custom"?TTI.rangeLabel(range):""});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
+  if(m.type==="hello"){if(BMVER&&m.ver!==BMVER&&!window.__oldBmWarned){window.__oldBmWarned=1;setTimeout(()=>alertOldBm(),800)}const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0,preset:range.preset||"all",mode:$("mode").value,custom:range.preset==="custom"?TTI.rangeLabel(range):""});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
   if(m.type==="channel")return queue(async()=>{
     const meta=m.meta||{},h=(meta.handle||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{},vids:{}};
