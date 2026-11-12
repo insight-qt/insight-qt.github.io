@@ -294,6 +294,8 @@
     var R = [['all', 'Toàn kênh'], ['30', '30 ngày'], ['90', '3 tháng'], ['180', '6 tháng'], ['365', '1 năm']];
     if (S.preset === 'custom') R.push(['custom', S.custom || 'Tự chọn']);
     var M = [['fast', 'Nhanh', '~40 clip'], ['smart', 'Kỹ', '~85 clip'], ['all', 'Toàn bộ', 'rất lâu']];
+    var C = [['100', '100'], ['200', '200'], ['500', '500'], ['all', 'Tất cả']];
+    var cp = S.cpc; if (!cp) { try { cp = JSON.parse(localStorage.getItem('tti_opts') || '{}').cpc; } catch (e) {} } cp = cp || (S.mode === 'fast' ? '100' : '200');
     var pr = S.preset, md = S.mode;
     var chip = 'border:1px solid #3a3842;background:transparent;color:#c9c6d2;border-radius:99px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12px';
     var on = 'border:1px solid #9a74ff;background:#2a2240;color:#e9e3ff;border-radius:99px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12px';
@@ -301,10 +303,14 @@
     function draw() {
       wrap.innerHTML = '<div style="font-size:11.5px;color:#9e9ba8;margin:6px 0 6px">Khoảng ngày</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
         R.map(function (r) { return '<button data-r="' + r[0] + '" style="' + (r[0] === pr ? on : chip) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
-        '<div style="font-size:11.5px;color:#9e9ba8;margin:12px 0 6px">Đọc comment</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
-        M.map(function (m) { return '<button data-m="' + m[0] + '" style="' + (m[0] === md ? on : chip) + '">' + m[1] + ' <span style="opacity:.6">' + m[2] + '</span></button>'; }).join('') + '</div>';
+        '<div style="font-size:11.5px;color:#9e9ba8;margin:12px 0 6px">Số clip đọc comment</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        M.map(function (m) { return '<button data-m="' + m[0] + '" style="' + (m[0] === md ? on : chip) + '">' + m[1] + ' <span style="opacity:.6">' + m[2] + '</span></button>'; }).join('') + '</div>' +
+        '<div style="font-size:11.5px;color:#9e9ba8;margin:12px 0 6px">Comment mỗi clip</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        C.map(function (c) { return '<button data-c="' + c[0] + '" style="' + (c[0] === cp ? on : chip) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+        (cp === '500' || cp === 'all' ? '<div style="font-size:11.5px;color:#e8b54a;margin-top:6px">Đọc nhiều comment thì mỗi clip lâu hơn, TikTok cũng dễ tạm chặn hơn.</div>' : '');
       [].forEach.call(wrap.querySelectorAll('[data-r]'), function (b) { b.onclick = function () { pr = b.getAttribute('data-r'); draw(); }; });
       [].forEach.call(wrap.querySelectorAll('[data-m]'), function (b) { b.onclick = function () { md = b.getAttribute('data-m'); draw(); }; });
+      [].forEach.call(wrap.querySelectorAll('[data-c]'), function (b) { b.onclick = function () { cp = b.getAttribute('data-c'); draw(); }; });
     }
     draw();
     var go = box.querySelector('#tti-go'), old = go.textContent, oldFn = go.onclick;
@@ -315,7 +321,9 @@
       var fin = function () {
         wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
         if (pr !== 'custom') S.from = pr === 'all' ? 0 : Math.floor(Date.now() / 1000) - Number(pr) * 86400;
-        try { localStorage.setItem('tti_opts', JSON.stringify({ preset: pr === 'custom' ? 'all' : pr, mode: md })); } catch (e) {}
+        try { localStorage.setItem('tti_opts', JSON.stringify({ preset: pr === 'custom' ? 'all' : pr, mode: md, cpc: cp })); } catch (e) {}
+        S.cpc = cp;   // comment mỗi clip → số trang (50 comment/trang) + số chuỗi reply đọc kèm
+        O = cp === '100' ? { pages: 2, repTop: 5, repMax: 10 } : cp === '200' ? { pages: 4, repTop: 8, repMax: 10 } : cp === '500' ? { pages: 10, repTop: 20, repMax: 20 } : { pages: 60, repTop: 40, repMax: 30 };
         S.mode = md; send({ type: 'opts', preset: pr, mode: md }); res();
       };
       var key = function (e) { if (e.key === 'Enter') { e.preventDefault(); fin(); } };
@@ -419,7 +427,7 @@
       var plan = acked && !lost() ? await waitFor('plan', 15000) : null;
       if (!plan) plan = await localPlan(meta, L.links, items);
       urls = (plan && plan.urls) || [];
-      if (plan && plan.mode === 'fast') O = { pages: 2, repTop: 5, repMax: 10 };   // chế độ Nhanh: 100 comment + 5 chuỗi reply mỗi clip
+      if (!S.cpc && plan && plan.mode === 'fast') O = { pages: 2, repTop: 5, repMax: 10 };   // chế độ Nhanh: 100 comment + 5 chuỗi reply mỗi clip
       if (!urls.length) { await checkAccounts(meta.handle, plan && plan.known); send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
     }
     /* soi sâu song song, tự giảm tốc khi TikTok từ chối */
