@@ -211,7 +211,7 @@
     if (u && u.userInfo && u.userInfo.user && u.userInfo.user.uniqueId) {
       var i = u.userInfo, us = i.user, s0 = i.statsV2 || i.stats || {};
       return { handle: us.uniqueId, nickname: us.nickname, bio: us.signature, verified: !!us.verified, private: !!us.privateAccount,
-        followers: +s0.followerCount || 0, hearts: +(s0.heartCount || s0.heart) || 0, videos: +s0.videoCount || 0, link: (us.bioLink && us.bioLink.link) || '' };
+        followers: +s0.followerCount || 0, hearts: +(s0.heartCount || s0.heart) || 0, videos: +s0.videoCount || 0, link: (us.bioLink && us.bioLink.link) || '', org: +us.isOrganization === 1, biz: !!(us.commerceUserInfo && us.commerceUserInfo.commerceUser), cat: (us.commerceUserInfo && us.commerceUserInfo.category) || '' };
     }
     var it = sc && sc['webapp.video-detail'] && sc['webapp.video-detail'].itemInfo && sc['webapp.video-detail'].itemInfo.itemStruct;
     if (it && it.author && it.author.uniqueId) {
@@ -235,7 +235,7 @@
       var i = u.userInfo || {}, us = i.user || {}, s = i.statsV2 || i.stats || {};
       if (!us.uniqueId) return null;   // trang lỗi / chưa tải xong: không có tên kênh thì coi như chưa đọc được
       return { handle: us.uniqueId, nickname: us.nickname, bio: us.signature, verified: !!us.verified, private: !!us.privateAccount,
-        followers: +s.followerCount || 0, hearts: +(s.heartCount || s.heart) || 0, videos: +s.videoCount || 0, link: (us.bioLink && us.bioLink.link) || '' };
+        followers: +s.followerCount || 0, hearts: +(s.heartCount || s.heart) || 0, videos: +s.videoCount || 0, link: (us.bioLink && us.bioLink.link) || '', org: +us.isOrganization === 1, biz: !!(us.commerceUserInfo && us.commerceUserInfo.commerceUser), cat: (us.commerceUserInfo && us.commerceUserInfo.category) || '' };
     } catch (e) { return null; }
   }
   function idTs(u) { try { var id = String(u).replace(/\/$/, '').split('/').pop(); var t = Number(BigInt(id) >> BigInt(32)); return t > 14e8 && t < 22e8 ? t : 0; } catch (e) { return 0; } }

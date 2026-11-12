@@ -725,7 +725,8 @@ function digCard(d){
   // so 2 số: +X% xanh / −X% đỏ / ≈ ngang
   const dv=(a,b,lo=.87,hi=1.15)=>a==null||!b?"–":a/b>=hi?`<b class="up">+${Math.round((a/b-1)*100)}%</b>`:a/b<=lo?`<b class="dn">−${Math.round((1-a/b)*100)}%</b>`:`<b class="mid">≈ ngang</b>`;
   const B=D.booking, bkR=B.x!=null?B.x/B.xb:null;
-  const a5=B.x!=null?`<p class="dverdict ${bkR>=1.15?"up":bkR<=0.85?"dn":""}">${bkR>=1.15?`Clip booking vẫn ăn: view gấp ${String(Math.round(bkR*10)/10).replace(".",",")} lần clip thường.`:bkR<=0.85?`Clip booking tụt view: chỉ bằng ${Math.round(bkR*100)}% clip thường.`:"Clip booking giữ được view như clip thường."}</p>
+  const own=d.meta&&d.meta.org;   // TikTok xác nhận là tài khoản tổ chức: kênh của chính brand, không có chuyện nhận booking
+  const a5=own?`<div class="empty2">Đây là kênh của một tổ chức (TikTok xác nhận), không phải creator nhận booking. Clip nhắc thương hiệu khác là hợp tác của chính brand, nên mục này không so.</div>`:B.x!=null?`<p class="dverdict ${bkR>=1.15?"up":bkR<=0.85?"dn":""}">${bkR>=1.15?`Clip booking vẫn ăn: view gấp ${String(Math.round(bkR*10)/10).replace(".",",")} lần clip thường.`:bkR<=0.85?`Clip booking tụt view: chỉ bằng ${Math.round(bkR*100)}% clip thường.`:"Clip booking giữ được view như clip thường."}</p>
     <div class="cmpr"><span></span><small>booking</small><small>thường</small><small>chênh</small>
       <span>View (×TV)</span><span>${xx(B.x)}</span><span>${xx(B.xb)}</span>${dv(B.x,B.xb)}
       <span>Tương tác</span><span>${pct(B.er)}</span><span>${pct(B.erb)}</span>${dv(B.er,B.erb)}
