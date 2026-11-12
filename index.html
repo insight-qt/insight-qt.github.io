@@ -763,7 +763,7 @@ async function loadChannels(){
   $("chs").classList.toggle("manage",MANAGE);
   $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
       <div class="cht"><span class="av" style="--hue:${[...c.handle].reduce((a,ch)=>(a*31+ch.charCodeAt(0))%360,7)}">${esc(([...(c.meta.nickname||c.handle).trim()][0]||"?").toUpperCase())}</span><div><b>${esc(c.meta.nickname||c.handle)}</b><div class="h">@${esc(c.handle)} · ${fmt(c.meta.followers)} follower</div></div></div>
-      <div class="m"><span><b>${c.n}</b>${ranged()?" clip · "+esc(TTI.rangeLabel(range)):"/"+(c.meta.videos??"?")+" clip"} · đọc comment ${c.s.deep??0}</span><span>TV <b>${fmt(c.s.med_views)}</b></span>
+      <div class="m"><span><b>${c.n}</b>${ranged()?" clip · "+esc(TTI.rangeLabel(range)):c.meta.videos!=null&&c.n<c.meta.videos?"/"+c.meta.videos+" clip":" clip"} · đọc comment ${c.s.deep??0}</span><span>TV <b>${fmt(c.s.med_views)}</b></span>
       <span>${c.s.viral?`<b style="color:var(--win)">${c.s.viral}</b> viral · `:""}<b style="color:var(--win)">${c.s.win??0}</b> win · <b style="color:var(--flop)">${c.s.flop??0}</b> flop</span></div>
     </div>`).join(""):`<div class="card empty" style="grid-column:1/-1">Chưa có kênh nào. Làm theo 3 bước ở trên để quét kênh đầu tiên.</div>`;
   if(!cur&&cs.length)loadDetail(CH0&&cs.some(c=>c.handle===CH0.toLowerCase())?CH0.toLowerCase():cs[0].handle);
