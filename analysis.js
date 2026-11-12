@@ -702,6 +702,18 @@
       const A = keys[i], B = keys[j]; if (!ser[A] || !ser[B]) continue;
       if (A.split(" ").length >= 2 && B.startsWith(A)) { ser[A].push(...ser[B]); delete ser[B]; }
     }
+    // gộp tiếp series đổi tên giữa chừng ("10 ngày thoát ế cùng NVHL" / "10 ngày thoát ế của Niềm Vui Hoa Lá"):
+    // chung ≥ 3 từ đầu (hoặc ≥ 60% số từ) và số phần gần như không trùng nhau → cùng một series
+    const ws = k => k.split(" ").filter(Boolean), head = (a, b) => { let n = 0; while (n < a.length && n < b.length && a[n] === b[n]) n++; return n; };
+    for (let merged = true; merged;) {
+      merged = false; const ks = Object.keys(ser);
+      for (let i = 0; i < ks.length && !merged; i++) for (let j = i + 1; j < ks.length && !merged; j++) {
+        const A = ks[i], B = ks[j], wa = ws(A), wb = ws(B), common = wa.filter(w => wb.includes(w)).length;
+        const near = head(wa, wb) >= 3 || (Math.min(wa.length, wb.length) >= 3 && common / Math.max(wa.length, wb.length) >= 0.6);
+        const pa = new Set(ser[A].map(x => x.part)), clash = ser[B].filter(x => pa.has(x.part)).length;
+        if (near && clash <= 1) { ser[A].push(...ser[B]); delete ser[B]; merged = true; }
+      }
+    }
     const series = Object.entries(ser).map(([k, list]) => {
       const byPart = {}; list.forEach(x => { if (!byPart[x.part] || (x.v.views || 0) > (byPart[x.part].v.views || 0)) byPart[x.part] = x; });
       const parts = Object.values(byPart).sort((a, b) => a.part - b.part).map(x => ({ part: x.part, id: x.v.id, url: x.v.url, views: x.v.views, x: x.v.x_med, label: x.v.label, day: day(x.v), isNew: !!x.v.isNew }));
