@@ -818,7 +818,9 @@ function heat(h,t){
   const top=cells[0], say=[];
   if(top&&top.x>=1.2)say.push(`Giờ đăng tốt nhất: <b>${full[top.day]||top.day}, ${top.hour}</b>. Clip đăng lúc này được view gấp <b>${times(top.x)}</b> clip bình thường của kênh (dựa trên ${top.n} clip).`);
   else say.push(`Chưa có khung giờ nào nổi hẳn lên. Giờ đăng không phải lý do chính khiến clip ăn hay flop.`);
-  const sub=[bd&&bd.med_x>=1.1&&`Nếu chỉ chọn ngày: <b>${full[bd.key]||bd.key}</b> (gấp ${times(bd.med_x)})`,bh&&bh.med_x>=1.1&&`Nếu chỉ chọn giờ: <b>${bh.key}</b> (gấp ${times(bh.med_x)})`].filter(Boolean).join(". ")+"";
+  const sp=[bd&&bd.med_x>=1.1&&`ngày ăn nhất là <b>${full[bd.key]||bd.key}</b> (gấp ${times(bd.med_x)})`,bh&&bh.med_x>=1.1&&`giờ ăn nhất là <b>${bh.key}</b> (gấp ${times(bh.med_x)})`].filter(Boolean);
+  // khung tốt nhất là ô ngày × giờ cụ thể; xét riêng ngày / riêng giờ có thể ra kết quả khác → nói rõ để khỏi tưởng mâu thuẫn
+  const sub=sp.length?(top&&top.x>=1.2?"Xét riêng từng yếu tố: ":"Xét riêng: ")+sp.join(", ")+".":"";
   // lưới chấm: màu = ăn / ngang / kém so với clip thường; chấm to = nhiều clip; viền = khung tốt nhất
   const isBest=c=>top&&top.x>=1.2&&c.day===top.day&&c.hour===top.hour;
   const cell=c=>{if(!c.n)return `<div class="d"><i class="e"></i></div>`;

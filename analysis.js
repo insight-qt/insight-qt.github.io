@@ -453,7 +453,7 @@
     if (cells.length >= 3) {
       const best = [...cells].sort((a, b) => b.x - a.x)[0], most = [...cells].sort((a, b) => b.n - a.n)[0];
       if (best.x >= 1.3 && (best.day !== most.day || best.hour !== most.hour) && best.x >= most.x * 1.4) out.push({ k: "time", score: 5 + Math.min(2, best.x / most.x - 1),
-        t: "Dời lịch đăng", d: `Kênh đăng nhiều nhất vào ${most.day} ${most.hour} (${most.n} clip, view ${Vs(most.x)} mức thường). Khung ${best.day} ${best.hour} view ${V(best.x)} (${best.n} clip). Chuyển vài clip sang khung này trong 3–4 tuần rồi khám lại.` });
+        t: `Thử đăng vào ${best.day}, ${best.hour}`, d: `Khung này view ${V(best.x)} (${best.n} clip). Hiện kênh đăng nhiều nhất vào ${most.day} ${most.hour} (${most.n} clip), view ${V(most.x)}. Chuyển vài clip sang ${best.day} ${best.hour} trong 3–4 tuần rồi khám lại.` });
     }
     // 5. Chủ đề
     const top = (t.topic || []).filter(g => g.n >= 3 && g.med_x != null);
