@@ -3,13 +3,17 @@
      Địa chỉ trang web và tên miền TikTok được trang web điền vào khi tạo nút. */
   var APP = '%%APP%%', APPURL = '%%APPURL%%', HOST = new RegExp('%%HOST%%');
   if (!HOST.test(location.hostname)) { alert('TikTok Insight: mở trang kênh TikTok (tiktok.com/@tenkenh) rồi bấm lại nút ⚡.'); return; }
-  if (window.__tti && window.__tti.running) { window.__tti.show(); return; }
+  // Đang quét thật → chỉ hiện lại khung cũ. Còn lại (đã xong, hoặc đang ở bảng chọn) → bỏ khung cũ, mở khung mới: không chồng nhiều lớp
+  if (window.__tti && window.__tti.running && !window.__tti.picking) { window.__tti.show(); return; }
+  if (window.__tti) window.__tti.stop = true;
+  [].forEach.call(document.querySelectorAll('#tti-box'), function (e) { e.remove(); });
+  [].forEach.call(document.body.children, function (e) { if (e.querySelector && e.querySelector(':scope > div > #tti-x')) e.remove(); });
   var S = window.__tti = { running: true, stop: false, labelBudget: 24 };
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var N = function (x) { return x == null || x === '' ? null : Number(x); };
 
   /* ---------- khung tiến độ trên trang TikTok ---------- */
-  var box = document.createElement('div');
+  var box = document.createElement('div'); box.id = 'tti-box';
   box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;width:340px;background:#16151a;color:#f2f1f5;' +
     'font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35)';
   box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>⚡ TikTok Insight</b>' +
@@ -335,11 +339,12 @@
     }
     var go = box.querySelector('#tti-go'), old = go.textContent, oldFn = go.onclick;
     $m.parentNode.insertBefore(wrap, $m.nextSibling);
+    S.picking = true;
     say('Quét trong khoảng nào, đọc comment kỹ cỡ nào?');
     go.textContent = 'Quét kênh này';
     return new Promise(function (res) {
       var fin = function () {
-        wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
+        S.picking = false; wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
         if (pr !== 'custom') S.from = pr === 'all' ? 0 : Math.floor(Date.now() / 1000) - Number(pr) * 86400;
         try { localStorage.setItem('tti_opts', JSON.stringify({ preset: pr === 'custom' ? 'all' : pr, mode: md, cpc: cp })); } catch (e) {}
         S.cpc = cp;   // comment mỗi clip → số trang (50 comment/trang) + số chuỗi reply đọc kèm
@@ -350,7 +355,7 @@
       document.addEventListener('keydown', key, true);
       go.onclick = fin;
       var rbtn = wrap.querySelector('#tti-resume');
-      if (rbtn) rbtn.onclick = function () { wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true); res('resume'); };
+      if (rbtn) rbtn.onclick = function () { S.picking = false; wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true); res('resume'); };
       var iv = setInterval(function () { if (S.stop) { clearInterval(iv); wrap.remove(); go.textContent = old; go.onclick = oldFn; res(); } }, 300);
     });
   }
