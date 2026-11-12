@@ -531,6 +531,7 @@ let chain=Promise.resolve();
 const queue=fn=>(chain=chain.then(fn).catch(e=>console.error(e)));
 
 /* ---------- nút ⚡ ---------- */
+try{if(!window.name)window.name="tikinsight"}catch(e){}   // để nút ⚡ tìm lại đúng tab này, không mở/tải lại tab mới
 const TEST_HOST=new URLSearchParams(location.search).get("testhost");
 fetch("bm.js",{cache:"no-cache"}).then(r=>r.text()).then(code=>{
   const host=TEST_HOST?"^"+TEST_HOST.replace(/\./g,"\\.")+"$":"(^|\\.)tiktok\\.com$";
@@ -732,8 +733,9 @@ async function loadChannels(){
 }
 async function loadDetail(h,quiet){
   const r=await DB.get(h); if(!r){$("det").innerHTML="";return}
+  const sy=window.scrollY;   // cập nhật ngầm khi đang quét: giữ nguyên chỗ đang đọc, không nhảy trang
   cur=h; detailMarks=r.marks||{}; const a=TTI.analyze(TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),r.meta.followers); detail={meta:r.meta,last:r.last,...a};
-  renderDetail(); if(!quiet)document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("on",e.textContent.includes("@"+h+" ")));
+  renderDetail(); if(quiet)window.scrollTo(0,sy); if(!quiet)document.querySelectorAll(".ch").forEach(e=>e.classList.toggle("on",e.textContent.includes("@"+h+" ")));
 }
 // một cột nhãn chung cho mọi khung bên phải → mọi thanh bắt đầu cùng một chỗ
 function sideLw(lists){const ks=lists.flatMap(l=>(l||[]).map(r=>String(r.key)));return Math.round(Math.min(170,Math.max(64,...ks.map(k=>k.length*7.4))))}

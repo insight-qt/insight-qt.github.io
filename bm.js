@@ -45,7 +45,11 @@
     try { target.postMessage(m, APP); } catch (e) {}
   }
   async function reconnect() {
-    target = window.open(APPURL + '#from-tiktok', 'tikinsight');
+    // Tab TikTok Insight đã mở sẵn (do nút này mở trước đó) → chỉ chuyển sang, KHÔNG tải lại trang. Chưa có thì mới mở mới.
+    target = window.open('', 'tikinsight');
+    var blank = false; try { blank = !target || target.location.href === 'about:blank'; } catch (e) { blank = false; }   // đọc được địa chỉ = tab trống mới tạo
+    if (blank) target = window.open(APPURL + '#from-tiktok', 'tikinsight');
+    try { target.focus(); } catch (e) {}
     if (!target) { $n.style.display = 'block'; $n.textContent = 'Trình duyệt chặn cửa sổ bật lên. Cho phép popup cho tiktok.com rồi bấm lại.'; return; }
     acked = false;
     for (var t = 0; t < 40 && !acked; t++) { try { target.postMessage({ type: 'hello' }, APP); } catch (e) {} await sleep(500); }
