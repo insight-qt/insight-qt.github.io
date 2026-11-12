@@ -326,6 +326,16 @@
         hook(window); W.scrollTo && W.scrollTo(0, 0);
         L = await listChannel(meta, document, window); wasFrame = false;
       }
+      // Khung ẩn chỉ tải được trang clip đầu (TikTok không cuộn tiếp khi khung nằm ngoài màn hình)
+      // → đang đứng trên đúng trang kênh thì cuộn tiếp ngay trên trang này để lấy đủ
+      var onCh = !isVideo && location.pathname.replace(/\/$/, '').toLowerCase() === '/@' + meta.handle.toLowerCase();
+      if (wasFrame && onCh && L.links.length && meta.videos && L.links.length < meta.videos * 0.8 && !S.reachedFrom) {
+        say('Đang đọc tiếp danh sách clip ngay trên trang kênh…');
+        hook(window);
+        var L2 = await listChannel(meta, document, window), seenU = {};
+        L.links.concat(L2.links || []).forEach(function (l) { seenU[l.url] = l; });
+        L = { links: Object.keys(seenU).map(function (u) { return seenU[u]; }), blocked: false };
+      }
       if (wasFrame && !L.links.length && !L.blocked && !Object.keys(CAP).length) {
         var go2 = box.querySelector('#tti-go'); go2.textContent = 'Mở trang kênh @' + meta.handle + ' →';
         go2.onclick = function () { location.href = '/@' + meta.handle; };

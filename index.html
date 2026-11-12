@@ -582,7 +582,7 @@ window.addEventListener("message",e=>{
     const inR=Object.keys(TTI.filterRange(rec.vids,range)).length;
     await DB.put(rec);
     job={...(job||{}),handle:h,state:m.blocked?"ask":"run",todo:urls.length,done:0,errors:[],total:(m.links||[]).length,
-      msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}: TikTok chỉ cho tải tới đó, đăng nhập TikTok rồi quét lại để đủ hơn)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")};
+      msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}. Muốn đọc đủ: mở thẳng trang kênh trên TikTok, đã đăng nhập, rồi bấm ⚡ lại)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")};
     reply({type:"plan",urls,mode:pmode,known:Object.keys(rec.accounts||{})});cur=h;renderJob();await loadChannels();loadDetail(h,true);
   });
   if(m.type==="video")return queue(async()=>{
