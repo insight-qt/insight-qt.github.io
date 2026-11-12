@@ -510,7 +510,7 @@
       }
       var items = Object.keys(CAP).map(function (k) { return toRec(CAP[k]); });
       send({ type: 'channel', meta: meta, links: L.links, items: items, full: !S.from && !S.stop && L.links.length >= (meta.videos || 0) * 0.95 });
-      say((S.reachedFrom ? 'Đã đọc tới mốc ngày đã chọn. ' : 'Có ' + Math.max(L.links.length, items.length) + ' clip' + (items.length ? ', đủ số liệu ' + items.length + ' clip' : '') + '. ') + 'Đang chọn clip để đọc comment…', 0.15);
+      say((S.reachedFrom ? 'Đã đọc tới mốc ngày đã chọn. ' : 'Có ' + Math.max(L.links.length, items.length) + ' clip' + (items.length ? ', đủ số liệu ' + items.length + ' clip' : '') + '. ') + (S.mode === 'all' ? 'Đang lập danh sách clip chưa đọc comment (mức Toàn bộ: đọc hết, clip đã đọc rồi thì bỏ qua)…' : 'Đang chọn ' + (S.mode === 'smart' ? '~85' : '~40') + ' clip tiêu biểu để đọc comment (mức ' + (S.mode === 'smart' ? 'Kỹ' : 'Nhanh') + ')…'), 0.15);
       plan = acked && !lost() ? await waitFor('plan', 15000) : null;
       if (!plan) plan = await localPlan(meta, L.links, items);
       urls = (plan && plan.urls) || [];
