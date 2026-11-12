@@ -985,7 +985,7 @@ async function openClip(){
   $("sharebar").innerHTML=`Khám nhanh 1 clip. Muốn biết clip này thắng hay thua so với chính kênh: quét cả kênh trên máy tính.`;
   const chip=(k,val,extra="")=>`<div class="chip"><small>${k}</small><span class="cv"><b>${val}</b>${extra}</span></div>`;
   $("det").innerHTML=`<section class="card det">
-    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${(X.labels&&X.labels.length)||X.hearts||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
+    <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${X.photo?" · post ảnh":v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${(X.labels&&X.labels.length)||X.hearts||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
     <div class="chips">
       ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
       ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}

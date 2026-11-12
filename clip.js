@@ -4,20 +4,32 @@
   var APP = 'https://insight-qt.github.io/';
   var vid = (location.pathname.match(/\/(?:video|photo)\/(\d+)/) || [])[1];
   if (!/tiktok\.com$/.test(location.hostname) || !vid) { alert('Mở một clip TikTok trên trình duyệt (link có /video/) rồi bấm lại.'); return; }
-  function itemFrom(txt) {
-    try { var it = JSON.parse(txt).__DEFAULT_SCOPE__['webapp.video-detail'].itemInfo.itemStruct; return it && it.id ? it : null; } catch (e) { return null; }
+  // tìm khối dữ liệu của đúng clip/post ảnh (id + stats) ở bất kỳ chỗ nào trong JSON của trang
+  function find(o, d) {
+    if (!o || typeof o !== 'object' || d > 12) return null;
+    if (String(o.id) === vid && (o.stats || o.statsV2) && o.author) return o;
+    for (var k in o) { var r = find(o[k], d + 1); if (r) return r; }
+    return null;
   }
-  var el = document.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__');
-  var it = el ? itemFrom(el.textContent) : null;
-  // TikTok là trang 1 lần tải: lướt sang clip khác thì dữ liệu trên trang vẫn là clip cũ → tải lại đúng clip
-  if (!it || String(it.id) !== vid) {
-    try {
-      var html = await fetch(location.origin + location.pathname, { credentials: 'include' }).then(function (r) { return r.text(); });
-      var m = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/);
-      it = m ? itemFrom(m[1]) : null;
-    } catch (e) { it = null; }
+  function fromHtml(html) {
+    var re = /<script[^>]*type="application\/json"[^>]*>([\s\S]*?)<\/script>/g, m;
+    while ((m = re.exec(html))) { try { var r = find(JSON.parse(m[1]), 0); if (r) return r; } catch (e) {} }
+    return null;
   }
-  if (!it) { alert('TikTok chưa trả số liệu clip này. Tải lại trang rồi bấm lại.'); return; }
+  function fromDoc() {
+    var ss = document.querySelectorAll('script[type="application/json"]');
+    for (var i = 0; i < ss.length; i++) { try { var r = find(JSON.parse(ss[i].textContent), 0); if (r) return r; } catch (e) {} }
+    return null;
+  }
+  async function get(u) { try { return await fetch(u, { credentials: 'include' }).then(function (r) { return r.text(); }); } catch (e) { return ''; } }
+  var user = (location.pathname.match(/\/@([^/]+)/) || [])[1] || '';
+  var it = fromDoc();
+  // TikTok là trang 1 lần tải: lướt sang clip khác thì dữ liệu trên trang vẫn là clip cũ → tải lại đúng clip.
+  // Post ảnh: trang /photo/ thường không kèm số liệu → thử trang /video/ cùng id, rồi API chi tiết.
+  if (!it) it = fromHtml(await get(location.origin + location.pathname));
+  if (!it && user) it = fromHtml(await get(location.origin + '/@' + user + '/video/' + vid));
+  if (!it) { try { var j = JSON.parse(await get(location.origin + '/api/item/detail/?aid=1988&itemId=' + vid)); it = j && j.itemInfo && j.itemInfo.itemStruct; if (it && String(it.id) !== vid) it = null; } catch (e) { it = null; } }
+  if (!it) { alert('TikTok chưa trả số liệu post này. Tải lại trang rồi bấm lại. Post ảnh: thử mở link dạng /video/ thay cho /photo/.'); return; }
   // chỉ giữ phần cần dùng, bỏ khối video nặng → link ngắn
   var au = it.author || {}, mu = it.music || {};
   var slim = {
