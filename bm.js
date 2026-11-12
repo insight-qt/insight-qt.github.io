@@ -38,8 +38,16 @@
   // Không tự mở tab TikTok Insight (để bạn ở lại TikTok). Quét xong bấm "Xem kết quả" mới mở và gửi toàn bộ sang.
   var acked = false, waiters = [], LOG = [], $n = box.querySelector('#tti-n');
   function lost() { return !target || target.closed; }
+  /* ---------- lưu tiến độ trên máy (IndexedDB của tiktok.com): trang lỡ tải lại vẫn bấm ⚡ chạy tiếp được ---------- */
+  var SDB = null, SV = null, svT = 0;
+  function sdb() { return SDB || (SDB = new Promise(function (res) { try { var q = indexedDB.open('tti-scan', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); }; q.onsuccess = function () { res(q.result); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } })); }
+  async function sget() { var d = await sdb(); if (!d) return null; return new Promise(function (res) { try { var r = d.transaction('kv').objectStore('kv').get('cur'); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  async function sput(v) { var d = await sdb(); if (!d) return; try { d.transaction('kv', 'readwrite').objectStore('kv').put(v, 'cur'); } catch (e) {} }
+  function save(force) { if (!SV || (!force && Date.now() - svT < 3000)) return; svT = Date.now(); SV.at = Date.now(); SV.LOG = LOG; sput(SV); }
+  // đang quét mà trang định tải lại / rời đi → trình duyệt hỏi lại trước (và lưu tiến độ ngay)
+  window.addEventListener('beforeunload', function (e) { if (S.running && !S.stop && SV) { save(true); e.preventDefault(); e.returnValue = ''; } });
   function send(m) {
-    if (m.type !== 'hello') LOG.push(m);
+    if (m.type !== 'hello') { LOG.push(m); save(); }
     if (!target) return;   // chưa nối với trang web: giữ lại, gửi hết khi bấm Xem kết quả
     if (lost()) { $n.style.display = 'block'; $n.textContent = 'Tab TikTok Insight đã đóng. Dữ liệu vẫn được giữ ở đây, bấm nút phía trên để mở lại và lưu.'; return; }
     try { target.postMessage(m, APP); } catch (e) {}
@@ -317,6 +325,14 @@
       [].forEach.call(wrap.querySelectorAll('[data-c]'), function (b) { b.onclick = function () { cp = b.getAttribute('data-c'); draw(); }; });
     }
     draw();
+    if (S.resumable) {
+      var rv = S.resumable, rb = document.createElement('div');
+      rb.style.cssText = 'margin:2px 0 4px;padding:10px 12px;border-radius:10px;background:#2a2240;border:1px solid #5d48a0';
+      rb.innerHTML = '<div style="font-size:12.5px;color:#e9e3ff">Lần quét <b>@' + rv.handle + '</b> còn dở: đã đọc comment ' + rv.done.length + '/' + rv.urls.length + ' clip.</div>' +
+        '<button id="tti-resume" style="margin-top:8px;width:100%;background:#4cc38a;color:#0d1f16;border:0;border-radius:9px;padding:7px 10px;cursor:pointer;font:inherit;font-weight:650">Tiếp tục chỗ đang dở →</button>' +
+        '<div style="font-size:11px;color:#9e9ba8;margin-top:6px">Hoặc chọn bên dưới để quét mới từ đầu.</div>';
+      wrap.insertBefore(rb, wrap.firstChild);
+    }
     var go = box.querySelector('#tti-go'), old = go.textContent, oldFn = go.onclick;
     $m.parentNode.insertBefore(wrap, $m.nextSibling);
     say('Quét trong khoảng nào, đọc comment kỹ cỡ nào?');
@@ -333,6 +349,8 @@
       var key = function (e) { if (e.key === 'Enter') { e.preventDefault(); fin(); } };
       document.addEventListener('keydown', key, true);
       go.onclick = fin;
+      var rbtn = wrap.querySelector('#tti-resume');
+      if (rbtn) rbtn.onclick = function () { wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true); res('resume'); };
       var iv = setInterval(function () { if (S.stop) { clearInterval(iv); wrap.remove(); go.textContent = old; go.onclick = oldFn; res(); } }, 300);
     });
   }
@@ -351,10 +369,21 @@
     if (target) { say('Đang kết nối với trang TikTok Insight…'); for (var t = 0; t < 10 && !acked; t++) { send({ type: 'hello' }); await sleep(400); } }
     if (!acked) { target = null; try { var sv = JSON.parse(localStorage.getItem('tti_opts') || '{}'); S.preset = sv.preset || 'all'; S.mode = sv.mode || 'fast'; } catch (e) { S.preset = 'all'; S.mode = 'fast'; } }
     // Chọn khoảng ngày + mức đọc comment ngay trên khung ⚡ (mặc định = lựa chọn đang lưu trên trang web)
-    await choose();
+    var oldScan = await sget();
+    if (oldScan && !oldScan.finished && oldScan.urls && oldScan.done && oldScan.urls.length > oldScan.done.length && Date.now() - (oldScan.at || 0) < 48 * 3600e3) S.resumable = oldScan;
+    var pickRes = await choose();
     if (S.stop) { done('Đã huỷ.'); return; }
+    var resumed = pickRes === 'resume', meta, urls = [], plan = null;
+    if (resumed) {
+      SV = S.resumable; LOG = SV.LOG || []; meta = SV.meta; S.from = SV.from || 0; S.cpc = SV.cp; S.mode = SV.mode;
+      O = SV.cp === '100' ? { pages: 2, repTop: 5, repMax: 10 } : SV.cp === '500' ? { pages: 10, repTop: 20, repMax: 20 } : SV.cp === 'all' ? { pages: 60, repTop: 40, repMax: 30 } : { pages: 4, repTop: 8, repMax: 10 };
+      urls = SV.urls.filter(function (u) { return SV.done.indexOf(u) < 0; }); plan = { known: SV.known || [] };
+      if (acked && !lost()) for (var li = 0; li < LOG.length; li++) { try { target.postMessage(LOG[li], APP); } catch (e) {} if (li % 10 === 9) await sleep(50); }
+      say('Đang tiếp tục @' + SV.handle + ': còn ' + urls.length + ' clip…', 0.15);
+    }
+    if (!resumed) {
     var isVideo = /\/(video|photo)\/\d+/.test(location.pathname);
-    var meta = userMeta(), D = document, W = window, frame = null;
+    meta = userMeta(); var D = document, W = window, frame = null;
     // Đang xem một clip → mở ngầm trang kênh của người đăng trong khung ẩn rồi quét cả kênh
     var owner = (location.pathname.match(/^\/@([^/?#]+)/) || [])[1];
     // Đang lướt feed (For You, Following, Explore…) → lấy kênh của clip đang chiếu giữa màn hình
@@ -428,12 +457,14 @@
       var items = Object.keys(CAP).map(function (k) { return toRec(CAP[k]); });
       send({ type: 'channel', meta: meta, links: L.links, items: items, full: !S.from && !S.stop && L.links.length >= (meta.videos || 0) * 0.95 });
       say((S.reachedFrom ? 'Đã đọc tới mốc ngày đã chọn. ' : 'Có ' + Math.max(L.links.length, items.length) + ' clip' + (items.length ? ', đủ số liệu ' + items.length + ' clip' : '') + '. ') + 'Đang chọn clip để đọc comment…', 0.15);
-      var plan = acked && !lost() ? await waitFor('plan', 15000) : null;
+      plan = acked && !lost() ? await waitFor('plan', 15000) : null;
       if (!plan) plan = await localPlan(meta, L.links, items);
       urls = (plan && plan.urls) || [];
+      SV = { handle: meta.handle, meta: meta, urls: urls.slice(), done: [], known: (plan && plan.known) || [], cp: S.cpc, mode: S.mode, from: S.from, finished: !urls.length }; save(true);
       if (!S.cpc && plan && plan.mode === 'fast') O = { pages: 2, repTop: 5, repMax: 10 };   // chế độ Nhanh: 100 comment + 5 chuỗi reply mỗi clip
       if (!urls.length) { await checkAccounts(meta.handle, plan && plan.known); send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
     }
+    }   // hết phần quét mới (bỏ qua khi tiếp tục lần dở)
     /* soi sâu song song, tự giảm tốc khi TikTok từ chối */
     var i = 0, n = 0, K = 3, pause = 500, blocks = 0, slow = false, t0 = Date.now();
     function eta() { if (n < 2) return 0; return Math.round((Date.now() - t0) / n * (urls.length - n) / 1000); }
@@ -449,7 +480,7 @@
           slow = true; pause = 4000; say('TikTok từ chối vì đọc nhanh quá, giảm tốc và thử lại…');
           await sleep(15000); continue;
         }
-        n++;
+        n++; if (SV) SV.done.push(u);
         if (!r.error) noteMentions(r.mentions);
         send(r.error ? { type: 'error', url: u, error: r.error, of: urls.length, eta: eta() } : { type: 'video', data: r, of: urls.length, eta: eta() });
         say('Đang đọc comment ' + n + '/' + urls.length + ' clip' + etaTxt(eta()), 0.15 + 0.85 * n / urls.length);
@@ -459,7 +490,8 @@
     var ws = []; for (var w = 0; w < K; w++) ws.push(worker(w)); await Promise.all(ws);
     if (!S.blockedOut) await checkAccounts(meta && meta.handle, plan && plan.known);
     send({ type: 'finished', stopped: S.stop, blocked: !!S.blockedOut });
+    if (SV) { SV.finished = !S.stop && !S.blockedOut; save(true); }
     done(S.blockedOut ? 'TikTok tạm từ chối (đọc nhiều quá). Dữ liệu đã lấy vẫn dùng được, thử lại sau ít phút.'
-      : S.stop ? 'Đã dừng. Dữ liệu đã lấy được đã lưu ở tab TikTok Insight.' : 'Xong ' + n + ' clip. Quay lại tab TikTok Insight để xem.');
+      : S.stop ? 'Đã dừng. Dữ liệu đã lấy được đã lưu ở tab TikTok Insight.' : 'Xong ' + (resumed && SV ? SV.done.length : n) + ' clip. Quay lại tab TikTok Insight để xem.');
   })();
 })();
