@@ -3,8 +3,8 @@
      Địa chỉ trang web và tên miền TikTok được trang web điền vào khi tạo nút. */
   var APP = '%%APP%%', APPURL = '%%APPURL%%', HOST = new RegExp('%%HOST%%');
   if (!HOST.test(location.hostname)) { alert('TikTok Insight: mở trang kênh TikTok (tiktok.com/@tenkenh) rồi bấm lại nút ⚡.'); return; }
-  // Đang quét thật → chỉ hiện lại khung cũ. Còn lại (đã xong, hoặc đang ở bảng chọn) → bỏ khung cũ, mở khung mới: không chồng nhiều lớp
-  if (window.__tti && window.__tti.running && !window.__tti.picking) { window.__tti.show(); return; }
+  // Đang quét thật → chỉ hiện lại khung cũ. Còn lại (đã xong, đã bấm Dừng, hoặc đang ở bảng chọn) → bỏ khung cũ, mở khung mới: không chồng nhiều lớp
+  if (window.__tti && window.__tti.running && !window.__tti.picking && !window.__tti.stop) { window.__tti.show(); return; }
   if (window.__tti) window.__tti.stop = true;
   [].forEach.call(document.querySelectorAll('#tti-box'), function (e) { e.remove(); });
   [].forEach.call(document.body.children, function (e) { if (e.querySelector && e.querySelector(':scope > div > #tti-x')) e.remove(); });
