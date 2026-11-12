@@ -9,13 +9,13 @@
 :root{
   --bg:#f6f5f2; --card:#fff; --ink:#16151a; --mute:#6f6c78; --faint:#a9a6b2; --line:#e7e5ea; --soft:#f1f0f4;
   --accent:#6b3fd4; --accent-ink:#fff; --accent-soft:#efe9fc;
-  --win:#1f8a5b; --win-soft:#e3f4ec; --shop:#0e7c82; --shop-soft:#dcf2f3; --adf:#c25a12; --adf-soft:#fde9da; --flop:#c2413b; --flop-soft:#fbe7e5; --warn:#b07a10; --warn-soft:#fbf1dc; --new:#1d6fd6; --new-soft:#e3eefc; --er:#c0367a; --er-soft:#fbe6f0;
+  --win:#1f8a5b; --win-soft:#e3f4ec; --shop:#0e7c82; --shop-soft:#dcf2f3; --adf:#c25a12; --adf-soft:#fde9da; --flop:#c2413b; --flop-soft:#fbe7e5; --warn:#b07a10; --warn-soft:#fbf1dc; --new:#1d6fd6; --new-soft:#e3eefc; --er:#c0367a; --er-soft:#fbe6f0; --er-l:#e6a3c3; --shop-l:#8ccdd0; --warn-l:#dcc27e; --accent-l:#b8a1ec;
   --shadow:0 1px 2px rgba(20,18,30,.04),0 8px 24px rgba(20,18,30,.05); --r:14px;
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#111014; --card:#1a191e; --ink:#f2f1f5; --mute:#9e9ba8; --faint:#6a6774; --line:#2a2830; --soft:#222027;
   --accent:#9a74ff; --accent-ink:#120f1a; --accent-soft:#2a2240;
-  --win:#4cc38a; --win-soft:#173326; --shop:#5ccfd5; --shop-soft:#12302f; --adf:#f2a160; --adf-soft:#3a2414; --flop:#ff7b72; --flop-soft:#3a1d1b; --warn:#e8b54a; --warn-soft:#362a12; --new:#6aa8ff; --new-soft:#15263d; --er:#ff7eb6; --er-soft:#3a1828; --shadow:none;
+  --win:#4cc38a; --win-soft:#173326; --shop:#5ccfd5; --shop-soft:#12302f; --adf:#f2a160; --adf-soft:#3a2414; --flop:#ff7b72; --flop-soft:#3a1d1b; --warn:#e8b54a; --warn-soft:#362a12; --new:#6aa8ff; --new-soft:#15263d; --er:#ff7eb6; --er-soft:#3a1828; --er-l:#84405f; --shop-l:#2f7173; --warn-l:#80662a; --accent-l:#5d48a0; --shadow:none;
 }}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}
@@ -65,7 +65,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .chs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .ch{padding:14px 16px;cursor:pointer;transition:border-color .15s}
 .ch:hover{border-color:var(--faint);transform:translateY(-1px)} .ch{transition:border-color .15s,transform .15s,background .15s}
-.ch.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--card) 85%);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent),var(--shadow)}
+.ch.on{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--card) 85%);box-shadow:0 0 0 3px var(--accent-soft),var(--shadow)}
 .ch.on::after{content:"Đang xem";position:absolute;top:14px;right:14px;padding:2px 9px;border-radius:99px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:650}
 .chs.manage .ch.on::after{display:none}
 .cht{display:flex;align-items:center;gap:11px;padding-right:72px}.cht>div{min-width:0}.cht b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -124,7 +124,8 @@ td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums} th
 td.hk{color:var(--mute);max-width:360px}
 .pill{display:inline-block;vertical-align:middle;line-height:1.5;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.02em}
 .pill.WIN{background:var(--win-soft);color:var(--win)} .pill.FLOP{background:var(--flop-soft);color:var(--flop)}
-.pill.ỔN{background:var(--soft);color:var(--mute)} .pill.er{background:var(--er-soft);color:var(--er);margin-left:4px}
+.pill.ỔN{background:var(--soft);color:var(--mute)} .pill.er,.pill.shop,.pill.brand,.pill.collab,.pill.pin,.pill.adf{font-weight:600}
+.pill.er{background:transparent;color:var(--er);border:1px solid var(--er-l);margin-left:4px}
 .pill.VIRAL{position:relative;overflow:hidden;color:#3b2b60;text-shadow:0 1px 0 rgba(255,255,255,.6);
   background:linear-gradient(110deg,#ffc2d4,#ffdcb0,#fff3a8,#c9f7c4,#ade9ff,#cfbcff,#ffc2d4);background-size:300% 100%;animation:holo 6s linear infinite;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.65),0 1px 8px rgba(190,170,255,.55),0 0 16px rgba(255,190,215,.4)}
@@ -134,8 +135,8 @@ td.hk{color:var(--mute);max-width:360px}
 @keyframes shine{0%,60%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
 @media (prefers-reduced-motion:reduce){.pill.VIRAL,.pill.VIRAL::after{animation:none}} .pill.MỚI{background:var(--new-soft);color:var(--new)}
 .pill.PAID{background:var(--adf-soft);color:var(--adf)} .pill.NGHI{background:transparent;color:var(--adf);border:1px dashed var(--adf)}
-.pill.shop{background:var(--shop-soft);color:var(--shop);margin-left:4px} .pill.brand{background:var(--warn-soft);color:var(--warn);margin-left:4px}
-.pill.pin{background:var(--soft);color:var(--mute);margin-left:4px;border:1px solid var(--line)} .pill.collab{background:var(--accent-soft);color:var(--accent);margin-left:4px} .pill.adf{background:transparent;color:var(--mute);margin-left:4px;border:1px solid var(--line)}
+.pill.shop{background:transparent;color:var(--shop);border:1px solid var(--shop-l);margin-left:4px} .pill.brand{background:transparent;color:var(--warn);border:1px solid var(--warn-l);margin-left:4px}
+.pill.pin{background:transparent;color:var(--mute);margin-left:4px;border:1px solid var(--faint)} .pill.collab{background:transparent;color:var(--accent);border:1px solid var(--accent-l);margin-left:4px} .pill.adf{background:transparent;color:var(--mute);margin-left:4px;border:1px dashed var(--faint)}
 .xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--accent);opacity:.75}
 .guide{max-height:86vh;overflow:auto}
 .ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
