@@ -321,7 +321,7 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome, Edge: bấm ⌘⇧B (Mac) hoặc Ctrl+Shift+B (Windows). Safari: Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Mở TikTok, tới kênh hoặc clip muốn khám</b><span>Đang lướt feed cũng được. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip. <a class="link" href="https://www.tiktok.com" target="_blank">Mở TikTok →</a></span></div>
-      <div class="step"><span class="stepn">3</span><b>Bấm ⚡ rồi để đó</b><span>Tool tự quét cả kênh của người đăng, tab này tự đầy dần. Khoảng ngày và mức đọc comment chỉnh ở thanh ngay dưới. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
+      <div class="step"><span class="stepn">3</span><b>Bấm ⚡, chọn khoảng ngày, bấm Quét</b><span>Tool tự quét cả kênh của người đăng, tab này tự đầy dần. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
     </div>
     <div class="row sfoot" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
   </section>
@@ -562,7 +562,7 @@ function openChannel(){
 window.addEventListener("message",e=>{
   if(!tiktokOrigin(e.origin)||!e.data||!e.data.type)return;
   const m=e.data, reply=x=>{try{e.source.postMessage(x,e.origin)}catch(err){}};
-  if(m.type==="hello"){const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
+  if(m.type==="hello"){const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0,preset:range.preset||"all",mode:$("mode").value,custom:range.preset==="custom"?TTI.rangeLabel(range):""});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
   if(m.type==="channel")return queue(async()=>{
     const meta=m.meta||{},h=(meta.handle||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{},vids:{}};
@@ -582,6 +582,7 @@ window.addEventListener("message",e=>{
       msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}. Muốn đọc đủ: mở thẳng trang kênh trên TikTok, đã đăng nhập, rồi bấm ⚡ lại)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")};
     reply({type:"plan",urls,mode:pmode,known:Object.keys(rec.accounts||{})});cur=h;renderJob();await loadChannels();loadDetail(h,true);
   });
+  if(m.type==="opts"){if(m.preset&&m.preset!==range.preset){range={...range,preset:m.preset};ls.set("tti_range",JSON.stringify(range));renderRange()}if(m.mode&&[...$("mode").options].some(o=>o.value===m.mode)){$("mode").value=m.mode;ls.set("tti_mode",m.mode)}if(job)job.mode=m.mode||job.mode;return}
   if(m.type==="video")return queue(async()=>{
     const v=TTI.videoFrom(m.data),h=(v.channel||(job&&job.handle)||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{handle:h},vids:{}};

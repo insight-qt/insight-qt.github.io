@@ -10,7 +10,7 @@
 
   /* ---------- khung tiến độ trên trang TikTok ---------- */
   var box = document.createElement('div');
-  box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;width:300px;background:#16151a;color:#f2f1f5;' +
+  box.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;width:340px;background:#16151a;color:#f2f1f5;' +
     'font:13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35)';
   box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>⚡ TikTok Insight</b>' +
     '<button id="tti-x" style="background:#2a2830;color:#f2f1f5;border:0;border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit">Dừng</button></div>' +
@@ -53,7 +53,7 @@
   box.querySelector('#tti-go').onclick = function () { reconnect(); };
   window.addEventListener('message', function (e) {
     if (e.origin !== APP || !e.data) return;
-    if (e.data.type === 'ack') { acked = true; S.from = +e.data.from || 0; }
+    if (e.data.type === 'ack') { acked = true; S.from = +e.data.from || 0; S.preset = e.data.preset || 'all'; S.mode = e.data.mode || 'fast'; S.custom = e.data.custom || ''; }
     waiters.slice().forEach(function (w) { if (w.type === e.data.type) { waiters.splice(waiters.indexOf(w), 1); w.res(e.data); } });
   });
   function waitFor(type, ms) { return new Promise(function (res) { waiters.push({ type: type, res: res }); setTimeout(function () { res(null); }, ms); }); }
@@ -278,11 +278,48 @@
     return null;
   }
 
+  function choose() {
+    var R = [['all', 'Toàn kênh'], ['30', '30 ngày'], ['90', '3 tháng'], ['180', '6 tháng'], ['365', '1 năm']];
+    if (S.preset === 'custom') R.push(['custom', S.custom || 'Tự chọn']);
+    var M = [['fast', 'Nhanh', '~40 clip'], ['smart', 'Kỹ', '~85 clip'], ['all', 'Toàn bộ', 'rất lâu']];
+    var pr = S.preset, md = S.mode;
+    var chip = 'border:1px solid #3a3842;background:transparent;color:#c9c6d2;border-radius:99px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12px';
+    var on = 'border:1px solid #9a74ff;background:#2a2240;color:#e9e3ff;border-radius:99px;padding:4px 10px;cursor:pointer;font:inherit;font-size:12px';
+    var wrap = document.createElement('div'); wrap.id = 'tti-pick'; wrap.style.cssText = 'margin-top:4px';
+    function draw() {
+      wrap.innerHTML = '<div style="font-size:11.5px;color:#9e9ba8;margin:6px 0 6px">Khoảng ngày</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        R.map(function (r) { return '<button data-r="' + r[0] + '" style="' + (r[0] === pr ? on : chip) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
+        '<div style="font-size:11.5px;color:#9e9ba8;margin:12px 0 6px">Đọc comment</div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        M.map(function (m) { return '<button data-m="' + m[0] + '" style="' + (m[0] === md ? on : chip) + '">' + m[1] + ' <span style="opacity:.6">' + m[2] + '</span></button>'; }).join('') + '</div>';
+      [].forEach.call(wrap.querySelectorAll('[data-r]'), function (b) { b.onclick = function () { pr = b.getAttribute('data-r'); draw(); }; });
+      [].forEach.call(wrap.querySelectorAll('[data-m]'), function (b) { b.onclick = function () { md = b.getAttribute('data-m'); draw(); }; });
+    }
+    draw();
+    var go = box.querySelector('#tti-go'), old = go.textContent, oldFn = go.onclick;
+    $m.parentNode.insertBefore(wrap, $m.nextSibling);
+    say('Quét trong khoảng nào, đọc comment kỹ cỡ nào?');
+    go.textContent = 'Quét kênh này';
+    return new Promise(function (res) {
+      var fin = function () {
+        wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
+        if (pr !== 'custom') S.from = pr === 'all' ? 0 : Math.floor(Date.now() / 1000) - Number(pr) * 86400;
+        send({ type: 'opts', preset: pr, mode: md }); res();
+      };
+      var key = function (e) { if (e.key === 'Enter') { e.preventDefault(); fin(); } };
+      document.addEventListener('keydown', key, true);
+      go.onclick = fin;
+      var iv = setInterval(function () { if (S.stop) { clearInterval(iv); wrap.remove(); go.textContent = old; go.onclick = oldFn; res(); } }, 300);
+    });
+  }
+
   /* ---------- chạy ---------- */
   (async function () {
     say('Đang kết nối với trang TikTok Insight…');
     for (var t = 0; t < 40 && !acked; t++) { send({ type: 'hello' }); await sleep(500); }
     if (!acked) { done('Không kết nối được trang TikTok Insight. Mở trang web của tool rồi bấm lại ⚡.'); return; }
+    // Chọn khoảng ngày + mức đọc comment ngay trên khung ⚡ (mặc định = lựa chọn đang lưu trên trang web)
+    await choose();
+    if (S.stop) { done('Đã huỷ.'); return; }
     var isVideo = /\/(video|photo)\/\d+/.test(location.pathname);
     var meta = userMeta(), D = document, W = window, frame = null;
     // Đang xem một clip → mở ngầm trang kênh của người đăng trong khung ẩn rồi quét cả kênh
