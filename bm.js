@@ -279,14 +279,9 @@
 
   /* ---------- chạy ---------- */
   (async function () {
-    // Không đứng trên trang kênh (đang xem clip / lướt feed) → mở trang kênh trong cửa sổ nhỏ NGAY lúc bấm
-    // (trình duyệt chỉ cho mở cửa sổ khi vừa có cú bấm). Cửa sổ thật thì TikTok mới chịu tải hết clip khi cuộn.
-    var onChPage = /^\/@[^/]+\/?$/.test(location.pathname), pop = null;
-    var pre = onChPage ? null : ((location.pathname.match(/^\/@([^/?#]+)/) || [])[1] || feedOwner());
-    if (pre) { try { pop = window.open('/@' + pre, 'tti_scan', 'popup,width=1100,height=820,left=40,top=40'); } catch (e) { pop = null; } }
     say('Đang kết nối với trang TikTok Insight…');
     for (var t = 0; t < 40 && !acked; t++) { send({ type: 'hello' }); await sleep(500); }
-    if (!acked) { if (pop) try { pop.close(); } catch (e) {} done('Không kết nối được trang TikTok Insight. Mở trang web của tool rồi bấm lại ⚡.'); return; }
+    if (!acked) { done('Không kết nối được trang TikTok Insight. Mở trang web của tool rồi bấm lại ⚡.'); return; }
     var isVideo = /\/(video|photo)\/\d+/.test(location.pathname);
     var meta = userMeta(), D = document, W = window, frame = null;
     // Đang xem một clip → mở ngầm trang kênh của người đăng trong khung ẩn rồi quét cả kênh
@@ -295,20 +290,14 @@
     if (!owner) { owner = feedOwner(); if (owner) isVideo = true; }
     var hookIv = null;
     if (owner) {
-      if (pop && !pop.closed) {
-        say('Đang đọc kênh @' + decodeURIComponent(owner) + ' trong cửa sổ nhỏ, cửa sổ tự đóng khi xong…');
-        frame = { contentWindow: pop, get contentDocument() { return pop.document; }, remove: function () { try { pop.close(); } catch (e) {} } };
-        hookIv = setInterval(function () { try { if (/^\/@/.test(pop.location.pathname)) hook(pop); } catch (e) {} }, 5);
-        for (var pw = 0; pw < 80; pw++) { try { if (/^\/@/.test(pop.location.pathname) && pop.document.readyState === 'complete') break; } catch (e) {} await sleep(250); }
-      } else {
       say('Đang mở ngầm kênh @' + decodeURIComponent(owner) + ' để đọc số liệu…');
       frame = document.createElement('iframe');
       frame.src = '/@' + owner;
-      frame.style.cssText = 'position:fixed;left:-3000px;top:0;width:1200px;height:900px;opacity:0;pointer-events:none;border:0';
+      // Khung phải nằm TRONG màn hình (dù trong suốt, nằm dưới trang): nằm ngoài màn hình thì TikTok không tải thêm clip khi cuộn
+      frame.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;opacity:0;pointer-events:none;border:0;z-index:-1';
       document.body.appendChild(frame);
       hookIv = setInterval(function () { try { var fw = frame && frame.contentWindow; if (fw && /^\/@/.test(fw.location.pathname)) hook(fw); } catch (e) {} }, 5);
       await new Promise(function (r) { frame.onload = r; setTimeout(r, 20000); });
-      }
       try { D = frame.contentDocument; W = frame.contentWindow; } catch (e) { D = null; }
       if (!D) { clearInterval(hookIv); frame.remove(); frame = null; D = document; W = window; hook(window); meta = userMeta(); }
       // Thông tin kênh: Safari hay trả khung trống chưa có dữ liệu → thử lần lượt nhiều nguồn

@@ -83,6 +83,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .chip{background:var(--soft);border-radius:12px;padding:10px 12px}
 .chip small{display:block;color:var(--mute);font-size:11.5px} .chip b{font-size:16px;font-weight:650}
 .note{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px}
+.rbar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin-top:12px}.rbar .range{margin:0}.step a.link{display:inline-block;padding:0;margin-top:6px}.modepick{display:inline-flex;align-items:center;gap:10px}.modepick small{color:var(--mute);font-size:12.5px;white-space:nowrap}.modepick select{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;height:var(--ctl-s,32px);padding:0 28px 0 10px;font-size:12.5px}
 .range{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 2px 0}
 .range>small{color:var(--mute);font-size:12.5px}
 .seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
@@ -319,18 +320,14 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
 
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome, Edge: bấm ⌘⇧B (Mac) hoặc Ctrl+Shift+B (Windows). Safari: Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
-      <div class="step"><span class="stepn">2</span><b>Dán link, chọn khoảng ngày, bấm Mở kênh</b><span>Kênh mở ở tab mới. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip.</span></div>
-      <div class="step"><span class="stepn">3</span><b>Sang tab TikTok, bấm ⚡</b><span>Rồi để đó. Tab này tự đầy dần. Đang xem clip nào cũng được: ⚡ tự quét cả kênh của người đăng. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
+      <div class="step"><span class="stepn">2</span><b>Mở TikTok, tới kênh hoặc clip muốn khám</b><span>Đang lướt feed cũng được. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip. <a class="link" href="https://www.tiktok.com" target="_blank">Mở TikTok →</a></span></div>
+      <div class="step"><span class="stepn">3</span><b>Bấm ⚡ rồi để đó</b><span>Tool tự quét cả kênh của người đăng, tab này tự đầy dần. Khoảng ngày và mức đọc comment chỉnh ở thanh ngay dưới. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
     </div>
     <div class="row sfoot" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
   </section>
 
-  <section class="card scan">
-    <input id="url" placeholder="Dán link kênh TikTok, ví dụ tiktok.com/@tenkenh" autocomplete="off">
-    <select id="mode" title="Mức đọc comment" onchange="ls.set('tti_mode',this.value)"><option value="fast">Nhanh · ~40 clip · 2–4 phút</option><option value="smart">Kỹ · ~85 clip · 5–10 phút</option><option value="all">Toàn bộ · rất lâu</option></select>
-    <button class="btn primary" onclick="openChannel()">Mở kênh trên TikTok</button>
-  </section>
-  <div class="range" id="range"></div>
+
+  <div class="rbar"><div class="range" id="range"></div><label class="modepick"><small>Đọc comment</small><select id="mode" title="Mức đọc comment" onchange="ls.set('tti_mode',this.value)"><option value="fast">Nhanh · ~40 clip · 2–4 phút</option><option value="smart">Kỹ · ~85 clip · 5–10 phút</option><option value="all">Toàn bộ · rất lâu</option></select></label></div>
 
   <div id="job"></div>
 
@@ -373,8 +370,8 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
       <p class="gl">Ba bước, bước đầu chỉ làm một lần.</p>
       <ol class="gsteps">
         <li><b>Kéo nút ⚡ TikTok Insight lên thanh bookmark.</b> Nó là một đoạn code nhỏ chạy ngay trên trang TikTok bạn đang mở, nên đọc được đúng những gì bạn thấy.</li>
-        <li><b>Dán link kênh, chọn khoảng ngày, bấm Mở kênh trên TikTok.</b> Nhận cả link clip, tool tự lấy ra tên kênh.</li>
-        <li><b>Sang tab TikTok vừa mở, bấm ⚡.</b> Khung tiến độ hiện ở góc trang. Đừng đóng tab đó cho tới khi khung báo Xong.</li>
+        <li><b>Mở TikTok, tới kênh, clip, hoặc lướt feed tới clip của kênh muốn khám.</b> Chọn khoảng ngày và mức đọc comment ở thanh dưới phần hướng dẫn trên trang tool.</li>
+        <li><b>Bấm ⚡.</b> Khung tiến độ hiện ở góc trang. Nếu đang ở clip hay feed, tool mở trang kênh trong một cửa sổ nhỏ rồi tự đóng khi xong. Đừng đóng tab TikTok cho tới khi khung báo Xong.</li>
       </ol>
       <h4>Chọn trước khi quét</h4>
       <dl class="gdl">
@@ -1128,7 +1125,6 @@ function closeGuide(){$("gmodal").classList.remove("show")}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeGuide();closeModal();closeBrief();closeMarks()}});
 function toggleSetup(on){$("setup").style.display=on?"":"none";ls.set("tti_setup_hidden",on?"":"1");if(on)window.scrollTo({top:0,behavior:"smooth"})}
 if(ls.get("tti_setup_hidden","")==="1")$("setup").style.display="none";
-$("url").addEventListener("keydown",e=>{if(e.key==="Enter")openChannel()});
 try{const md=ls.get("tti_mode","fast");if([...$("mode").options].some(o=>o.value===md))$("mode").value=md}catch(e){}
 openShared().then(sh=>sh||openClip()).then(sh=>{if(!sh){renderRange();loadChannels()}});
 window.addEventListener("hashchange",()=>location.reload());
