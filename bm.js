@@ -81,20 +81,20 @@
 
   /* ---------- bắt số liệu mà chính trang kênh TikTok tải về khi cuộn (không tốn thêm request) ---------- */
   var CAP = {};
-  function grab(j) { (j && j.itemList || []).forEach(function (it) { if (it && it.id) CAP[String(it.id)] = it; }); }
+  function grab(j) { (j && j.itemList || []).forEach(function (it) { if (it && it.id) CAP[String(it.id)] = it; }); if (j && j.itemList) { S.listCursor = j.cursor; S.listMore = !!j.hasMore; } }
   function hook(w) {
     try {
       if (!w || w.__ttiHooked || !w.fetch) return; w.__ttiHooked = 1;
       var of = w.fetch;
       w.fetch = function () {
         var a = arguments, p = of.apply(this, a);
-        try { var u = String(a[0] && a[0].url || a[0]); if (/\/api\/post\/item_list/.test(u)) p.then(function (r) { r.clone().json().then(grab).catch(function () {}); }); } catch (e) {}
+        try { var u = String(a[0] && a[0].url || a[0]); if (/\/api\/post\/item_list/.test(u)) { if (!S.listReq) S.listReq = { u: u, w: w }; } if (/\/api\/post\/item_list/.test(u)) p.then(function (r) { r.clone().json().then(grab).catch(function () {}); }); } catch (e) {}
         return p;
       };
       var XO = w.XMLHttpRequest && w.XMLHttpRequest.prototype; if (!XO) return;
       var oo = XO.open, os = XO.send;
       XO.open = function (m, u) { this.__ttiU = u; return oo.apply(this, arguments); };
-      XO.send = function () { var x = this; if (/\/api\/post\/item_list/.test(String(x.__ttiU))) x.addEventListener('load', function () { try { grab(JSON.parse(x.responseText)); } catch (e) {} }); return os.apply(this, arguments); };
+      XO.send = function () { var x = this; if (/\/api\/post\/item_list/.test(String(x.__ttiU)) && !S.listReq) S.listReq = { u: String(x.__ttiU), w: w, xhr: true }; if (/\/api\/post\/item_list/.test(String(x.__ttiU))) x.addEventListener('load', function () { try { grab(JSON.parse(x.responseText)); } catch (e) {} }); return os.apply(this, arguments); };
     } catch (e) {}
   }
 
@@ -228,12 +228,44 @@
     });
     return out;
   }
+  /* Đọc nhanh danh sách: lặp lại đúng yêu cầu "lấy danh sách clip" mà chính trang TikTok vừa gửi, chỉ đổi vị trí trang (cursor).
+     30 clip / lần, không cần cuộn. TikTok không chịu (trả rỗng) thì thôi, quay về cách cuộn trang như cũ. */
+  async function fastList(meta) {
+    var R = S.listReq; if (!R || S.listMore === false) return false;
+    var got = 0, before = Object.keys(CAP).length;
+    for (var pg = 0; pg < 300 && S.listMore && !S.stop; pg++) {
+      var u = new URL(R.u, location.origin); u.searchParams.set('cursor', String(S.listCursor || 0)); u.searchParams.set('count', '35');
+      var j = null;
+      try { j = await R.w.fetch(u.href, { credentials: 'include' }).then(function (r) { return r.json(); }); } catch (e) { j = null; }
+      if (!j || !(j.itemList || []).length) { if (j && j.hasMore === false) { S.listMore = false; break; } return got > 0; }
+      grab(j); got += j.itemList.length;
+      var oldest = Math.min.apply(null, j.itemList.map(function (x) { return +x.createTime || 9e9; }));
+      say('Đang đọc nhanh danh sách clip: ' + Object.keys(CAP).length + '/' + (meta.videos || '?'), meta.videos ? Math.min(1, Object.keys(CAP).length / meta.videos) * 0.15 : 0);
+      if (S.from && oldest < S.from) { S.reachedFrom = true; break; }
+      await sleep(350 + Math.random() * 300);
+    }
+    return Object.keys(CAP).length > before || got > 0;
+  }
+  function capLinks(h) {
+    return Object.keys(CAP).map(function (k) { return CAP[k]; }).filter(function (it) { return it.author && String(it.author.uniqueId || '').toLowerCase() === h; })
+      .sort(function (a, b) { return (+b.createTime || 0) - (+a.createTime || 0); })
+      .map(function (it) { return { url: location.origin + '/@' + it.author.uniqueId + '/' + (it.imagePost ? 'photo' : 'video') + '/' + it.id, views: String((it.stats || {}).playCount || '') }; });
+  }
   async function listChannel(meta, D, W) {
     D = D || document; W = W || window;
     var h = (meta.handle || '').toLowerCase(), last = -1, stable = 0, refresh = 0, links = [];
     for (var k = 0; k < Math.max(60, meta.videos / 3 + 60); k++) {
       if (S.stop) break;
       links = gridLinks(h, D);
+      // trang đã tự lấy trang clip đầu → thử đọc nhanh phần còn lại (1 lần)
+      if (S.listReq && !S.fastTried) {
+        S.fastTried = true;
+        if (await fastList(meta)) {
+          var seenF = {}, all = links.concat(capLinks(h)).filter(function (l) { if (seenF[l.url]) return false; seenF[l.url] = 1; return true; });
+          if (!S.listMore || S.reachedFrom || (meta.videos && all.length >= meta.videos * 0.95)) return { links: all, blocked: false, fast: true };
+          links = all;
+        }
+      }
       var t = D.body.innerText.slice(0, 6000);
       if (!links.length && Object.keys(CAP).length) { stable++; if (stable >= 6) break; }
       if (!links.length && !Object.keys(CAP).length && /Something went wrong|Đã xảy ra lỗi|Có lỗi xảy ra/i.test(t)) {
