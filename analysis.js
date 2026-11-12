@@ -25,6 +25,9 @@
   // hashtag kiểu tên hãng + đuôi Việt Nam / official (#knorrvietnam, #abibvn), trừ các chủ đề chung
   const SUFFIX_BRAND = /^[a-z][a-z0-9]{2,}(vietnam|vn|official|vietnamofficial|global)$/i;
   const GENERIC_SFX = /^(tiktok|xuhuong|trend|dulich|amthuc|monngon|review|hai|haihuoc|comedy|food|travel|music|nhac|phim|film|game|giaitri|congso|sinhvien|hoc|giaoduc|cuocsong|lamdep|thoitrang|fashion|beauty|skincare|makeup|mebe|baby|giadinh|nauan|cooking|anvat|streetfood|cafe|coffee|bongda|football|thethao|sport|gym|fitness|yoga|tinhyeu|love|meme|vlog|daily|life|dance|nhay|cover|sing|ca|kpop|vpop|rap|anime|manga|art|draw|photo|xe|oto|moto|congnghe|tech|edu|story|chuyen|tamsu|news|tintuc|vietnam|saigon|hanoi|danang|nguoi|ban|em|anh|chi|me|bo|con|nha|viet|xinh)(vietnam|vn|official|vietnamofficial|global)$/i;
+  // Clip "Trả lời @tên" (trả lời comment): TikTok gắn người comment như một lượt tag → không phải collab.
+  // Dữ liệu cũ chưa tách loại tag: caption mở đầu "Trả lời @" / "Replying to @" thì bỏ tag đầu tiên.
+  const replyFree = v => { const ms = (v.mentions || []).filter(x => !v.reply_to || String(x).toLowerCase() !== String(v.reply_to).toLowerCase()); return !v.reply_to && /^\s*(tr[aả] l[oờ]i|replying to|reply to)\s+@/i.test(v.caption || "") ? ms.slice(1) : ms; };
   const GENERIC_TAG = /^(fyp|foryou|foryoupage|xuhuong|trend|trending|viral|tiktok|tiktokawards|tiktokvietnam|capcut|learnontiktok|thanhcongnghe|hoccungtiktok|edutok|tiktokgiaitri|thanhthoiluottet|worldcup|backtoschool|tet|giangsinh|christmas|noel|halloween|valentine|trungthu)/i;
   // comment cho thấy người xem nhận ra quảng cáo
   const AD_TALK = /qu[ảa]ng c[áa]o|\bqc\b|\bads?\b|t[àa]i tr[ợo]|sponsor|booking|nh[ậa]n bao nhi[êe]u|bao nhi[êe]u (ti[ềe]n|c[áa]t)|\bpr\b|seeding|đ[ưu][ợo]c tr[ảa] ti[ềe]n|clip (qc|pr)|l[ạa]i (qc|pr|qu[ảa]ng)/i;
@@ -68,7 +71,7 @@
       id: String(d.id), url: d.url, channel: d.channel, ts: d.createTime || idTs(d.id),
       views: d.views, likes: d.likes, comments_count: d.comments_count, shares: d.shares, saves: d.saves, duration: d.duration,
       caption: (d.caption || "").trim(), hashtags: d.hashtags || [], music: d.music || "", original_sound: !!d.original_sound,
-      is_photo: !!d.is_photo, pinned: !!d.pinned, pinned_api: !!d.pinned, paid_flags: d.paid_flags || [], shop: !!d.shop, mentions: d.mentions || [],
+      is_photo: !!d.is_photo, pinned: !!d.pinned, pinned_api: !!d.pinned, paid_flags: d.paid_flags || [], shop: !!d.shop, mentions: d.mentions || [], reply_to: d.reply_to || "",
       labels: d.labels || [], kw: d.kw || [], loc: d.loc || "",
       transcript: cleanVtt(d.vtt), ost: d.ost || [], cover: d.cover || "", ocr: d.ocr,
       comments: cm.map(c => ({ text: c.text.trim(), likes: c.likes || 0, replies: c.replies || 0, by: c.by || "", biz: !!c.biz,
@@ -84,7 +87,7 @@
       if (old && !old.lite && !old.thin) {           // đã soi sâu: chỉ cập nhật số liệu, giữ comment + phụ đề
         for (const k of ["views", "likes", "comments_count", "shares", "saves", "paid_flags", "shop", "pinned_api"]) old[k] = v[k];
         if (v.cover) old.cover = v.cover; if ((v.ost || []).length) old.ost = v.ost;
-        for (const k of ["labels", "kw", "mentions"]) if ((v[k] || []).length) old[k] = v[k];   // dữ liệu khi cuộn không có chủ đề → giữ cái đã có
+        for (const k of ["labels", "kw", "mentions"]) if ((v[k] || []).length) old[k] = v[k]; if (v.reply_to) { old.reply_to = v.reply_to; old.mentions = v.mentions || []; }   // dữ liệu khi cuộn không có chủ đề → giữ cái đã có
         old.pinned = !!(v.pinned || old.pinned); old.stale = false; snap(old, v.views);
       } else {
         vids[v.id] = snap({ ...v, thin: true, lite: false, hist: (old && old.hist) || [], pinned: !!(v.pinned || (old && old.pinned)),
@@ -304,7 +307,7 @@
       // quảng cáo (thường là quảng cáo tự động cho clip bán hàng), không cho biết bao nhiêu view đến từ ads. Cần thêm dấu hiệu khác.
       if (!v.lite) {
         // 2. Tài khoản doanh nghiệp / tài khoản được tag vào comment
-        const ment = new Set((v.mentions || []).map(x => String(x).toLowerCase()).filter(x => x && x !== me));
+        const ment = new Set(replyFree(v).map(x => String(x).toLowerCase()).filter(x => x && x !== me));
         const all = (v.comments || []).flatMap(c => [c, ...(c.reply_list || [])]);
         // Chỉ tài khoản doanh nghiệp (TikTok xác minh) mới là dấu hiệu ads. Creator được tag rồi vào comment là collab, không phải ads.
         const bizSet = new Set(all.filter(c => c.by && c.biz && c.by.toLowerCase() !== me).map(c => c.by.toLowerCase()));
@@ -324,7 +327,7 @@
         if (SALE_CTA.test(v.caption || "")) sig.push([0.5, "caption kiểu bán hàng"]);
       }
       { const biz = new Set((v.comments || []).flatMap(c => [c, ...(c.reply_list || [])]).filter(c => c.biz && c.by).map(c => c.by.toLowerCase()));
-        v.collab = [...new Set((v.mentions || []).map(x => String(x).toLowerCase()).filter(x => x && x !== me && !biz.has(x) && !(acc[x] && acc[x].org)))]; }
+        v.collab = [...new Set(replyFree(v).map(x => String(x).toLowerCase()).filter(x => x && x !== me && !biz.has(x) && !(acc[x] && acc[x].org)))]; }
       v.ad_score = sig.reduce((a, x) => a + x[0], 0);
       v.ad_reasons = sig.sort((a, b) => b[0] - a[0]).map(x => x[1]);
       v.suspect = !v.declared && v.mark !== "organic" && v.ad_score >= 2;

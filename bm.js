@@ -141,23 +141,35 @@
       if (!it) await sleep(2000);
     }
     if (!it) return { error: 'Không đọc được clip' + (code ? ' (mã ' + code + ')' : why ? ' (' + why + ')' : '') };
-    var id = String(it.id || wantId), comments = [], cursor = 0;
-    for (var pg = 0; pg < O.pages; pg++) {
-      var d = await fetch(location.origin + '/api/comment/list/?aid=1988&aweme_id=' + id + '&count=50&cursor=' + cursor, { credentials: 'include' })
-        .then(function (x) { return x.json(); }).catch(function () { return {}; });
-      (d.comments || []).forEach(function (c) { var t = (c.text || '').replace(/\n/g, ' ').trim(); if (t) comments.push({ cid: c.cid, text: t, likes: c.digg_count || 0, replies: c.reply_comment_total || 0, by: (c.user && c.user.unique_id) || '', biz: !!(c.user && c.user.enterprise_verify_reason) }); });
-      if (!d.has_more) break; cursor = d.cursor || cursor + 50; await sleep(200);
+    var id = String(it.id || wantId), comments = [], seenC = {}, blockedApi = false;
+    // gọi API comment; TikTok trả 403/429 = đang chặn vì đọc nhanh → báo cho vòng ngoài giảm tốc
+    function api(u) { return fetch(location.origin + u, { credentials: 'include' }).then(function (x) { if (x.status === 403 || x.status === 429) { blockedApi = true; return {}; } return x.json(); }).catch(function () { return {}; }); }
+    function addC(d) { (d.comments || []).forEach(function (c) { if (c.cid && seenC[c.cid]) return; if (c.cid) seenC[c.cid] = 1; X(c); }); }
+    var X = function (c) { var d = { comments: [c] }; (d.comments || []).forEach(function (c) { var t = (c.text || '').replace(/\n/g, ' ').trim(); if (t) comments.push({ cid: c.cid, text: t, likes: c.digg_count || 0, replies: c.reply_comment_total || 0, by: (c.user && c.user.unique_id) || '', biz: !!(c.user && c.user.enterprise_verify_reason) }); }); };
+    // trang 1 trước (biết tổng, biết TikTok có trả không); các trang sau đọc 2 trang cùng lúc theo vị trí (cursor = số comment đã qua)
+    var d0 = await api('/api/comment/list/?aid=1988&aweme_id=' + id + '&count=50&cursor=0'); addC(d0);
+    var total = +((it.statsV2 || it.stats || {}).commentCount) || 0, more = !!d0.has_more, cur = +d0.cursor || 50;
+    var par = cur === 50 || cur === (d0.comments || []).length ? 2 : 1;   // cursor đúng kiểu vị trí mới đọc song song, không thì đọc lần lượt
+    for (var pg = 1; more && pg < O.pages && !blockedApi;) {
+      var batch = []; for (var q = 0; q < par && pg < O.pages && (!total || cur + q * 50 < total + 50); q++, pg++) batch.push(api('/api/comment/list/?aid=1988&aweme_id=' + id + '&count=50&cursor=' + (cur + q * 50)));
+      if (!batch.length) break;
+      var ds = await Promise.all(batch); ds.forEach(addC);
+      var last = ds[ds.length - 1]; more = !!last.has_more && ds.every(function (x) { return (x.comments || []).length; }); cur = par > 1 ? cur + batch.length * 50 : (+last.cursor || cur + 50);
+      await sleep(250);
     }
+    if (blockedApi && !comments.length) return { blocked: true };
     var authorId = it.author && it.author.id;
     var withRep = comments.filter(function (c) { return c.replies > 0 && c.cid; }).sort(function (a, b) { return b.likes - a.likes; }).slice(0, O.repTop);
-    for (var i = 0; i < withRep.length; i++) {
-      var c = withRep[i];
-      var rr = await fetch(location.origin + '/api/comment/list/reply/?aid=1988&item_id=' + id + '&comment_id=' + c.cid + '&count=' + O.repMax + '&cursor=0', { credentials: 'include' })
-        .then(function (x) { return x.json(); }).catch(function () { return {}; });
-      c.reply_list = (rr.comments || []).map(function (x) {
+    // chuỗi trả lời: đọc 3 chuỗi cùng lúc
+    for (var i = 0; i < withRep.length && !blockedApi; i += 3) {
+      await Promise.all(withRep.slice(i, i + 3).map(function (c) {
+        return api('/api/comment/list/reply/?aid=1988&item_id=' + id + '&comment_id=' + c.cid + '&count=' + O.repMax + '&cursor=0').then(function (rr) {
+          c.reply_list = (rr.comments || []).map(function (x) {
         return { text: (x.text || '').replace(/\n/g, ' ').trim(), likes: x.digg_count || 0, by_creator: !!(x.user && authorId && String(x.user.uid) === String(authorId)), by: (x.user && x.user.unique_id) || '', biz: !!(x.user && x.user.enterprise_verify_reason) };
       }).filter(function (x) { return x.text; }).sort(function (a, b) { return b.likes - a.likes; });
-      await sleep(100);
+        });
+      }));
+      await sleep(150);
     }
     var st = it.statsV2 || it.stats || {}, vtt = '', subs = (it.video && it.video.subtitleInfos) || [];
     var sub = subs.filter(function (x) { return /^vi/i.test(x.LanguageCodeName || ''); })[0] || subs[0];
@@ -183,7 +195,8 @@
       views: N(st.playCount), likes: N(st.diggCount), comments_count: N(st.commentCount), shares: N(st.shareCount), saves: N(st.collectCount),
       duration: N(it.video && it.video.duration), caption: it.desc || '', vtt: vtt || '', ost: ost, cover: coverOf(it), comments: comments || [],
       hashtags: (it.textExtra || []).map(function (x) { return x.hashtagName; }).filter(Boolean),
-      mentions: (it.textExtra || []).map(function (x) { return x.userUniqueId; }).filter(Boolean),
+      mentions: (it.textExtra || []).filter(function (x) { return +x.subType !== 2; }).map(function (x) { return x.userUniqueId; }).filter(Boolean),   // subType 2 = "Trả lời @…" (clip trả lời comment), không phải tag người hợp tác
+      reply_to: ((it.textExtra || []).filter(function (x) { return +x.subType === 2; })[0] || {}).userUniqueId || '',
       labels: (it.diversificationLabels || []).filter(function (x) { return typeof x === 'string'; }),
       kw: (it.suggestedWords || []).map(function (x) { return typeof x === 'string' ? x : (x && (x.word || x.text)) || ''; }).filter(Boolean).slice(0, 10),
       loc: it.locationCreated || '',
@@ -519,22 +532,25 @@
       if (!urls.length) { await checkAccounts(meta.handle, plan && plan.known); send({ type: 'finished' }); done(S.from ? 'Xong: các clip trong khoảng ngày đã chọn đều đã được soi sâu.' : 'Xong: đã cập nhật view + ngày đăng của ' + L.links.length + ' clip.'); return; }
     }
     }   // hết phần quét mới (bỏ qua khi tiếp tục lần dở)
-    /* soi sâu song song, tự giảm tốc khi TikTok từ chối */
-    var i = 0, n = 0, K = 3, pause = 500, blocks = 0, slow = false, t0 = Date.now();
+    /* soi sâu song song: mặc định 3 clip cùng lúc. TikTok từ chối → lùi về 1 clip, nghỉ lâu hơn;
+       chạy êm 10 clip liền → tăng dần lại (tối đa 4 clip cùng lúc). Kênh lớn đọc hàng tiếng thì không bị kẹt mãi ở tốc độ chậm. */
+    var i = 0, n = 0, K = 4, conc = 3, pause = 500, blocks = 0, okRun = 0, t0 = Date.now();
     function eta() { if (n < 2) return 0; return Math.round((Date.now() - t0) / n * (urls.length - n) / 1000); }
-    function etaTxt(sec) { return !sec ? '' : sec < 60 ? ' · còn chưa tới 1 phút' : ' · còn khoảng ' + Math.round(sec / 60) + ' phút'; }
+    function etaTxt(sec) { if (!sec) return ''; if (sec < 60) return ' · còn chưa tới 1 phút'; var m = Math.round(sec / 60); return ' · còn khoảng ' + (m < 90 ? m + ' phút' : Math.floor(m / 60) + ' giờ' + (m % 60 >= 10 ? ' ' + (Math.round(m % 60 / 10) * 10) + ' phút' : '')); }
     async function worker(wid) {
       while (i < urls.length && !S.stop) {
-        if (slow && wid > 0) return;  // đã giảm tốc → chỉ giữ 1 luồng
+        if (wid >= conc) { await sleep(2000); continue; }   // luồng đang nghỉ: chờ tới lượt được chạy lại
         var u = urls[i++], r;
         try { r = await collect(u); } catch (e) { r = { error: String(e && e.message || e) }; }
         if (r.blocked) {
-          blocks++; i--; urls.push(urls.splice(i, 1)[0]);   // đưa clip này về cuối hàng, thử lại sau
+          blocks++; var at = urls.indexOf(u); if (at >= 0 && at < i) { urls.splice(at, 1); i--; } urls.push(u);   // đưa clip này về cuối hàng, thử lại sau
           if (blocks > 6) { S.stop = true; S.blockedOut = true; break; }
-          slow = true; pause = 4000; say('TikTok từ chối vì đọc nhanh quá, giảm tốc và thử lại…');
+          conc = 1; okRun = 0; pause = 4000; say('TikTok từ chối vì đọc nhanh quá, giảm tốc và thử lại…');
           await sleep(15000); continue;
         }
         n++; if (SV) SV.done.push(u);
+        if (!r.error && ++okRun >= 10) { okRun = 0; if (pause > 500) pause = Math.max(500, Math.round(pause / 2)); else if (conc < K) conc++; }
+        if (r.error) okRun = 0;
         if (!r.error) noteMentions(r.mentions);
         send(r.error ? { type: 'error', url: u, error: r.error, of: urls.length, eta: eta() } : { type: 'video', data: r, of: urls.length, eta: eta() });
         if (!r.error) { S.cmt = (S.cmt || 0) + (r.comments || []).length; if (!(r.comments || []).length && (r.comments_count || 0) > 0) S.cmtMiss = (S.cmtMiss || 0) + 1; }
