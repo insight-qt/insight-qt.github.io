@@ -414,7 +414,7 @@
         done('TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này rồi tải lại trang kênh và bấm ⚡.'); return;
       }
       var items = Object.keys(CAP).map(function (k) { return toRec(CAP[k]); });
-      send({ type: 'channel', meta: meta, links: L.links, items: items });
+      send({ type: 'channel', meta: meta, links: L.links, items: items, full: !S.from && !S.stop && L.links.length >= (meta.videos || 0) * 0.95 });
       say((S.reachedFrom ? 'Đã đọc tới mốc ngày đã chọn. ' : 'Có ' + Math.max(L.links.length, items.length) + ' clip' + (items.length ? ', đủ số liệu ' + items.length + ' clip' : '') + '. ') + 'Đang chọn clip để đọc comment…', 0.15);
       var plan = acked && !lost() ? await waitFor('plan', 15000) : null;
       if (!plan) plan = await localPlan(meta, L.links, items);

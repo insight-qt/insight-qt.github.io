@@ -248,13 +248,16 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
  .det .chips+.acts>.btn{width:100%;min-width:0;padding:0 10px;white-space:nowrap}
  .det .chips+.acts .scanned{grid-column:5/6;padding-left:12px}.det .chips+.acts .del{grid-column:6;justify-self:end;padding-right:12px}}
 .tfil .seg{background:transparent;padding:0;gap:8px}
-.tfil .seg button{--fc:var(--ink);--fs:var(--soft);border:1px solid transparent;background:var(--fs);color:var(--fc);border-radius:99px;padding:0 14px;gap:6px;font-weight:600;height:32px}
+.tfil .seg button{--fc:var(--ink);--fs:var(--soft);border:1px solid transparent;background:var(--soft);color:var(--mute);border-radius:99px;padding:0 14px;gap:6px;font-weight:600;height:32px}
 .tfil .seg button .fd{display:none}
 .tfil .seg button .hint{color:inherit!important;opacity:.7;font-weight:600;margin-left:0!important}
-.tfil .seg button:hover{border-color:var(--fc);color:var(--fc)}
+.tfil .seg button:hover{color:var(--fc)}
 .tfil .seg button.on{background:var(--fc);color:var(--card);border-color:var(--fc);box-shadow:none}.tfil .seg button.on .hint{opacity:.85}
 .fb-VIRAL{--fc:var(--accent)!important;--fs:var(--accent-soft)!important}.fb-WIN{--fc:var(--win)!important;--fs:var(--win-soft)!important}.fb-FLOP{--fc:var(--flop)!important;--fs:var(--flop-soft)!important}
 .fb-BRAND{--fc:var(--warn)!important;--fs:var(--warn-soft)!important}.fb-ADS{--fc:var(--adf)!important;--fs:var(--adf-soft)!important}.fb-MOI{--fc:var(--new)!important;--fs:var(--new-soft)!important}
+.tfil .seg button.fb-VIRAL.on{color:#3b2b60;border-color:rgba(255,255,255,.65);background:linear-gradient(110deg,#ffc2d4,#ffdcb0,#fff3a8,#c9f7c4,#ade9ff,#cfbcff,#ffc2d4);background-size:300% 100%;animation:holo 6s linear infinite;box-shadow:0 1px 8px rgba(190,170,255,.55),0 0 16px rgba(255,190,215,.4);text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.tfil .seg button.fb-VIRAL.on .fd{display:inline-block;width:9px;height:9px;border-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0C5.4 3 7 4.6 10 5 7 5.4 5.4 7 5 10 4.6 7 3 5.4 0 5 3 4.6 4.6 3 5 0Z' fill='%233b2b60'/%3E%3C/svg%3E") center/contain no-repeat}
+@media (prefers-reduced-motion:reduce){.tfil .seg button.fb-VIRAL.on{animation:none}}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
@@ -584,6 +587,8 @@ window.addEventListener("message",e=>{
     rec.meta={...rec.meta,...meta,handle:h,scanned:new Date().toLocaleString("vi-VN"),scannedAt:nowS,partial:!!m.blocked};
     if(meta.followers){const fh=(rec.meta.fhist||[]).slice();if(fh.length&&nowS-fh[fh.length-1][0]<12*3600)fh[fh.length-1]=[nowS,meta.followers];else fh.push([nowS,meta.followers]);rec.meta.fhist=fh.slice(-60)}
     TTI.mergeLinks(rec.vids,m.links||[],h); TTI.mergeItems(rec.vids,m.items||[]);
+    // Quét đủ cả kênh: clip có trong máy mà TikTok không còn liệt kê = đã xoá / ẩn → không tính nữa (vẫn giữ, lỡ quét thiếu thì lần sau hiện lại)
+    {const seen=new Set([...(m.links||[]).map(l=>TTI.idOf(l.url)),...(m.items||[]).map(x=>String(x.id))].filter(Boolean));Object.values(rec.vids).forEach(v=>{if(seen.has(String(v.id)))v.gone=false;else if(m.full)v.gone=true})}
     const pmode=(job&&job.mode)||$("mode").value, urls=m.blocked?[]:TTI.plan(rec.vids,pmode,range);
     const inR=Object.keys(TTI.filterRange(rec.vids,range)).length;
     await DB.put(rec);
@@ -715,7 +720,7 @@ function closeCompare(){$("cmodal").classList.remove("show")}
 /* ---------- hiển thị ---------- */
 async function loadChannels(){
   const all=await DB.all();
-  const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.keys(fv).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
+  const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.values(fv).filter(v=>!v.gone).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
   CHS=cs.map(c=>c.handle); MSEL.forEach(h=>{if(!CHS.includes(h))MSEL.delete(h)}); renderChBar();
   $("chs").classList.toggle("manage",MANAGE);
   $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
@@ -787,7 +792,7 @@ function renderDetail(){
     ${d.summary.thin_base?`<div class="note" style="margin-top:14px">Mẫu mỏng: chỉ ${d.summary.base_n} clip organic đủ 7 ngày để làm chuẩn, cần ít nhất 10. Nhãn để tham khảo, đừng chốt vội.</div>`:""}
     <div class="chips">
       <div class="chip"><small>Follower</small><span class="cv"><b>${fmt(m.followers)}</b>${fgrow(m)}</span></div>
-      <div class="chip"><small>Clip có số liệu</small><span class="cv"><b>${d.rows.length}${m.videos&&!ranged()?"/"+m.videos:""}</b></span></div>
+      <div class="chip"><small>Clip có số liệu</small><span class="cv"><b>${d.rows.length}${m.videos&&!ranged()&&d.rows.length<=m.videos?"/"+m.videos:""}</b></span></div>
       <div class="chip"><small>Đã đọc comment</small><span class="cv"><b>${s.deep??0}</b></span></div>
       <div class="chip"><small>View trung vị</small><span class="cv"><b>${fmt(s.med_views)}</b></span></div>
       <div class="chip"><small>Tương tác/view</small><span class="cv"><b>${pct(s.med_er)}</b></span></div>

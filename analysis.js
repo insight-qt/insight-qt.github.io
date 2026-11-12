@@ -154,7 +154,7 @@
   /* Chọn clip soi sâu: top view, bottom view, mới nhất, rải đều ở giữa. mode "all" = tất cả */
   function plan(vids, mode, range) {
     const DEEP_SMART = DEEP[mode] || DEEP.fast;
-    const sub = filterRange(vids, range), all = Object.values(sub).filter(v => v.url);
+    const sub = filterRange(vids, range), all = Object.values(sub).filter(v => v.url && !v.gone);
     const need = v => v.lite || v.thin;
     const stale = all.filter(v => v.stale && !v.lite && !v.thin).map(v => v.url);
     if (mode === "all") return stale.concat(all.filter(need).map(v => v.url));
@@ -186,7 +186,7 @@
   }
 
   function analyze(vids, followers) {
-    const rows = Object.values(vids).filter(v => typeof v.views === "number").map(v => ({ ...v }))
+    const rows = Object.values(vids).filter(v => typeof v.views === "number" && !v.gone).map(v => ({ ...v }))
       .sort((a, b) => (b.ts || 0) - (a.ts || 0));
     if (!rows.length) return { rows: [], summary: {}, tables: {} };
     const now = Date.now() / 1000;
