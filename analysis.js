@@ -616,21 +616,27 @@
     const lc = t => String(t || "").toLowerCase().normalize("NFC");
 
     // 1. Khán giả đang hỏi gì → đề tài clip tiếp theo
+    // từ khoá có ranh giới từ (tránh "bao giờ" khớp "áo gì", "top 1" khớp "p1")
+    const W = src => new RegExp("(?<![\\p{L}\\p{N}])(?:" + src + ")(?![\\p{L}\\p{N}])", "iu");
     const ASK = [
-      ["next", "Đòi phần tiếp", /(ph[aầ]n|t[aậ]p|part|p)\s*\d|ph[aầ]n (sau|ti[eế]p|2)|t[aậ]p (sau|ti[eế]p)|ra ti[eế]p|l[aà]m ti[eế]p|ti[eế]p đi|h[oó]ng (ph[aầ]n|t[aậ]p)|ch[oờ] (ph[aầ]n|t[aậ]p)|c[oò]n n[uữ]a (kh[oô]ng|ko|k)\b|k[eể] ti[eế]p/],
-      ["how", "Hỏi cách làm", /l[aà]m (sao|th[eế] n[aà]o|nh[uư] n[aà]o)|c[aá]ch (n[aà]o|l[aà]m)|h[uư][oớ]ng d[aẫ]n|ch[iỉ] (m[iì]nh|em|tui|t[oô]i|v[oớ]i|e|cho)|h[oọ]c [oở] đ[aâ]u|b[aắ]t đ[aầ]u (t[uừ]|nh[uư])|n[eê]n (l[aà]m|h[oọ]c|b[aắ]t đ[aầ]u)|tips?\b|b[ií] quy[eế]t/],
-      ["buy", "Hỏi mua, giá, địa chỉ", /gi[aá] (bao|nhi[eê]u|sao)|bao nhi[eê]u (ti[eề]n|k\b|1)|mua [oở] đ[aâ]u|mua (sao|kiểu g[iì])|link (mua|sp|s[aả]n)|xin link|shop (n[aà]o|g[iì])|đ[iị]a ch[iỉ]|[oở] đ[aâ]u (v[aậ]y|th[eế]|ạ|a|z)|qu[aá]n n[aà]o|ch[oỗ] n[aà]o/],
-      ["name", "Hỏi tên nhạc, đồ, app", /t[eê]n (b[aà]i|nh[aạ]c|app|s[aả]n ph[aẩ]m|m[oó]n|phim|qu[aá]n|s[aá]ch)|nh[aạ]c g[iì]|b[aà]i g[iì]|app g[iì]|[aá]o (g[iì]|n[aà]o)|son g[iì]|m[aá]y g[iì]|phim g[iì]|s[aá]ch g[iì]/],
+      ["next", "Đòi phần tiếp", W("(?:phần|tập|part|p)\\s*\\d{1,2}|phần (?:sau|tiếp|tiếp theo|2)|tập (?:sau|tiếp)|ra tiếp|làm tiếp|tiếp đi|kể tiếp|hóng phần|chờ phần|còn nữa (?:không|ko|k)")],
+      ["how", "Hỏi cách làm", W("làm sao|làm thế nào|làm như nào|cách nào|cách làm|hướng dẫn|chỉ (?:mình|em|tui|tôi|t|e) (?:với|cách|đi|nha)|học ở đâu|bắt đầu từ đâu|bắt đầu như nào|nên học|nên bắt đầu|cần học|học gì|học những gì|cần những gì|cần gì để")],
+      ["buy", "Hỏi mua, giá, địa chỉ", W("giá bao nhiêu|bao nhiêu tiền|giá sao|mua ở đâu|mua sao|xin link|link mua|shop nào|địa chỉ|ở đâu vậy|ở đâu thế|ở đâu ạ|quán nào|chỗ nào")],
+      ["name", "Hỏi tên nhạc, đồ, app", W("tên (?:bài|nhạc|app|sản phẩm|món|phim|quán|sách)|nhạc gì|bài gì|app gì|áo gì|son gì|máy gì|phim gì|sách gì|dùng gì|xài gì|tên gì")],
     ];
-    const isQ = t => /\?|\b(kh[oô]ng|ko|k|hok|h[ôo]ng|ch[uư]a|sao|g[iì]|n[aà]o|đ[aâ]u|m[aấ]y|bao gi[oờ]|khi n[aà]o|ai)\s*(v[aậ]y|th[eế]|ạ|a|ad|anh|ch[iị]|em|b[aạ]n|shop|ơi)?\s*[!.…]*$/i.test(t);
+    // chỉ tính là "hỏi" khi câu thật sự là câu hỏi / lời xin: có dấu ?, từ để hỏi, hoặc lời nhờ
+    const ASKY = W("làm sao|như nào|thế nào|ở đâu|bao nhiêu|là gì|gì vậy|gì thế|gì ạ|nào vậy|nào ạ|ai biết|có ai|cho (?:mình|em|tui|t|tôi|e) hỏi|xin (?:link|tên|cách|info|in4)|chỉ (?:mình|em|tui|tôi|t|e)|hướng dẫn (?:mình|em|tui|đi|với)|được không|đc không|đc k|được k|không ạ|ko ạ|vậy ạ|hả|nhỉ|chưa ạ");
+    const isQ = t => /\?/.test(t) || ASKY.test(t);
     const groups = {}; ASK.forEach(([k, name]) => groups[k] = { k, name, n: 0, likes: 0, items: [] }); groups.other = { k: "other", name: "Câu hỏi khác", n: 0, likes: 0, items: [] };
     const seen = new Set(); let asked = 0;
     for (const v of rows) for (const c of v.comments || []) {
       const by = String(c.by || "").toLowerCase(); if (me && by === me) continue;
       const t = String(c.text || "").replace(/\s+/g, " ").trim(), l = lc(t); if (t.length < 8 || t.length > 220) continue;
       const key = l.replace(/[^\p{L}\p{N} ]/gu, "").replace(/\s+/g, " ").trim(); if (!key || seen.has(key)) continue;
-      let g = null; for (const [k, , re] of ASK) if (re.test(l)) { g = k; break; }
-      if (!g && isQ(l) && t.split(" ").length >= 4) g = "other";
+      const lq = l.replace(/["“”«»][^"“”«»]{0,80}["“”«»]/g, " ");   // bỏ đoạn trích trong ngoặc kép: người ta đang kể, không phải hỏi
+      const realQ = (lq.includes("?") && (lq.split("?").pop().match(/\p{L}+/gu) || []).length <= 3) || ASKY.test(lq);   // dấu ? phải nằm ở câu cuối
+      let g = null; for (const [k, , re] of ASK) if (re.test(lq) && (k === "next" || realQ)) { g = k; break; }
+      if (!g && realQ && t.split(" ").length >= 4) g = "other";
       if (!g) continue; seen.add(key); asked++;
       const G = groups[g]; G.n++; G.likes += c.likes || 0; G.items.push({ text: t, likes: c.likes || 0, replies: c.replies || 0, answered: (c.reply_list || []).some(r => r.by_creator), v: { id: v.id, url: v.url, cap: cap(v, 36), day: day(v) } });
     }
