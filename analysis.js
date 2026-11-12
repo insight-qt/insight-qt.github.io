@@ -368,7 +368,7 @@
     const baseT = base.filter(v => !v.pinned);   // clip ghim là clip cũ treo đầu kênh: không tính vào dòng thời gian
     const durKey = v => v.is_photo ? ["Ảnh (photo)"] : v.duration ? DURS.filter(([a, b]) => a <= v.duration && v.duration < b).map(d => d[2]) : [];
     const tables = {
-      kind: group(v => [v.kind === "ORGANIC" && v.brand ? "CÓ BRAND" : v.kind], ["ORGANIC", "CÓ BRAND", "PAID", "NGHI ADS"], 1, rows.filter(v => !v.isNew)),
+      kind: group(v => [v.kind === "ORGANIC" && v.brand ? "CÓ BRAND" : v.kind], ["ORGANIC", "CÓ BRAND", "PAID", "NGHI ADS"], 2, rows.filter(v => !v.isNew)),
       duration: group(durKey, DURS.map(d => d[2]).concat(["Ảnh (photo)"])),
       weekday: group(v => (dt(v) ? [WEEKDAY[wkIdx(dt(v))]] : []), WEEKDAY, 1, baseT),
       hour: group(v => (dt(v) ? HOURS.filter(([a, b]) => a <= dt(v).getHours() && dt(v).getHours() < b).map(h => h[2]) : []), HOURS.map(h => h[2]), 1, baseT),

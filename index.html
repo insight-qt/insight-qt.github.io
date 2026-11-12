@@ -258,6 +258,7 @@ table.ct td.hk{max-width:none;overflow-wrap:anywhere}table.ct .pills{min-width:0
 .tfil .seg button.fb-VIRAL.on{color:#3b2b60;border-color:rgba(255,255,255,.65);background:linear-gradient(110deg,#ffc2d4,#ffdcb0,#fff3a8,#c9f7c4,#ade9ff,#cfbcff,#ffc2d4);background-size:300% 100%;animation:holo 6s linear infinite;box-shadow:0 1px 8px rgba(190,170,255,.55),0 0 16px rgba(255,190,215,.4);text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .tfil .seg button.fb-VIRAL.on .fd{display:inline-block;width:9px;height:9px;border-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0C5.4 3 7 4.6 10 5 7 5.4 5.4 7 5 10 4.6 7 3 5.4 0 5 3 4.6 4.6 3 5 0Z' fill='%233b2b60'/%3E%3C/svg%3E") center/contain no-repeat}
 @media (prefers-reduced-motion:reduce){.tfil .seg button.fb-VIRAL.on{animation:none}}
+.chlab{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;font-size:12.5px}.chlab .lt{border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--soft)}.chlab .lt b{color:var(--accent);font-weight:650}
 .tfil{margin:18px 0 6px}.tfil .seg button .hint{margin-left:4px;font-size:11.5px}
 .why .fix{display:block;border:0;background:none;padding:0;margin:4px 0 0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .why.ok{color:var(--mute)}
@@ -332,13 +333,13 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome, Edge: bấm ⌘⇧B (Mac) hoặc Ctrl+Shift+B (Windows). Safari: Xem → Hiện thanh Mục ưa thích.</span><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a></div>
       <div class="step"><span class="stepn">2</span><b>Mở TikTok, tới kênh hoặc clip muốn khám</b><span>Đang lướt feed cũng được. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip. <a class="link" href="https://www.tiktok.com" target="_blank">Mở TikTok →</a></span></div>
-      <div class="step"><span class="stepn">3</span><b>Bấm ⚡, chọn khoảng ngày, bấm Quét</b><span>Tool tự quét cả kênh của người đăng, tab này tự đầy dần. Lỡ đóng tab này thì bấm nút trong khung ⚡ để mở lại, không mất dữ liệu.</span></div>
+      <div class="step"><span class="stepn">3</span><b>Bấm ⚡, chọn khoảng ngày, bấm Quét</b><span>Bạn ở yên trên TikTok trong lúc quét. Xong bấm <b>Xem kết quả</b> trong khung ⚡, kết quả hiện ở trang này. Trang TikTok lỡ tải lại thì bấm ⚡, chọn Tiếp tục.</span></div>
     </div>
     <div class="row sfoot" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
   </section>
 
 
-  <div class="rbar"><div class="range" id="range"></div><label class="modepick"><small>Đọc comment</small><select id="mode" title="Mức đọc comment" onchange="ls.set('tti_mode',this.value)"><option value="fast">Nhanh · ~40 clip · 2–4 phút</option><option value="smart">Kỹ · ~85 clip · 5–10 phút</option><option value="all">Toàn bộ · rất lâu</option></select></label></div>
+  <div class="rbar"><div class="range" id="range"></div><label class="modepick" style="display:none"><small>Đọc comment</small><select id="mode" title="Mức đọc comment" onchange="ls.set('tti_mode',this.value)"><option value="fast">Nhanh · ~40 clip · 2–4 phút</option><option value="smart">Kỹ · ~85 clip · 5–10 phút</option><option value="all">Toàn bộ · rất lâu</option></select></label></div>
 
   <div id="job"></div>
 
@@ -602,16 +603,16 @@ window.addEventListener("message",e=>{
     const v=TTI.videoFrom(m.data),h=(v.channel||(job&&job.handle)||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{handle:h},vids:{}};
     const old=rec.vids[v.id];v.hist=(old&&old.hist)||[];if(old){if(!(v.labels||[]).length&&(old.labels||[]).length)v.labels=old.labels;if(!(v.kw||[]).length&&(old.kw||[]).length)v.kw=old.kw;if(old.pinned)v.pinned=true;if(old.ocr!=null)v.ocr=old.ocr}TTI.snap(v,v.views);rec.vids[v.id]=v;await DB.put(rec);
-    if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";if(!job.handle)job.handle=h}
+    if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;if(job.state!=="done"&&job.state!=="ask")job.msg="";if(!job.handle)job.handle=h}
     renderJob();throttleDetail(h);
   });
   if(m.type==="accounts")return queue(async()=>{
     const h=((job&&job.handle)||cur||"").toLowerCase();if(!h)return;const rec=await DB.get(h);if(!rec)return;
     rec.accounts={...(rec.accounts||{}),...(m.data||{})};await DB.put(rec);if(cur===h)loadDetail(h,true);
   });
-  if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
-  if(m.type==="finished"){if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
-    queue(async()=>{renderJob();await loadChannels();if(job&&job.handle){loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});}
+  if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;if(job.state!=="done"&&job.state!=="ask")job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
+  if(m.type==="finished")return queue(async()=>{if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
+    renderJob();await loadChannels();if(job&&job.handle){loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});
 });
 let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if(!cur||cur===h)queue(()=>loadDetail(h,true))}}
 function renderJob(){
@@ -662,7 +663,7 @@ async function ocrCovers(h){
 /* ---------- Đào sâu ---------- */
 function digCard(d){
   const D=TTI.dig(d,d.meta&&d.meta.handle);
-  const xx=v=>v==null?"–":String(Math.round(v*10)/10).replace(".",",")+"×";
+  const xx=v=>v==null?"–":(Math.round(v*10)/10).toFixed(1).replace(".",",")+"×";
   const a1=D.asks.length?D.asks.slice(0,4).map(g=>`<div class="ag"><div class="agh"><b>${esc(g.name)}</b><span>${g.n} câu · ${fmt(g.likes)} like</span></div>${g.items.slice(0,2).map(c=>`<q>«${esc(c.text.length>140?c.text.slice(0,140)+"…":c.text)}»<small>${fmt(c.likes)} like${c.answered?' · <span class="ok">kênh đã trả lời</span>':""} · <a href="${esc(c.v.url||"#")}" target="_blank">clip ${esc(c.v.day)}</a></small></q>`).join("")}</div>`).join("")
     :`<div class="empty2">${D.deep?"Chưa thấy câu hỏi lặp lại trong comment.":"Chưa đọc comment clip nào. Bấm ⚡ để tool soi comment."}</div>`;
   const a2=D.series.length?D.series.map(z=>{const mx=Math.max(...z.parts.map(p=>p.views||0),1);return `<div class="sr"><div class="srh"><b title="${esc(z.name)}">${esc(z.name)}</b><span style="color:${z.keep==null?"var(--mute)":z.keep>=0.8?"var(--win)":z.keep<0.5?"var(--flop)":"var(--mute)"}">${z.keep==null?"":z.keep>=1?`phần cuối gấp ${xx(z.keep).replace("×"," lần")}`:`phần cuối còn ${Math.round(z.keep*100)}%`}</span></div><div class="sbars">${z.parts.map(p=>`<a href="${esc(p.url||"#")}" target="_blank" title="Phần ${p.part} · ${fmt(p.views)} view · ${xx(p.x)}"><i class="${p.label==="WIN"||p.label==="VIRAL"?"w":p.label==="FLOP"?"f":""}" style="height:${Math.max(6,Math.round((p.views||0)/mx*100))}%"></i>P${p.part}</a>`).join("")}</div></div>`}).join("")
@@ -722,6 +723,7 @@ function closeCompare(){$("cmodal").classList.remove("show")}
 async function loadChannels(){
   const all=await DB.all();
   const cs=all.map(r=>{const fv=TTI.applyMarks(TTI.filterRange(r.vids,range),r.marks,r.accounts),a=TTI.analyze(fv,r.meta.followers);return{handle:r.handle,meta:r.meta,n:Object.values(fv).filter(v=>!v.gone).length,s:a.summary}}).sort((a,b)=>String(b.meta.scanned||"").localeCompare(String(a.meta.scanned||"")));
+  document.querySelector(".rbar").style.display=cs.length?"":"none";
   CHS=cs.map(c=>c.handle); MSEL.forEach(h=>{if(!CHS.includes(h))MSEL.delete(h)}); renderChBar();
   $("chs").classList.toggle("manage",MANAGE);
   $("chs").innerHTML=cs.length?cs.map(c=>`<div class="card ch ${c.handle===cur&&!MANAGE?"on":""} ${MSEL.has(c.handle)?"sel":""}" data-h="${esc(c.handle)}" onclick="${MANAGE?`toggleSel('${esc(c.handle)}')`:`loadDetail('${esc(c.handle)}')`}"><i class="ck"></i>
@@ -739,6 +741,13 @@ async function loadDetail(h,quiet){
 }
 // một cột nhãn chung cho mọi khung bên phải → mọi thanh bắt đầu cùng một chỗ
 function sideLw(lists){const ks=lists.flatMap(l=>(l||[]).map(r=>String(r.key)));return Math.round(Math.min(170,Math.max(64,...ks.map(k=>k.length*7.4))))}
+// TikTok không gắn nhãn cho cả kênh, chỉ gắn chủ đề cho từng clip → gộp lại thành "TikTok xếp kênh vào…"
+function chLabels(rows){
+  const L=rows.filter(v=>(v.labels||[]).length);if(!L.length)return`<div class="chlab hint">TikTok xếp kênh vào: chưa có dữ liệu. Chủ đề lấy được khi tool mở trang từng clip, quét lại bằng ⚡ để lấy thêm.</div>`;
+  const c={};L.forEach(v=>[...new Set(v.labels)].forEach(l=>c[l]=(c[l]||0)+1));
+  const top=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  return `<div class="chlab"><span class="hint">TikTok xếp kênh vào</span>${top.map(([k,n])=>`<span class="lt" title="${n}/${L.length} clip có chủ đề này">${esc(k)} <b>${Math.round(n/L.length*100)}%</b></span>`).join("")}<span class="hint">theo ${L.length} clip</span></div>`;
+}
 function grp(title,rows){
   if(!rows||!rows.length)return"";
   const mx=Math.max(...rows.map(r=>r.med_x||0),1);
@@ -786,7 +795,7 @@ function renderDetail(){
   const mx=Math.max(...rows.map(r=>r.x_med||0),1);
   $("det").innerHTML=`<section class="card det">
     <div class="det-head">
-      <div><h2>${esc(m.nickname||m.handle)} <span class="hint">@${esc(m.handle)}</span>${ranged()?`<span class="rtag">${esc(TTI.rangeLabel(range))}</span>`:""}</h2><div class="bio">${esc((m.bio||"").replace(/\n/g," · "))}</div></div>
+      <div><h2>${esc(m.nickname||m.handle)} <span class="hint">@${esc(m.handle)}</span>${ranged()?`<span class="rtag">${esc(TTI.rangeLabel(range))}</span>`:""}</h2><div class="bio">${esc((m.bio||"").replace(/\n/g," · "))}</div>${chLabels(d.rows)}</div>
       <div class="acts"><select id="depth" title="Độ dày file xuất"><option value="gon">File gọn</option><option value="vua" selected>File vừa (khuyên dùng)</option><option value="du">File đầy đủ</option></select>
         <button class="btn" onclick="exportJpg()">Xuất ảnh JPEG</button><button class="btn primary" onclick="exportMd()">Xuất .md cho AI</button></div>
     </div>

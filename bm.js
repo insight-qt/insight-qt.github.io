@@ -8,7 +8,7 @@
   if (window.__tti) window.__tti.stop = true;
   [].forEach.call(document.querySelectorAll('#tti-box'), function (e) { e.remove(); });
   [].forEach.call(document.body.children, function (e) { if (e.querySelector && e.querySelector(':scope > div > #tti-x')) e.remove(); });
-  var S = window.__tti = { running: true, stop: false, labelBudget: 24 };
+  var S = window.__tti = { running: true, stop: false, labelBudget: 40 };
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var N = function (x) { return x == null || x === '' ? null : Number(x); };
 
@@ -107,7 +107,7 @@
   async function collect(url) {
     var path = new URL(url, location.origin).pathname, wantId = (path.match(/\/(?:video|photo)\/(\d+)/) || [])[1];
     var it = CAP[wantId] || null, code, why = '';
-    // Dữ liệu bắt khi cuộn không có chủ đề / từ khoá TikTok gắn → chỉ tải trang clip cho ~24 clip quan trọng nhất (đầu hàng đợi:
+    // Dữ liệu bắt khi cuộn không có chủ đề / từ khoá TikTok gắn → chỉ tải trang clip cho ~40 clip quan trọng nhất (đầu hàng đợi:
     // nhóm ăn nhất + kém nhất). TikTok từ chối một lần là thôi hẳn, không làm chậm phần quét còn lại.
     if (it && !it.diversificationLabels && S.labelBudget > 0) {
       S.labelBudget--;
@@ -340,8 +340,8 @@
     var go = box.querySelector('#tti-go'), old = go.textContent, oldFn = go.onclick;
     $m.parentNode.insertBefore(wrap, $m.nextSibling);
     S.picking = true;
-    say('Quét trong khoảng nào, đọc comment kỹ cỡ nào?');
-    go.textContent = 'Quét kênh này';
+    say(S.preOwner ? 'Quét kênh @' + S.preOwner + ': khoảng nào, đọc comment kỹ cỡ nào?' : 'Quét trong khoảng nào, đọc comment kỹ cỡ nào?');
+    go.textContent = S.preOwner ? 'Quét @' + S.preOwner : 'Quét kênh này';
     return new Promise(function (res) {
       var fin = function () {
         S.picking = false; wrap.remove(); go.textContent = old; go.onclick = oldFn; document.removeEventListener('keydown', key, true);
@@ -374,7 +374,11 @@
     if (target) { say('Đang kết nối với trang TikTok Insight…'); for (var t = 0; t < 10 && !acked; t++) { send({ type: 'hello' }); await sleep(400); } }
     if (!acked) { target = null; try { var sv = JSON.parse(localStorage.getItem('tti_opts') || '{}'); S.preset = sv.preset || 'all'; S.mode = sv.mode || 'fast'; } catch (e) { S.preset = 'all'; S.mode = 'fast'; } }
     // Chọn khoảng ngày + mức đọc comment ngay trên khung ⚡ (mặc định = lựa chọn đang lưu trên trang web)
+    // Không đứng ở kênh / clip / feed có clip → báo ngay, khỏi bắt chọn rồi mới báo lỗi
+    var preOwner = (location.pathname.match(/^\/@([^/?#]+)/) || [])[1] || feedOwner();
+    S.preOwner = preOwner ? decodeURIComponent(preOwner) : '';
     var oldScan = await sget();
+    if (!preOwner && !(oldScan && !oldScan.finished)) { box.querySelector('#tti-go').style.display = 'none'; done('Mở trang kênh, mở một clip, hoặc lướt feed tới clip của kênh muốn khám rồi bấm ⚡.'); return; }
     if (oldScan && !oldScan.finished && oldScan.urls && oldScan.done && oldScan.urls.length > oldScan.done.length && Date.now() - (oldScan.at || 0) < 48 * 3600e3) S.resumable = oldScan;
     var pickRes = await choose();
     if (S.stop) { done('Đã huỷ.'); return; }
