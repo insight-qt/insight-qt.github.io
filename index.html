@@ -33,7 +33,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .btn{border:0;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:600;background:var(--soft);white-space:nowrap}
 .btn:hover{filter:brightness(.97)} .btn:disabled{opacity:.45;cursor:default}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}
-.link{background:none;border:0;color:var(--mute);cursor:pointer;font-size:13px;padding:6px 8px;border-radius:8px}
+.link{background:none;border:0;color:var(--mute);cursor:pointer;font-size:13px;padding:6px 8px;border-radius:8px} footer .link.del{margin-left:-8px}
 .link:hover{color:var(--ink);background:var(--soft)} .link.del:hover{color:var(--flop)}
 .hint{color:var(--faint);font-size:12.5px}
 /* onboarding */
@@ -106,7 +106,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .grp h4,.heat h4{margin:0 0 8px;font-size:12.5px;color:var(--mute);font-weight:600}
 .gr{display:grid;grid-template-columns:var(--lw,72px) minmax(40px,1fr) 44px;gap:8px;align-items:center;font-size:12.5px;margin:3px 0}
 .gr .t{height:6px;background:var(--soft);border-radius:99px;overflow:hidden} .gr .t i{display:block;height:100%;background:var(--accent)}
-.gr span:last-child{text-align:right;color:var(--mute)}
+.gr span:last-child{text-align:right;color:var(--mute)}.gr.up .t i{background:var(--win)}.gr.up span:last-child{color:var(--win)}.gr.dn .t i{background:var(--flop);opacity:.7}.gr.dn span:last-child{color:var(--flop)}.gr .t i{background:var(--faint)}
 .heat{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .hd2{display:grid;grid-template-columns:30px repeat(6,1fr);gap:4px;font-size:12px;align-items:center}.hd2 .hd{color:var(--mute);text-align:center;font-size:11px;padding-bottom:2px;white-space:nowrap;letter-spacing:-.02em}.heat .lg{vertical-align:middle;line-height:1.6}@media (max-width:420px){.hd2 .hd{font-size:10px}}.hd2 .dl{color:var(--mute)}
 .hd2 .d{display:flex;align-items:center;justify-content:center;height:30px}.hd2 .d i{display:block;border-radius:50%}.hd2 .d i.e{width:5px;height:5px;background:var(--line)}
@@ -138,7 +138,7 @@ td.hk{color:var(--mute);max-width:360px}
 .pill.PAID{background:var(--adf-soft);color:var(--adf)} .pill.NGHI{background:transparent;color:var(--adf);border:1px dashed var(--adf)}
 .pill.shop{background:transparent;color:var(--shop);border:1px solid var(--shop-l);margin-left:4px} .pill.brand{background:transparent;color:var(--warn);border:1px solid var(--warn-l);margin-left:4px}
 .pill.pin{background:transparent;color:var(--mute);margin-left:4px;border:1px solid var(--faint)} .pill.collab{background:transparent;color:var(--accent);border:1px solid var(--accent-l);margin-left:4px} .pill.adf{background:transparent;color:var(--mute);margin-left:4px;border:1px dashed var(--faint)}
-.xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--accent);opacity:.75}
+.xm{display:inline-flex;align-items:center;gap:6px} .xm i{display:inline-block;height:6px;border-radius:99px;background:var(--faint);opacity:.75}.xm.up{color:var(--win)}.xm.up i{background:var(--win)}.xm.dn{color:var(--flop)}.xm.dn i{background:var(--flop);opacity:.6}
 .guide{max-height:86vh;overflow:auto}
 .ghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .gtabs{margin-bottom:18px}
@@ -286,7 +286,7 @@ body.shared .sharebar{display:block;margin-bottom:14px}
 .sbars{display:flex;align-items:flex-end;gap:4px;height:64px;margin-top:6px}.sbars a{flex:1;max-width:38px;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--mute);font-size:10px;height:100%;justify-content:flex-end}.sbars i{width:100%;border-radius:4px 4px 2px 2px;background:var(--accent);opacity:.85;min-height:3px}.sbars i.w{background:var(--win)}.sbars i.f{background:var(--flop)}
 .rs,.hf{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:center}.rs:first-of-type,.hf:first-of-type{border-top:0;padding-top:0}
 .rs a{color:var(--ink);text-decoration:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rs small,.hf small{grid-column:1/-1;color:var(--mute);font-size:11.5px}.rs b{color:var(--win);font-weight:650;white-space:nowrap}
-.hf b{font-weight:650;white-space:nowrap}.hf b.up{color:var(--win)}.hf b.dn{color:var(--flop)}
+.hf b{font-weight:650;white-space:nowrap}.hf b.up{color:var(--win)}.hf b.dn{color:var(--flop)}.diff b.up{color:var(--win)}.diff b.dn{color:var(--flop)}.rs>b{color:var(--win)}
 @media (max-width:760px){.dig{grid-template-columns:1fr}}
 .cmp{overflow:auto}.cmp table{margin:0;font-size:13px}.cmp th,.cmp td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;cursor:default}.cmp th:first-child,.cmp td:first-child{text-align:left;color:var(--mute);font-weight:500;position:sticky;left:0;background:var(--card)}
 .cmp thead th{color:var(--ink);font-weight:650;vertical-align:bottom}.cmp thead th small{display:block;color:var(--mute);font-weight:400;font-size:11.5px}.cmp td.best{color:var(--win);font-weight:650}.cmp td.best::after{content:" ★";font-size:10px}
@@ -328,10 +328,10 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
 .pk .mg div{background:var(--soft);border-radius:10px;padding:7px 9px}
 .pk .mg b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
 .pk .mg small{display:block;color:var(--mute);font-size:11px}
-.pk .up{color:var(--win)}.pk .dn{color:var(--flop)}
+.pk .mg small.up,.pk .up{color:var(--win)}.pk .mg small.dn,.pk .dn{color:var(--flop)}
 .pk .ln{display:flex;gap:8px;padding:5px 0;border-top:1px dashed var(--line)}
 .pk .ln{align-items:center}.pk .ln>span:first-child{flex:0 0 104px;color:var(--mute)}
-.pk .chips{display:flex;flex-wrap:wrap;gap:4px}.pk .chips i{font-style:normal;font-size:11px;background:var(--soft);border-radius:99px;padding:1px 7px}
+.pk .pkc{display:flex;flex-wrap:wrap;gap:4px}.pk .pkc i{font-style:normal;font-size:11px;background:var(--soft);border-radius:99px;padding:1px 7px}
 .pk .cm{margin:2px 0 0;padding:0;list-style:none}.pk .cm li{padding:3px 0;line-height:1.35}.pk .cm em{font-style:normal;color:var(--mute);font-size:11px;margin-left:4px}
 .pk .act{display:flex;gap:6px;flex-wrap:wrap;margin:10px -16px -12px;padding:10px 16px 12px;border-top:1px solid var(--line);position:sticky;bottom:-12px;background:var(--card)}
 .pk .act button{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:5px 11px;cursor:pointer}
@@ -361,7 +361,7 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
     <div class="steps">
       <div class="step"><span class="stepn">1</span><b>Kéo nút ⚡ lên thanh bookmark</b><span>Làm một lần, dùng mãi. Chưa thấy thanh bookmark? Chrome, Edge: bấm ⌘⇧B (Mac) hoặc Ctrl+Shift+B (Windows). Safari: Xem → Hiện thanh Mục ưa thích.</span><div class="bmrow"><a class="bm" id="bm" href="#" onclick="event.preventDefault();toast('Kéo lên thanh bookmark nhé, bấm ở đây không chạy đâu')">⚡ TikTok Insight</a><div class="bmver" id="bmver"></div></div></div>
       <div class="step"><span class="stepn">2</span><b>Mở TikTok, tới kênh hoặc clip muốn khám</b><span>Đang lướt feed cũng được. Đăng nhập TikTok trước, không thì TikTok giấu bớt clip. <a class="link" href="https://www.tiktok.com" target="_blank">Mở TikTok →</a></span></div>
-      <div class="step"><span class="stepn">3</span><b>Bấm ⚡, chọn khoảng ngày, bấm Quét</b><span>Bạn ở yên trên TikTok trong lúc quét. Xong bấm <b>Xem kết quả</b> trong khung ⚡, kết quả hiện ở trang này. Trang TikTok lỡ tải lại thì bấm ⚡, chọn Tiếp tục.</span></div>
+      <div class="step"><span class="stepn">3</span><b>Bấm ⚡, chọn khoảng ngày, bấm Quét</b><span>Bạn ở yên trên TikTok trong lúc quét. Xong bấm <strong>Xem kết quả</strong> trong khung ⚡, kết quả hiện ở trang này. Trang TikTok lỡ tải lại thì bấm ⚡, chọn Tiếp tục.</span></div>
     </div>
     <div class="row sfoot" style="justify-content:space-between;margin-top:14px"><button class="link" onclick="openGuide('read')">Nhãn VIRAL, WIN, FLOP nghĩa là gì? Mở sổ tay →</button><button class="link" onclick="toggleSetup(false)">Đã hiểu, ẩn đi</button></div>
   </section>
@@ -542,6 +542,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=v=>typeof v==="number"?v>=1e6?(v/1e6).toFixed(1).replace(".",",")+"M":v>=1e3?(v/1e3).toFixed(1).replace(".",",")+"K":String(Math.round(v)):"–";
 const pct=(v,d=1)=>typeof v==="number"?(v*100).toFixed(d).replace(".",",")+"%":"–";
+const xc=v=>typeof v!=="number"?"":v>=1.2?"up":v<=0.8?"dn":"";
 const xm=v=>typeof v==="number"?v.toFixed(1).replace(".",",")+"×":"–";
 // so với clip thường: dưới mức thì nói "chỉ bằng X%", trên mức mới nói "gấp X lần"
 const vsNorm=x=>x==null?"–":x>=1.15?`view gấp ${String(Math.round(x*10)/10).replace(".",",")} lần clip thường`:x<=0.87?`view chỉ bằng ${Math.round(x*100)}% clip thường`:"view ngang clip thường";
@@ -648,7 +649,7 @@ window.addEventListener("message",e=>{
     rec.accounts={...(rec.accounts||{}),...(m.data||{})};await DB.put(rec);if(cur===h)loadDetail(h,true);
   });
   if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;if(job.state!=="done"&&job.state!=="ask")job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
-  if(m.type==="finished")return queue(async()=>{if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
+  if(m.type==="finished")return queue(async()=>{if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
     renderJob();await loadChannels();if(job&&job.handle){if(!cur||cur===job.handle)loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});
 });
 let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if(!cur||cur===h)queue(()=>loadDetail(h,true))}}
@@ -665,7 +666,7 @@ function jobCard(k,job){
   return `<section class="card job ${ask?"ask":""}">
     <div class="row" style="justify-content:space-between"><div><h3>${job.handle?`<a href="#" onclick="event.preventDefault();loadDetail('${esc(job.handle)}')" style="color:inherit;text-decoration:none">@${esc(job.handle)}</a>`:"Đang chờ nút ⚡"}</h3><div class="msg">${esc(msg)}</div></div>
     ${["done","ask"].includes(job.state)?`<button class="link" onclick="hideJob('${esc(k)}')">Ẩn</button>`:run?`<span class="hint">${many?"Tab nằm dưới bị Chrome cho chạy chậm: kéo mỗi tab TikTok ra một cửa sổ riêng.":"Giữ tab TikTok mở. Muốn dừng: bấm Dừng trong khung ⚡"}</span>`:""}</div>
-    ${job.todo?`<div class="bar"><i style="width:${p}%"></i></div>`:""}
+    ${job.todo&&job.state==="run"?`<div class="bar"><i style="width:${p}%"></i></div>`:""}
     ${run&&!many?`<div class="hint">Kết quả bên dưới đã xem được và tự cập nhật khi soi thêm clip.</div>`:""}
     ${errs.length?`<details class="errs"><summary>${errs.length} clip chưa đọc được (lần quét sau tự thử lại)</summary>${errs.slice(-30).map(e=>`<div>${esc(String(e.url).split("/").pop())} · ${esc(e.error)}</div>`).join("")}</details>`:""}
   </section>`;
@@ -712,11 +713,11 @@ function digCard(d){
     :`<div class="empty2">Chưa thấy series. Tool nhận series khi caption hoặc chữ trên màn hình có “P1”, “Phần 2”, “Tập 3”, “Part 4”.</div>`;
   const a3=D.rising.length?D.rising.slice(0,5).map(r=>`<div class="rs"><a href="${esc(r.url||"#")}" target="_blank" title="${esc(r.cap)}">${esc(r.cap)}</a><b>+${fmt(r.gain)} view</b><small>Đăng ${r.age} ngày trước · ~${fmt(Math.round(r.perDay))} view/ngày${r.speed>=1.2?`, nhanh gấp ${xx(r.speed).replace("×"," lần")} trước đó`:""}${r.kind!=="ORGANIC"?" · "+esc(r.kind):""}</small></div>`).join("")
     :`<div class="empty2">${D.scans<2?"Cần quét kênh ít nhất 2 lần (cách nhau vài ngày) để thấy clip cũ nào đang được đẩy lại.":"Chưa có clip cũ nào bật lên lại giữa 2 lần quét gần nhất."}</div>`;
-  const a4=D.hook.length?D.hook.map(f=>`<div class="hf"><span>${esc(f.name)}</span><b class="${f.r>=1?"up":"dn"}">${xx(f.ma)} <span class="hint">vs ${xx(f.mb)}</span></b><small>${f.na} clip có · ${f.nb} clip không · ${f.r>=1?"đi cùng clip ăn hơn":"đi cùng clip kém hơn"}</small></div>`).join("")
+  const a4=D.hook.length?D.hook.map(f=>`<div class="hf"><span>${esc(f.name)}</span><b class="${f.r>=1?"up":"dn"}" title="View trung vị (so với mức thường): clip có ${xx(f.ma)}, clip không ${xx(f.mb)}">${f.r>=1?"+":"−"}${Math.round(Math.abs(f.r-1)*100)}% view</b><small>${f.na} clip có · ${f.nb} clip không · ${f.r>=1?"đi cùng clip ăn hơn":"đi cùng clip kém hơn"}</small></div>`).join("")
     :`<div class="empty2">${D.base<8?`Mới có ${D.base} clip organic đủ 7 ngày, cần thêm để so.`:"Chưa thấy đặc điểm nào tách bạch clip ăn với clip kém."}</div>`;
   return `<div class="dig">
     <div><h4>Khán giả đang hỏi</h4><p class="dsub">Câu hỏi lặp lại trong comment = đề tài clip tiếp theo</p>${a1}</div>
-    <div><h4>Công thức hook</h4><p class="dsub">×TV trung vị khi clip có / không có đặc điểm này</p>${a4}</div>
+    <div><h4>Công thức hook</h4><p class="dsub">Clip có đặc điểm này được view hơn / kém clip không có bao nhiêu</p>${a4}</div>
     <div><h4>Series</h4><p class="dsub">Clip đánh số phần: phần nào giữ được người xem</p>${a2}</div>
     <div><h4>Clip cũ đang lên lại</h4><p class="dsub">View tăng mạnh giữa 2 lần quét gần nhất</p>${a3}</div>
   </div><div class="hint" style="margin-top:6px">Công thức hook là tương quan, chưa phải nhân quả. Xuất .md cho AI để kiểm lại bằng transcript.</div>`;
@@ -793,7 +794,7 @@ function chLabels(rows){
 function grp(title,rows){
   if(!rows||!rows.length)return"";
   const mx=Math.max(...rows.map(r=>r.med_x||0),1);
-  return `<div class="grp"><h4>${title}</h4>${rows.map(r=>`<div class="gr" title="${r.n} clip · TV ${fmt(r.med_views)} · ${r.win} win / ${r.flop} flop"><span>${esc(r.key)}</span><span class="t"><i style="width:${Math.round((r.med_x||0)/mx*100)}%"></i></span><span>${xm(r.med_x)}</span></div>`).join("")}</div>`;
+  return `<div class="grp"><h4>${title}</h4>${rows.map(r=>`<div class="gr ${xc(r.med_x)}" title="${r.n} clip · TV ${fmt(r.med_views)} · ${r.win} win / ${r.flop} flop"><span>${esc(r.key)}</span><span class="t"><i style="width:${Math.round((r.med_x||0)/mx*100)}%"></i></span><span>${xm(r.med_x)}</span></div>`).join("")}</div>`;
 }
 function rxCard(d){
   const rx=TTI.prescribe(d);if(!rx.length)return"";
@@ -849,7 +850,7 @@ function renderDetail(){
       <div class="chip"><small>Đã đọc comment</small><span class="cv"><b>${s.deep??0}</b></span></div>
       <div class="chip"><small>View trung vị</small><span class="cv"><b>${fmt(s.med_views)}</b></span></div>
       <div class="chip"><small>Tương tác/view</small><span class="cv"><b>${pct(s.med_er)}</b></span></div>
-      ${s.med_share!=null?`<div class="chip" title="Mốc tham khảo cho ${esc(s.share_bench.tier)}: ${pct(s.share_bench.rate,2)} (nguồn bên thứ ba)"><small>Share/view</small><span class="cv"><b>${pct(s.med_share,2)}</b><em class="${s.med_share>=s.share_bench.rate*1.2?"up":s.med_share<=s.share_bench.rate*0.8?"down":""}">mốc ${pct(s.share_bench.rate,2)}</em></span></div>`:""}
+      ${s.med_share!=null?`<div class="chip" title="Mốc tham khảo cho ${esc(s.share_bench.tier)}: ${pct(s.share_bench.rate,2)} (nguồn bên thứ ba)"><small>Share/view</small><span class="cv"><b>${pct(s.med_share,2)}</b><em class="${s.med_share>=s.share_bench.rate*1.2?"up":s.med_share<=s.share_bench.rate*0.8?"down":""}">${s.med_share>=s.share_bench.rate*1.2?"▲ trên":s.med_share<=s.share_bench.rate*0.8?"▼ dưới":"≈"} mốc ${pct(s.share_bench.rate,2)}</em></span></div>`:""}
       <div class="chip"><small>Viral · Win · Flop</small><span class="cv"><b><span style="color:var(--win)">${s.viral??0} · ${s.win??0}</span> · <span style="color:var(--flop)">${s.flop??0}</span></b></span></div>
       <div class="chip" title="Organic · Paid (có chạy ads) · Nghi chạy ads"><small>Organic · Ads · Nghi</small><span class="cv"><b>${s.organic??0} · ${s.paid??0} · ${s.suspect??0}</b></span></div>
       <div class="chip"><small>Tần suất</small><span class="cv"><b>${s.per_week?String(s.per_week).replace(".",",")+"/tuần":"–"}</b></span></div>
@@ -870,7 +871,7 @@ function renderDetail(){
       <th class="num hide-s" onclick="sortDet('er')">Tương tác${sortBy==="er"?" ↓":""}</th><th class="num hide-s">Share</th><th class="num hide-s" title="Comment đã lấy / tổng TikTok hiển thị">Cmt lấy / tổng</th></tr></thead>
     <tbody>${rows.length?"":`<tr><td colspan="8" class="empty">Không có clip nào${fsel[0]!=="all"?" thuộc nhóm "+fsel[1]+" trong":" trong"} khoảng ${esc(TTI.rangeLabel(range))}. Chọn khoảng rộng hơn, hoặc bấm “Cập nhật / soi tiếp” nếu kênh có clip mới.</td></tr>`}${rows.map((r,i)=>`<tr class="r" data-i="${i}" onclick="rowClick(${i})"><td>${dfmt(r.ts)}</td>
       <td class="hk">${r.lite?'<span class="hint">chưa soi sâu</span>':esc((r.hook||r.caption||"").slice(0,90))}${r.kind==="NGHI ADS"?`<div class="why">${esc(r.ad_reasons.join(" · "))}</div>`:r.kind==="PAID"?`<div class="why">${esc(r.paid_src)}${r.flag_paid?` <button class="fix" onclick="event.stopPropagation();markOne('${r.id}','organic')">Không chạy ads? Chấm như clip thường</button>`:""}</div>`:r.is_ad_flag&&r.mark==="organic"?`<div class="why ok">Bạn đã xác nhận không chạy ads <button class="fix" onclick="event.stopPropagation();markOne('${r.id}',null)">Hoàn tác</button></div>`:""}</td><td class="num">${fmt(r.views)}</td>
-      <td><span class="xm"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*40))}px"></i>${xm(r.x_med)}</span></td>
+      <td><span class="xm ${r.label==="WIN"||r.label==="VIRAL"?"up":r.label==="FLOP"?"dn":""}"><i style="width:${Math.max(3,Math.round(Math.sqrt(Math.min(r.x_med,mx)/mx)*40))}px"></i>${xm(r.x_med)}</span></td>
       <td><div class="pills"><span class="pill ${r.label==="NGHI ADS"?"NGHI":r.label}" title="${esc(r.kind==="NGHI ADS"?r.ad_reasons.join("\n"):r.super?"Từ 10× mức thường, hoặc view gấp 5 lần follower":r.paid_src||"")}">${r.super?"SIÊU VIRAL":r.label}</span>${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}${r.brand?`<span class="pill brand" title="${esc(r.brand_src.join(" · "))}">Brand</span>`:(r.product||[]).length?`<span class="pill pin" title="Nhắc tên hãng / sản phẩm: ${esc(r.product.join(", "))}. Chưa thấy dấu hiệu booking (lời cảm ơn hãng, được gửi máy, mã giảm giá, tag nhà bán lẻ, hashtag chiến dịch).">Nhắc SP</span>`:""}${r.collab&&r.collab.length?`<span class="pill collab" title="Hợp tác với ${esc(r.collab.map(x=>"@"+x).join(", "))}: view có thể đến từ tệp fan của người kia">Collab</span>`:""}${r.pinned?'<span class="pill pin" title="Clip ghim: clip cũ treo đầu kênh, không tính vào giai đoạn và bảng giờ đăng">Ghim</span>':""}${r.is_ad_flag&&r.kind==="ORGANIC"?`<span class="pill adf" title="TikTok có gắn cờ quảng cáo, nhưng bạn đã xác nhận clip này không chạy ads">Cờ ads</span>`:""}${r.label==="MỚI"&&r.ts?`<span class="hint due">có điểm ${dfmt(r.ts+TTI.NEW_DAYS*86400).slice(0,5)}</span>`:""}</div></td>
       <td class="num hide-s">${pct(r.er)}</td><td class="num hide-s">${pct(r.share_r,2)}</td>
       <td class="num hide-s">${r.lite?'<span class="hint">–</span>':r.thin?`<span class="hint">–/${fmt(r.comments_count)}</span>`:`${(r.comments||[]).length}<span class="hint">/${fmt(r.comments_count)}</span>`}</td></tr>`).join("")}</tbody></table></div>
@@ -880,7 +881,7 @@ function sortDet(k){sortBy=k;renderDetail()}
 /* ---------- soi nhanh 1 clip: chuột phải hoặc giữ lâu vào dòng ---------- */
 let pkSkip=0;
 function rowClick(i){if(Date.now()<pkSkip)return;const r=SHOWN[i];if(r)window.open(r.url,"_blank")}
-function cmpTo(v,m,lo=.8,hi=1.25){if(v==null||!m)return "";const r=v/m;const g=x=>String(Math.round(x*10)/10).replace(".",",");return r>=hi?`<small class="up">▲ gấp ${g(r)} lần kênh</small>`:r<=lo?`<small class="dn">▼ bằng ${Math.round(r*100)}% kênh</small>`:`<small>ngang kênh</small>`}
+function cmpTo(v,m,lo=.8,hi=1.25){if(v==null||!m)return "";const r=v/m;const g=x=>String(Math.round(x*10)/10).replace(".",",");return r>=hi?`<small class="up">▲ gấp ${g(r)} lần mức kênh</small>`:r<=lo?`<small class="dn">▼ chỉ bằng ${Math.round(r*100)}% mức kênh</small>`:`<small>≈ ngang mức kênh</small>`}
 function peekClose(){$("pk").classList.remove("show");document.querySelectorAll("tr.pkon").forEach(x=>x.classList.remove("pkon"))}
 function peek(ev,i){
   const r=SHOWN[i];if(!r)return;const s=detail.summary||{},pk=$("pk");peekClose();
@@ -896,7 +897,7 @@ function peek(ev,i){
     <h4>${dfmt(r.ts)}${dur?" · "+dur:""}${r.is_photo?" · post ảnh":""} ${lab}${r.er_high?'<span class="pill er">ER cao</span>':""}${r.shop?'<span class="pill shop">Giỏ hàng</span>':""}</h4>
     <div class="cap">${esc(r.caption||r.hook||"(không caption)")}</div>
     <div class="mg">
-      <div><small>View</small><b>${fmt(r.views)}</b><small>${r.x_med!=null?xm(r.x_med)+" mức thường":""}</small></div>
+      <div><small>View</small><b>${fmt(r.views)}</b>${r.x_med!=null?cmpTo(r.x_med,1,.87,1.15).replace("mức kênh","clip thường"):""}</div>
       <div><small>Tương tác</small><b>${pct(r.er)}</b>${cmpTo(r.er,s.med_er)}</div>
       <div><small>Share</small><b>${fmt(r.shares)}</b>${r.share_r!=null?cmpTo(r.share_r,s.med_share):""}</div>
       <div><small>Like</small><b>${fmt(r.likes)}</b><small>${pct(r.likes!=null&&r.views?r.likes/r.views:null)} view</small></div>
@@ -909,15 +910,15 @@ function peek(ev,i){
     ${L("Âm thanh",r.original_sound?"Âm thanh gốc":r.music?esc(r.music.slice(0,60)):"")}
     ${L("Tốc độ nói",r.wpm?r.wpm+" từ/phút":"")}
     ${L("Chữ trên clip",(r.ost||[]).length||r.ocr?esc(((r.ost||[]).join(" · ")||r.ocr||"").slice(0,120)):"")}
-    ${L("TikTok xếp vào",(r.labels||[]).length?`<span class="chips">${r.labels.map(x=>`<i>${esc(x)}</i>`).join("")}</span>`:"")}
-    ${L("Hashtag",(r.hashtags||[]).length?`<span class="chips">${r.hashtags.slice(0,10).map(x=>`<i>#${esc(x)}</i>`).join("")}</span>`:"")}
+    ${L("TikTok xếp vào",(r.labels||[]).length?`<span class="pkc">${r.labels.map(x=>`<i>${esc(x)}</i>`).join("")}</span>`:"")}
+    ${L("Hashtag",(r.hashtags||[]).length?`<span class="pkc">${r.hashtags.slice(0,10).map(x=>`<i>#${esc(x)}</i>`).join("")}</span>`:"")}
     ${L("Vì sao",r.kind==="NGHI ADS"?esc(r.ad_reasons.join(" · ")):r.kind==="PAID"?esc(r.paid_src||""):"")}
     ${cms.length?`<div class="ln" style="display:block"><span style="color:var(--mute)">Comment nhiều like nhất</span><ul class="cm">${cms.map(c=>`<li>${esc(c.text.slice(0,140))}<em>♥ ${fmt(c.likes)}</em></li>`).join("")}</ul></div>`:""}
     <div class="act"><button onclick="window.open(SHOWN[${i}].url,'_blank')">Mở trên TikTok ↗</button><button onclick="pkCopy(${i},'link')">Copy link</button><button onclick="pkCopy(${i},'stat')">Copy số liệu</button></div>`;
   pk.classList.add("show");
   if(innerWidth>600){const w=pk.offsetWidth,hh=pk.offsetHeight;let x=ev.clientX+8,y=ev.clientY+8;if(x+w>innerWidth-8)x=Math.max(8,ev.clientX-w-8);if(y+hh>innerHeight-8)y=Math.max(8,innerHeight-hh-8);pk.style.left=x+"px";pk.style.top=y+"px"}
 }
-function pkCopy(i,k){const r=SHOWN[i];if(!r)return;const t=k==="link"?r.url:[`Clip ${dfmt(r.ts)} · ${r.url}`,`Caption: ${(r.caption||"").replace(/\s+/g," ").trim()}`,`View ${fmt(r.views)} (${xm(r.x_med)} mức thường) · Like ${fmt(r.likes)} · Comment ${fmt(r.comments_count)} · Share ${fmt(r.shares)} · Lưu ${fmt(r.saves)}`,`Tương tác ${pct(r.er)} · Share/view ${pct(r.share_r,2)} · Nhãn ${r.super?"SIÊU VIRAL":r.label}`].join("\n");
+function pkCopy(i,k){const r=SHOWN[i];if(!r)return;const t=k==="link"?r.url:[`Clip ${dfmt(r.ts)} · ${r.url}`,`Caption: ${(r.caption||"").replace(/\s+/g," ").trim()}`,`View ${fmt(r.views)} (${vsNorm(r.x_med)}) · Like ${fmt(r.likes)} · Comment ${fmt(r.comments_count)} · Share ${fmt(r.shares)} · Lưu ${fmt(r.saves)}`,`Tương tác ${pct(r.er)} · Share/view ${pct(r.share_r,2)} · Nhãn ${r.super?"SIÊU VIRAL":r.label}`].join("\n");
   navigator.clipboard.writeText(t).then(()=>toast(k==="link"?"Đã copy link":"Đã copy số liệu"),()=>toast("Không copy được"))}
 document.addEventListener("contextmenu",e=>{const tr=e.target.closest&&e.target.closest("#det tr.r[data-i]");if(!tr||window.getSelection().toString())return;e.preventDefault();peek(e,+tr.dataset.i)});
 {let tm=null,sx=0,sy=0;
@@ -1007,10 +1008,10 @@ function diffCard(d){
   const grow=rows.filter(r=>!isNewId(r)&&L.views[r.id]&&r.views>L.views[r.id]).map(r=>({r,g:r.views-L.views[r.id]})).sort((a,b)=>b.g-a.g).slice(0,3);
   const due=rows.filter(r=>r.label==="MỚI"&&r.ts).map(r=>r.ts+TTI.NEW_DAYS*86400).sort((a,b)=>a-b);
   const li=[];
-  if(L.followers&&d.meta.followers){const df=d.meta.followers-L.followers;li.push(`Follower ${df>=0?"tăng":"giảm"} <b>${fmt(Math.abs(df))}</b> (${fmt(L.followers)} → ${fmt(d.meta.followers)})`)}
+  if(L.followers&&d.meta.followers){const df=d.meta.followers-L.followers;li.push(`Follower <b class="${df>=0?"up":"dn"}">${df>=0?"▲ tăng":"▼ giảm"} ${fmt(Math.abs(df))}</b> (${fmt(L.followers)} → ${fmt(d.meta.followers)})`)}
   if(fresh.length)li.push(`<b>${fresh.length}</b> clip mới${["VIRAL","WIN","FLOP","MỚI"].filter(cnt).map(l=>` · ${cnt(l)} ${l==="MỚI"?"chưa đủ 7 ngày":l}`).join("")}`);
-  moved.slice(0,4).forEach(r=>li.push(`<a href="${esc(r.url)}" target="_blank">Clip ${dfmt(r.ts)}</a> đổi nhãn: ${esc(L.labels[r.id])} → <b>${esc(r.label)}</b>`));
-  if(grow.length)li.push("View tăng nhiều nhất: "+grow.map(x=>`<a href="${esc(x.r.url)}" target="_blank">${dfmt(x.r.ts)}</a> +${fmt(x.g)}`).join(" · "));
+  const rank={FLOP:0,"NGHI ADS":0,"ỔN":1,WIN:2,VIRAL:3};moved.slice(0,4).forEach(r=>{const up=(rank[r.label]??1)>(rank[L.labels[r.id]]??1);li.push(`<a href="${esc(r.url)}" target="_blank">Clip ${dfmt(r.ts)}</a> đổi nhãn: ${esc(L.labels[r.id])} → <b class="${up?"up":"dn"}">${up?"▲":"▼"} ${esc(r.label)}</b>`)});
+  if(grow.length)li.push("View tăng nhiều nhất: "+grow.map(x=>`<a href="${esc(x.r.url)}" target="_blank">${dfmt(x.r.ts)}</a> <b class="up">+${fmt(x.g)}</b>`).join(" · "));
   if(due.length)li.push(`${due.length} clip MỚI sẽ có điểm từ <b>${dfmt(due[0]).slice(0,5)}</b>. Quét lại sau ngày đó.`);
   if(!li.length)li.push("Chưa có gì thay đổi đáng kể.");
   return `<div class="diff"><h4>Kết quả tái khám${L.at?" · so với lần quét "+dfmt(L.at):""}</h4><ul>${li.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
@@ -1115,7 +1116,7 @@ async function openShared(){
   const tables={heat:{hours:T.hh||[],organic:T.ho,rows:(T.hr||[]).map(([day,cells])=>({day,cells:cells.map(([n,x])=>({n,x,med:null}))}))},weekday:ex(T.wd),hour:ex(T.hu),duration:ex(T.du),topic:ex(T.to),kind:ex(T.ki)};
   const S=P.s||{},m={handle:P.m.h,nickname:P.m.n,followers:P.m.f,videos:P.m.vd};
   const sum={deep:S.dp,med_views:S.mv,med_er:S.er,med_share:S.sh,share_bench:S.bt?{tier:S.bt[0],rate:S.bt[1]}:null,viral:S.vi,win:S.wi,flop:S.fl,organic:S.o,paid:S.p,suspect:S.su,per_week:S.pw,med_save:S.sv,reach:S.re,conc:S.co,thin_base:!!S.tb,base_n:S.tb};
-  const row=([ts,cap,views,x,label,f,id])=>`<tr class="r" ${id?`onclick="window.open('https://www.tiktok.com/@${esc(m.handle)}/video/${esc(id)}','_blank')"`:""}><td>${dfmt(ts)}</td><td class="hk">${esc(cap)}</td><td class="num">${fmt(views)}</td><td><span class="xm">${xm(x)}</span></td><td><div class="pills"><span class="pill ${label}">${f.includes("s")?"SIÊU VIRAL":label}</span>${f.includes("e")?'<span class="pill er">ER cao</span>':""}${f.includes("b")?'<span class="pill brand">Brand</span>':""}${f.includes("c")?'<span class="pill collab">Collab</span>':""}</div></td></tr>`;
+  const row=([ts,cap,views,x,label,f,id])=>`<tr class="r" ${id?`onclick="window.open('https://www.tiktok.com/@${esc(m.handle)}/video/${esc(id)}','_blank')"`:""}><td>${dfmt(ts)}</td><td class="hk">${esc(cap)}</td><td class="num">${fmt(views)}</td><td><span class="xm ${label==="WIN"||label==="VIRAL"?"up":label==="FLOP"?"dn":""}">${xm(x)}</span></td><td><div class="pills"><span class="pill ${label}">${f.includes("s")?"SIÊU VIRAL":label}</span>${f.includes("e")?'<span class="pill er">ER cao</span>':""}${f.includes("b")?'<span class="pill brand">Brand</span>':""}${f.includes("c")?'<span class="pill collab">Collab</span>':""}</div></td></tr>`;
   const sec=t=>`<tr><td colspan="5" class="sh-sec">${t}</td></tr>`;
   $("sharebar").innerHTML=`Bản xem lại, gửi từ máy tính lúc ${new Date(P.at*1000).toLocaleString("vi-VN",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit"})}${P.rg?" · "+esc(P.rg):""}. Muốn quét kênh mới: mở trang này trên máy tính.`;
   const bt=sum.share_bench;
@@ -1128,7 +1129,7 @@ async function openShared(){
       <div class="chip"><small>Đã đọc comment</small><span class="cv"><b>${sum.deep??0}</b></span></div>
       <div class="chip"><small>View trung vị</small><span class="cv"><b>${fmt(sum.med_views)}</b></span></div>
       <div class="chip"><small>Tương tác/view</small><span class="cv"><b>${pct(sum.med_er)}</b></span></div>
-      ${sum.med_share!=null&&bt?`<div class="chip"><small>Share/view</small><span class="cv"><b>${pct(sum.med_share,2)}</b><em class="${sum.med_share>=bt.rate*1.2?"up":sum.med_share<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em></span></div>`:""}
+      ${sum.med_share!=null&&bt?`<div class="chip"><small>Share/view</small><span class="cv"><b>${pct(sum.med_share,2)}</b><em class="${sum.med_share>=bt.rate*1.2?"up":sum.med_share<=bt.rate*0.8?"down":""}">${sum.med_share>=bt.rate*1.2?"▲ trên":sum.med_share<=bt.rate*0.8?"▼ dưới":"≈"} mốc ${pct(bt.rate,2)}</em></span></div>`:""}
       <div class="chip"><small>Viral · Win · Flop</small><span class="cv"><b><span style="color:var(--win)">${sum.viral} · ${sum.win}</span> · <span style="color:var(--flop)">${sum.flop}</span></b></span></div>
       <div class="chip"><small>Organic · Ads · Nghi</small><span class="cv"><b>${sum.organic} · ${sum.paid} · ${sum.suspect}</b></span></div>
       <div class="chip"><small>Tần suất</small><span class="cv"><b>${sum.per_week?String(sum.per_week).replace(".",",")+"/tuần":"–"}</b></span></div>
@@ -1227,7 +1228,7 @@ async function openClip(){
     <div class="det-head"><div><h2>@${esc(v.h||"?")} <span class="hint">${v.ts?dfmt(v.ts):""}${age!=null?" · "+age+" ngày trước":""}${X.photo?" · post ảnh":v.dur?" · "+v.dur+"s":""}</span></h2><div class="bio">${esc(desc)}</div>${(X.labels&&X.labels.length)||X.hearts||X.music?"":`<p class="hint" style="margin:8px 0 0">Đang đọc ít số liệu. Cập nhật mẫu trong phím tắt để xem thêm chủ đề, từ khoá, nhạc, so với trung bình kênh.</p>`}</div></div>
     <div class="chips">
       ${chip("View",fmt(v.views))}${chip("Follower kênh",fmt(v.fol))}${chip("View / follower",reach!=null?pct(reach,reach<0.1?1:0):"–")}
-      ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
+      ${chip("Tương tác/view",pct(er))}${chip("Share/view",pct(shr,2),`<em class="${shr>=bt.rate*1.2?"up":shr<=bt.rate*0.8?"down":""}">${shr>=bt.rate*1.2?"▲ trên":shr<=bt.rate*0.8?"▼ dưới":"≈"} mốc ${pct(bt.rate,2)}</em>`)}${chip("Save/view",pct(svr,2))}
       ${X.hearts&&X.vids?chip("Tim TB mỗi clip của kênh",fmt(X.hearts/X.vids))+chip("Comment",fmt(v.cm)):""}
     </div>
     <div class="rx"><h4>Đọc nhanh</h4>${sayHtml}

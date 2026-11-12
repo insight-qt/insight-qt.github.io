@@ -424,11 +424,13 @@
   function prescribe(a) {
     const { rows, summary: s, tables: t } = a, out = [];
     if (!rows || !rows.length) return out;
-    const X = v => (v == null ? "–" : v.toFixed(1).replace(".", ",") + "×");
+    // nói bằng lời thay cho "1,5×": gấp X lần / chỉ bằng Y% / ngang
+    const Vs = v => v == null ? "–" : v >= 1.15 ? `gấp ${(Math.round(v * 10) / 10).toString().replace(".", ",")} lần` : v <= 0.87 ? `chỉ bằng ${Math.round(v * 100)}%` : "ngang";
+    const V = v => v == null ? "–" : Vs(v) + " mức thường";
     const P = (v, d = 1) => (v * 100).toFixed(d).replace(".", ",") + "%";
     const day = v => { if (!v.ts) return ""; const d = new Date(v.ts * 1000); return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(2); };
     const cap = v => { const c = String(v.caption || v.vtt || "").replace(/#\S+/g, "").replace(/\s+/g, " ").trim(); return c.length > 54 ? c.slice(0, 54) + "…" : c || "(không caption)"; };
-    const ref = v => `“${cap(v)}” (${day(v)}, ${X(v.x_med)})`;
+    const ref = v => `“${cap(v)}” (${day(v)}, view ${Vs(v.x_med)})`;
     const org = rows.filter(v => v.kind === "ORGANIC" && !v.isNew && !v.pinned);
     if (org.length < 6) return [{ k: "data", score: 9, t: "Chưa đủ dữ liệu để kê đơn", d: `Mới có ${org.length} clip organic đủ ${NEW_DAYS} ngày. Quét rộng khoảng ngày hơn hoặc chờ kênh đăng thêm.` }];
     // 1. Nhân bản clip thắng
@@ -444,20 +446,20 @@
     if (dur.length >= 2) {
       const best = [...dur].sort((a, b) => b.med_x - a.med_x)[0], most = [...dur].sort((a, b) => b.n - a.n)[0], tot = dur.reduce((a, g) => a + g.n, 0);
       if (best.key !== most.key && best.med_x >= most.med_x * 1.4) out.push({ k: "dur", score: 6 + Math.min(2, best.med_x / most.med_x - 1),
-        t: `Dồn về clip ${best.key}`, d: `Clip ${best.key} ra ${X(best.med_x)} (${best.n} clip), trong khi ${most.key} chỉ ${X(most.med_x)} mà đang chiếm ${Math.round(most.n / tot * 100)}% số clip.` });
+        t: `Dồn về clip ${best.key}`, d: `Clip ${best.key} có view ${V(best.med_x)} (${best.n} clip). Clip ${most.key} view ${V(most.med_x)} mà đang chiếm ${Math.round(most.n / tot * 100)}% số clip.` });
     }
     // 4. Giờ đăng
     const cells = []; ((t.heat || {}).rows || []).forEach(r => r.cells.forEach((c, i) => { if (c.n >= 3 && c.x != null) cells.push({ day: r.day, hour: t.heat.hours[i], n: c.n, x: c.x }); }));
     if (cells.length >= 3) {
       const best = [...cells].sort((a, b) => b.x - a.x)[0], most = [...cells].sort((a, b) => b.n - a.n)[0];
       if (best.x >= 1.3 && (best.day !== most.day || best.hour !== most.hour) && best.x >= most.x * 1.4) out.push({ k: "time", score: 5 + Math.min(2, best.x / most.x - 1),
-        t: "Dời lịch đăng", d: `Kênh đăng nhiều nhất vào ${most.day} ${most.hour} (${most.n} clip, ${X(most.x)}). Khung ${best.day} ${best.hour} ra ${X(best.x)} (${best.n} clip). Chuyển vài clip sang khung này trong 3–4 tuần rồi khám lại.` });
+        t: "Dời lịch đăng", d: `Kênh đăng nhiều nhất vào ${most.day} ${most.hour} (${most.n} clip, view ${Vs(most.x)} mức thường). Khung ${best.day} ${best.hour} view ${V(best.x)} (${best.n} clip). Chuyển vài clip sang khung này trong 3–4 tuần rồi khám lại.` });
     }
     // 5. Chủ đề
     const top = (t.topic || []).filter(g => g.n >= 3 && g.med_x != null);
     if (top.length >= 2) {
       const hi = top[0], lo = top[top.length - 1];
-      if (hi.med_x >= 1.5) out.push({ k: "topic", score: 5.5, t: `Đẩy mạnh chủ đề ${hi.key}`, d: `TikTok xếp ${hi.n} clip vào “${hi.key}”, trung vị ${X(hi.med_x)}.${lo.med_x <= 0.7 && lo.key !== hi.key ? ` Ngược lại “${lo.key}” chỉ ${X(lo.med_x)} (${lo.n} clip): bớt, hoặc đổi góc kể.` : ""}` });
+      if (hi.med_x >= 1.5) out.push({ k: "topic", score: 5.5, t: `Đẩy mạnh chủ đề ${hi.key}`, d: `TikTok xếp ${hi.n} clip vào “${hi.key}”, view ${V(hi.med_x)}.${lo.med_x <= 0.7 && lo.key !== hi.key ? ` Ngược lại “${lo.key}” view ${V(lo.med_x)} (${lo.n} clip): bớt, hoặc đổi góc kể.` : ""}` });
     }
     // 6. Share
     if (s.med_share != null && s.share_bench && s.med_share < s.share_bench.rate * 0.8) {
