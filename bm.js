@@ -11,6 +11,8 @@
   [].forEach.call(document.querySelectorAll('#tti-box'), function (e) { e.remove(); });
   [].forEach.call(document.body.children, function (e) { if (e.querySelector && e.querySelector(':scope > div > #tti-x')) e.remove(); });
   var S = window.__tti = { running: true, stop: false, labelBudget: 40 };
+  // mã riêng của tab này: trang kết quả tách tiến độ theo từng tab khi quét nhiều kênh cùng lúc (giữ qua lần tải lại)
+  try { S.tab = sessionStorage.getItem('tti_tab') || ('t' + Math.random().toString(36).slice(2, 8)); sessionStorage.setItem('tti_tab', S.tab); } catch (e) { S.tab = 't' + Math.random().toString(36).slice(2, 8); }
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var N = function (x) { return x == null || x === '' ? null : Number(x); };
 
@@ -47,12 +49,15 @@
   /* ---------- lưu tiến độ trên máy (IndexedDB của tiktok.com): trang lỡ tải lại vẫn bấm ⚡ chạy tiếp được ---------- */
   var SDB = null, SV = null, svT = 0;
   function sdb() { return SDB || (SDB = new Promise(function (res) { try { var q = indexedDB.open('tti-scan', 1); q.onupgradeneeded = function () { q.result.createObjectStore('kv'); }; q.onsuccess = function () { res(q.result); }; q.onerror = function () { res(null); }; } catch (e) { res(null); } })); }
-  async function sget() { var d = await sdb(); if (!d) return null; return new Promise(function (res) { try { var r = d.transaction('kv').objectStore('kv').get('cur'); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
-  async function sput(v) { var d = await sdb(); if (!d) return; try { d.transaction('kv', 'readwrite').objectStore('kv').put(v, 'cur'); } catch (e) {} }
+  async function sget(k) { var d = await sdb(); if (!d) return null; return new Promise(function (res) { try { var r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
+  async function sput(v) { var d = await sdb(); if (!d || !v || !v.handle) return; try { d.transaction('kv', 'readwrite').objectStore('kv').put(v, 'cur:' + String(v.handle).toLowerCase()); } catch (e) {} }
+  // lượt quét dở gần nhất (mỗi kênh lưu một chỗ riêng, quét nhiều tab không đè nhau)
+  async function slatest() { var d = await sdb(); if (!d) return null; return new Promise(function (res) { try { var r = d.transaction('kv').objectStore('kv').getAll(); r.onsuccess = function () { var a = (r.result || []).filter(function (x) { return x && !x.finished; }).sort(function (x, y) { return (y.at || 0) - (x.at || 0); }); res(a[0] || null); }; r.onerror = function () { res(null); }; } catch (e) { res(null); } }); }
   function save(force) { if (!SV || (!force && Date.now() - svT < 3000)) return; svT = Date.now(); SV.at = Date.now(); SV.LOG = LOG; sput(SV); }
   // đang quét mà trang định tải lại / rời đi → trình duyệt hỏi lại trước (và lưu tiến độ ngay)
   window.addEventListener('beforeunload', function (e) { if (S.running && !S.stop && SV) { save(true); e.preventDefault(); e.returnValue = ''; } });
   function send(m) {
+    m.tab = S.tab;
     if (m.type !== 'hello') { LOG.push(m); save(); }
     if (!target) return;   // chưa nối với trang web: giữ lại, gửi hết khi bấm Xem kết quả
     if (lost()) { $n.style.display = 'block'; $n.textContent = 'Tab TikTok Insight đã đóng. Dữ liệu vẫn được giữ ở đây, bấm nút phía trên để mở lại và lưu.'; return; }
@@ -66,7 +71,7 @@
     try { target.focus(); } catch (e) {}
     if (!target) { $n.style.display = 'block'; $n.textContent = 'Trình duyệt chặn cửa sổ bật lên. Cho phép popup cho tiktok.com rồi bấm lại.'; return; }
     acked = false;
-    for (var t = 0; t < 40 && !acked; t++) { try { target.postMessage({ type: 'hello', ver: '%%VER%%' }, APP); } catch (e) {} await sleep(500); }
+    for (var t = 0; t < 40 && !acked; t++) { try { target.postMessage({ type: 'hello', ver: '%%VER%%', tab: S.tab }, APP); } catch (e) {} await sleep(500); }
     if (!acked) return;
     var copy = LOG.slice();
     for (var i = 0; i < copy.length; i++) { try { target.postMessage(copy[i], APP); } catch (e) {} if (i % 10 === 9) await sleep(50); }
@@ -320,7 +325,7 @@
       if (us && us.uniqueId) out[todo[i]] = { org: +us.isOrganization === 1, biz: !!(us.commerceUserInfo && us.commerceUserInfo.commerceUser),
         verified: !!us.verified, cat: (us.commerceUserInfo && us.commerceUserInfo.category) || '', name: us.nickname || '' };
     }
-    if (Object.keys(out).length) send({ type: 'accounts', data: out });
+    if (Object.keys(out).length) send({ type: 'accounts', data: out, h: owner });
   }
 
   function feedOwner() {
@@ -417,7 +422,7 @@
     // Không đứng ở kênh / clip / feed có clip → báo ngay, khỏi bắt chọn rồi mới báo lỗi
     var preOwner = (location.pathname.match(/^\/@([^/?#]+)/) || [])[1] || feedOwner();
     S.preOwner = preOwner ? decodeURIComponent(preOwner) : '';
-    var oldScan = await sget();
+    var oldScan = S.preOwner ? await sget('cur:' + S.preOwner.toLowerCase()) : await slatest();
     if (!preOwner && !(oldScan && !oldScan.finished)) { box.querySelector('#tti-go').style.display = 'none'; done('Mở trang kênh, mở một clip, hoặc lướt feed tới clip của kênh muốn khám rồi bấm ⚡.'); return; }
     if (oldScan && !oldScan.finished && oldScan.urls && oldScan.done && oldScan.urls.length > oldScan.done.length && Date.now() - (oldScan.at || 0) < 48 * 3600e3) S.resumable = oldScan;
     var pickRes = await choose();

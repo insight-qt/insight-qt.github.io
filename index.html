@@ -599,19 +599,21 @@ function setDates(){range={...range,from:$("rf").value,to:$("rt").value};if(rang
 const ranged=()=>!!TTI.rangeBounds(range);
 
 /* ---------- quét ---------- */
-let detailMarks={}, labFilter="all", SHOWN=[]; let job=null, cur=null, detail=null, sortBy="date", last=null;
+let detailMarks={}, labFilter="all", SHOWN=[]; let JOBS={}, cur=null, detail=null, sortBy="date", last=null;
 function openChannel(){
   const h=handleOf($("url").value);
   if(!h){toast("Dán link dạng tiktok.com/@tenkenh");return $("url").focus()}
   const base=TEST_HOST?"http://"+TEST_HOST+":"+(new URLSearchParams(location.search).get("testport")||"80"):"https://www.tiktok.com";
   window.open(base+"/@"+h,"_blank");
-  job={handle:h,state:"wait",mode:$("mode").value,msg:"Trang kênh đã mở ở tab mới. Sang tab đó, bấm nút ⚡ TikTok Insight trên thanh bookmark.",done:0,todo:0,errors:[]};
+  JOBS.wait={handle:h,state:"wait",mode:$("mode").value,msg:"Trang kênh đã mở ở tab mới. Sang tab đó, bấm nút ⚡ TikTok Insight trên thanh bookmark.",done:0,todo:0,errors:[]};
   renderJob();
 }
 window.addEventListener("message",e=>{
   if(!tiktokOrigin(e.origin)||!e.data||!e.data.type)return;
   const m=e.data, reply=x=>{try{e.source.postMessage(x,e.origin)}catch(err){}};
-  if(m.type==="hello"){if(BMVER&&m.ver!==BMVER&&!window.__oldBmWarned){window.__oldBmWarned=1;setTimeout(()=>alertOldBm(),800)}const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0,preset:range.preset||"all",mode:$("mode").value,custom:range.preset==="custom"?TTI.rangeLabel(range):""});if(!job||job.state==="done")job={handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]};else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
+  // mỗi tab TikTok (mỗi nút ⚡ đang chạy) một thẻ tiến độ riêng → quét nhiều kênh cùng lúc không lẫn số
+  const tk=m.tab||"_"; let job=JOBS[tk]||null; const setJ=j=>{JOBS[tk]=job=j};
+  if(m.type==="hello"){if(BMVER&&m.ver!==BMVER&&!window.__oldBmWarned){window.__oldBmWarned=1;setTimeout(()=>alertOldBm(),800)}const b=TTI.rangeBounds(range);reply({type:"ack",from:b&&b.from||0,preset:range.preset||"all",mode:$("mode").value,custom:range.preset==="custom"?TTI.rangeLabel(range):""});if(!job&&JOBS.wait){job=JOBS[tk]=JOBS.wait;delete JOBS.wait}if(!job||job.state==="done")setJ({handle:null,state:"run",mode:$("mode").value,msg:"Nút ⚡ đã kết nối, đang đọc kênh…",done:0,todo:0,errors:[]});else{job.state="run";job.msg="Nút ⚡ đã kết nối, đang đọc kênh…"}renderJob();return}
   if(m.type==="channel")return queue(async()=>{
     const meta=m.meta||{},h=(meta.handle||"").toLowerCase();if(!h)return;
     const rec=(await DB.get(h))||{handle:h,meta:{},vids:{}};
@@ -629,9 +631,9 @@ window.addEventListener("message",e=>{
     const pmode=(job&&job.mode)||$("mode").value, urls=m.blocked?[]:TTI.plan(rec.vids,pmode,range);
     const inR=Object.keys(TTI.filterRange(rec.vids,range)).length;
     await DB.put(rec);
-    job={...(job||{}),handle:h,state:m.blocked?"ask":"run",todo:urls.length,done:0,errors:[],total:(m.links||[]).length,
-      msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}. Muốn đọc đủ: mở thẳng trang kênh trên TikTok, đã đăng nhập, rồi bấm ⚡ lại)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")};
-    reply({type:"plan",urls,mode:pmode,known:Object.keys(rec.accounts||{})});cur=h;renderJob();await loadChannels();loadDetail(h,true);
+    setJ({...(job||{}),handle:h,state:m.blocked?"ask":"run",todo:urls.length,done:0,errors:[],total:(m.links||[]).length,
+      msg:m.blocked?"TikTok không cho xem danh sách clip khi chưa đăng nhập. Đăng nhập TikTok trên trình duyệt này, tải lại trang kênh rồi bấm ⚡ lần nữa.":(ranged()?`${inR} clip trong khoảng ${TTI.rangeLabel(range)}`:`Đã đọc ${Math.max((m.links||[]).length,(m.items||[]).length)} clip`+(meta.videos&&(m.links||[]).length<meta.videos*0.6?` (kênh có ${meta.videos}. Muốn đọc đủ: mở thẳng trang kênh trên TikTok, đã đăng nhập, rồi bấm ⚡ lại)`:""))+(urls.length?` · đang đọc comment ${urls.length} clip đại diện`:" · comment đã đọc đủ")});
+    reply({type:"plan",urls,mode:pmode,known:Object.keys(rec.accounts||{})});const busy=cur&&cur!==h&&Object.values(JOBS).some(j=>j.handle===cur&&j.state==="run");if(!busy)cur=h;renderJob();await loadChannels();if(!busy)loadDetail(h,true);
   });
   if(m.type==="opts"){if(m.preset&&m.preset!==range.preset){range={...range,preset:m.preset};ls.set("tti_range",JSON.stringify(range));renderRange()}if(m.mode&&[...$("mode").options].some(o=>o.value===m.mode)){$("mode").value=m.mode;ls.set("tti_mode",m.mode)}if(job)job.mode=m.mode||job.mode;return}
   if(m.type==="video")return queue(async()=>{
@@ -642,24 +644,29 @@ window.addEventListener("message",e=>{
     renderJob();throttleDetail(h);
   });
   if(m.type==="accounts")return queue(async()=>{
-    const h=((job&&job.handle)||cur||"").toLowerCase();if(!h)return;const rec=await DB.get(h);if(!rec)return;
+    const h=(m.h||(job&&job.handle)||cur||"").toLowerCase();if(!h)return;const rec=await DB.get(h);if(!rec)return;
     rec.accounts={...(rec.accounts||{}),...(m.data||{})};await DB.put(rec);if(cur===h)loadDetail(h,true);
   });
   if(m.type==="error"){if(job){job.done=(job.done||0)+1;if(m.of)job.todo=Math.max(m.of,job.done);job.eta=m.eta||0;if(job.state!=="done"&&job.state!=="ask")job.msg="";job.errors.push({url:m.url,error:m.error})}renderJob();return}
   if(m.type==="finished")return queue(async()=>{if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong @${job.handle}: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
-    renderJob();await loadChannels();if(job&&job.handle){loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});
+    renderJob();await loadChannels();if(job&&job.handle){if(!cur||cur===job.handle)loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});
 });
 let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if(!cur||cur===h)queue(()=>loadDetail(h,true))}}
 function renderJob(){
-  if(!job){$("job").innerHTML="";return}
+  const ks=Object.keys(JOBS).filter(k=>JOBS[k]);
+  $("job").innerHTML=ks.map(k=>jobCard(k,JOBS[k])).join("");
+}
+function hideJob(k){delete JOBS[k];renderJob()}
+function jobCard(k,job){
   const p=job.todo?Math.round(job.done/job.todo*100):0, ask=job.state==="ask"||job.state==="wait", run=job.state==="run"&&job.todo;
   const errs=job.errors||[], eta=job.eta?(job.eta<60?"còn chưa tới 1 phút":`còn khoảng ${Math.round(job.eta/60)} phút`):"";
   const msg=run&&!job.msg?`Đang đọc comment ${job.done}/${job.todo} clip${eta?" · "+eta:""}`:(job.msg||"");
-  $("job").innerHTML=`<section class="card job ${ask?"ask":""}">
-    <div class="row" style="justify-content:space-between"><div><h3>${job.handle?"@"+esc(job.handle):"Đang chờ nút ⚡"}</h3><div class="msg">${esc(msg)}</div></div>
-    ${["done","ask"].includes(job.state)?`<button class="link" onclick="job=null;renderJob()">Ẩn</button>`:run?`<span class="hint">Giữ tab TikTok mở. Muốn dừng: bấm Dừng trong khung ⚡</span>`:""}</div>
+  const many=Object.keys(JOBS).filter(x=>JOBS[x]&&JOBS[x].state==="run").length>1;
+  return `<section class="card job ${ask?"ask":""}">
+    <div class="row" style="justify-content:space-between"><div><h3>${job.handle?`<a href="#" onclick="event.preventDefault();loadDetail('${esc(job.handle)}')" style="color:inherit;text-decoration:none">@${esc(job.handle)}</a>`:"Đang chờ nút ⚡"}</h3><div class="msg">${esc(msg)}</div></div>
+    ${["done","ask"].includes(job.state)?`<button class="link" onclick="hideJob('${esc(k)}')">Ẩn</button>`:run?`<span class="hint">${many?"Tab nằm dưới bị Chrome cho chạy chậm: kéo mỗi tab TikTok ra một cửa sổ riêng.":"Giữ tab TikTok mở. Muốn dừng: bấm Dừng trong khung ⚡"}</span>`:""}</div>
     ${job.todo?`<div class="bar"><i style="width:${p}%"></i></div>`:""}
-    ${run?`<div class="hint">Kết quả bên dưới đã xem được và tự cập nhật khi soi thêm clip.</div>`:""}
+    ${run&&!many?`<div class="hint">Kết quả bên dưới đã xem được và tự cập nhật khi soi thêm clip.</div>`:""}
     ${errs.length?`<details class="errs"><summary>${errs.length} clip chưa đọc được (lần quét sau tự thử lại)</summary>${errs.slice(-30).map(e=>`<div>${esc(String(e.url).split("/").pop())} · ${esc(e.error)}</div>`).join("")}</details>`:""}
   </section>`;
 }
@@ -682,7 +689,7 @@ async function ocrCovers(h){
     if(!list.length)return;
     if(!window.Tesseract)await loadScript(OCR_CDN.lib);
     const worker=await Tesseract.createWorker("vie",1,{workerPath:OCR_CDN.worker,corePath:OCR_CDN.core,langPath:OCR_CDN.lang});
-    let done=0,fail=0,got=0;const out={},base=job&&job.handle===h?job.msg:"",say=t=>{if(job&&job.handle===h&&job.state==="done"){job.msg=base+t;renderJob()}};
+    let done=0,fail=0,got=0;const job=Object.values(JOBS).find(j=>j&&j.handle===h);const out={},base=job?job.msg:"",say=t=>{if(job&&job.handle===h&&job.state==="done"){job.msg=base+t;renderJob()}};
     for(const v of list){
       const blob=await fetch(v.cover,{mode:"cors",referrerPolicy:"no-referrer"}).then(x=>x.ok?x.blob():null).catch(()=>null);
       if(!blob){fail++;if(fail>=3&&!done){toast("TikTok không cho đọc ảnh bìa từ trang này, bỏ qua bước đọc chữ trên ảnh bìa");break}continue}
@@ -850,7 +857,7 @@ function renderDetail(){
       <div class="chip" title="View trung vị chia số follower: clip bình thường chạm tới bao nhiêu phần tệp fan"><small>View / follower</small><span class="cv"><b>${s.reach!=null?pct(s.reach,s.reach<0.1?1:0):"–"}</b></span></div>
       <div class="chip" title="10% clip nhiều view nhất chiếm bao nhiêu tổng view organic. Càng cao càng sống nhờ vài clip nổ"><small>10% clip gánh</small><span class="cv"><b>${s.conc!=null?Math.round(s.conc*100)+"% view":"–"}</b></span></div>
     </div>
-    <div class="acts"><a class="btn" href="https://www.tiktok.com/@${esc(m.handle)}" target="_blank" onclick="job={handle:'${esc(m.handle)}',state:'wait',mode:$('mode').value,msg:'Sang tab TikTok vừa mở, bấm ⚡ để cập nhật và soi tiếp.',done:0,todo:0,errors:[]};renderJob()" style="text-decoration:none">Cập nhật / soi tiếp</a>
+    <div class="acts"><a class="btn" href="https://www.tiktok.com/@${esc(m.handle)}" target="_blank" onclick="JOBS.wait={handle:'${esc(m.handle)}',state:'wait',mode:$('mode').value,msg:'Sang tab TikTok vừa mở, bấm ⚡ để cập nhật và soi tiếp.',done:0,todo:0,errors:[]};renderJob()" style="text-decoration:none">Cập nhật / soi tiếp</a>
       <button class="btn" onclick="openMarks()">Đánh dấu clip ads</button><button class="btn" onclick="remind('${esc(m.handle)}')" title="Tải file lịch để nhắc quét lại">Hẹn tái khám</button><button class="btn" onclick="openPhone()" title="Gửi bản xem lại sang điện thoại">Mở trên điện thoại</button>
       <span class="hint scanned">Quét lần cuối ${esc(m.scanned||"–")}</span><button class="link del" onclick="delCh('${esc(m.handle)}')">Xoá kênh</button></div>
     ${diffCard(d)}
