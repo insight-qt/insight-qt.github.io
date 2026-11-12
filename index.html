@@ -502,6 +502,8 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const fmt=v=>typeof v==="number"?v>=1e6?(v/1e6).toFixed(1).replace(".",",")+"M":v>=1e3?(v/1e3).toFixed(1).replace(".",",")+"K":String(Math.round(v)):"–";
 const pct=(v,d=1)=>typeof v==="number"?(v*100).toFixed(d).replace(".",",")+"%":"–";
 const xm=v=>typeof v==="number"?v.toFixed(1).replace(".",",")+"×":"–";
+// so với clip thường: dưới mức thì nói "chỉ bằng X%", trên mức mới nói "gấp X lần"
+const vsNorm=x=>x==null?"–":x>=1.15?`view gấp ${String(Math.round(x*10)/10).replace(".",",")} lần clip thường`:x<=0.87?`view chỉ bằng ${Math.round(x*100)}% clip thường`:"view ngang clip thường";
 const dfmt=ts=>ts?new Date(ts*1000).toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit",year:"2-digit"}):"–";
 function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("show"),2400)}
 const handleOf=t=>{const m=String(t||"").match(/@([A-Za-z0-9_.\-]+)/);if(m)return m[1].replace(/\.$/,"").toLowerCase();t=String(t||"").trim();return /^[A-Za-z0-9_.\-]{2,40}$/.test(t)?t.toLowerCase():null};
@@ -651,7 +653,7 @@ function digCard(d){
     :`<div class="empty2">${D.deep?"Chưa thấy câu hỏi lặp lại trong comment.":"Chưa đọc comment clip nào. Bấm ⚡ để tool soi comment."}</div>`;
   const a2=D.series.length?D.series.map(z=>{const mx=Math.max(...z.parts.map(p=>p.views||0),1);return `<div class="sr"><div class="srh"><b title="${esc(z.name)}">${esc(z.name)}</b><span style="color:${z.keep==null?"var(--mute)":z.keep>=0.8?"var(--win)":z.keep<0.5?"var(--flop)":"var(--mute)"}">${z.keep==null?"":z.keep>=1?`phần cuối gấp ${xx(z.keep).replace("×"," lần")}`:`phần cuối còn ${Math.round(z.keep*100)}%`}</span></div><div class="sbars">${z.parts.map(p=>`<a href="${esc(p.url||"#")}" target="_blank" title="Phần ${p.part} · ${fmt(p.views)} view · ${xx(p.x)}"><i class="${p.label==="WIN"||p.label==="VIRAL"?"w":p.label==="FLOP"?"f":""}" style="height:${Math.max(6,Math.round((p.views||0)/mx*100))}%"></i>P${p.part}</a>`).join("")}</div></div>`}).join("")
     :`<div class="empty2">Chưa thấy series. Tool nhận series khi caption hoặc chữ trên màn hình có “P1”, “Phần 2”, “Tập 3”, “Part 4”.</div>`;
-  const a3=D.rising.length?D.rising.slice(0,5).map(r=>`<div class="rs"><a href="${esc(r.url||"#")}" target="_blank" title="${esc(r.cap)}">${esc(r.cap)}</a><b>+${fmt(r.gain)} view</b><small>Đăng ${r.age} ngày trước · ~${fmt(Math.round(r.perDay))} view/ngày${r.speed?`, gấp ${xx(r.speed).replace("×"," lần")} nhịp cũ`:""}${r.kind!=="ORGANIC"?" · "+esc(r.kind):""}</small></div>`).join("")
+  const a3=D.rising.length?D.rising.slice(0,5).map(r=>`<div class="rs"><a href="${esc(r.url||"#")}" target="_blank" title="${esc(r.cap)}">${esc(r.cap)}</a><b>+${fmt(r.gain)} view</b><small>Đăng ${r.age} ngày trước · ~${fmt(Math.round(r.perDay))} view/ngày${r.speed>=1.2?`, nhanh gấp ${xx(r.speed).replace("×"," lần")} trước đó`:""}${r.kind!=="ORGANIC"?" · "+esc(r.kind):""}</small></div>`).join("")
     :`<div class="empty2">${D.scans<2?"Cần quét kênh ít nhất 2 lần (cách nhau vài ngày) để thấy clip cũ nào đang được đẩy lại.":"Chưa có clip cũ nào bật lên lại giữa 2 lần quét gần nhất."}</div>`;
   const a4=D.hook.length?D.hook.map(f=>`<div class="hf"><span>${esc(f.name)}</span><b class="${f.r>=1?"up":"dn"}">${xx(f.ma)} <span class="hint">vs ${xx(f.mb)}</span></b><small>${f.na} clip có · ${f.nb} clip không · ${f.r>=1?"đi cùng clip ăn hơn":"đi cùng clip kém hơn"}</small></div>`).join("")
     :`<div class="empty2">${D.base<8?`Mới có ${D.base} clip organic đủ 7 ngày, cần thêm để so.`:"Chưa thấy đặc điểm nào tách bạch clip ăn với clip kém."}</div>`;
@@ -753,7 +755,7 @@ function heat(h,t){
   const cell=c=>{if(!c.n)return `<div class="d"><i class="e"></i></div>`;
     const x=c.x||0, sz=Math.round(9+Math.min(c.n,6)*2.6), k=x>=1.2?"up":x<0.8?"dn":"mid";
     const dot=`<i class="${k}${c.n<3?" few":""}" style="width:${sz}px;height:${sz}px"></i>`;
-    return `<div class="d" title="${c.day} ${c.hour} · ${c.n} clip · view gấp ${xm(x)} clip thường">${isBest(c)?`<span class="ring">${dot}</span>`:dot}</div>`};
+    return `<div class="d" title="${c.day} ${c.hour} · ${c.n} clip · ${vsNorm(x)}">${isBest(c)?`<span class="ring">${dot}</span>`:dot}</div>`};
   return `<div class="heat">${title}${say.length?`<p class="hsay">${say.join(" ")}</p>`:""}${sub?`<p class="hsub">${sub}</p>`:""}
     <div class="hd2"><div></div>${h.hours.map(x=>`<div class="hd">${x}</div>`).join("")}
     ${h.rows.map(r=>`<div class="dl">${short[r.day]||r.day}</div>${r.cells.map((c,k)=>cell({...c,day:r.day,hour:h.hours[k]})).join("")}`).join("")}</div>

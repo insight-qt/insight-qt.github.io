@@ -523,7 +523,7 @@
       if (D.series.length) { o.push("### Series (clip có đánh số phần)", "");
         D.series.forEach(z => o.push(`- “${z.name}”: ` + z.parts.map(p => `P${p.part} ${n_(p.views)} (${x_(p.x)})`).join(" → ") + (z.keep != null ? (z.keep >= 1 ? ` · phần cuối gấp ${x_(z.keep).replace("×", " lần")} view phần đầu` : ` · phần cuối còn ${Math.round(z.keep * 100)}% view so với phần đầu`) : ""))); o.push(""); }
       if (D.rising.length) { o.push("### Clip cũ đang lên lại (so 2 lần quét gần nhất)", "");
-        D.rising.slice(0, 5).forEach(r => o.push(`- “${r.cap}” (đăng ${r.day}, ${r.age} ngày trước): +${n_(r.gain)} view, khoảng ${n_(Math.round(r.perDay))} view/ngày${r.speed ? `, gấp ${x_(r.speed).replace("×", " lần")} nhịp trước đó` : ""}${r.kind !== "ORGANIC" ? ` · ${r.kind}` : ""}`)); o.push(""); }
+        D.rising.slice(0, 5).forEach(r => o.push(`- “${r.cap}” (đăng ${r.day}, ${r.age} ngày trước): +${n_(r.gain)} view, khoảng ${n_(Math.round(r.perDay))} view/ngày${r.speed >= 1.2 ? `, nhanh gấp ${x_(r.speed).replace("×", " lần")} trước đó` : ""}${r.kind !== "ORGANIC" ? ` · ${r.kind}` : ""}`)); o.push(""); }
       if (D.hook.length) { o.push(`### Công thức hook (so ×TV trung vị, ${D.base} clip organic)`, "");
         D.hook.forEach(f => o.push(`- ${f.name}: ${x_(f.ma)} (${f.na} clip) so với ${x_(f.mb)} khi không có (${f.nb} clip) → ${f.r >= 1 ? "đi cùng clip ăn hơn" : "đi cùng clip kém hơn"}`)); o.push("", "_Tương quan, chưa phải nhân quả: AI kiểm lại bằng transcript ở mục G._", ""); }
     }
