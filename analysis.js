@@ -555,7 +555,7 @@
     const rx = prescribe({ rows, summary: s, tables: t });
     if (rx.length) o.push("## D1b. Kê đơn của tool", "", "_Rút thẳng từ số liệu bằng luật đơn giản. AI kiểm lại bằng transcript + comment ở mục G: đồng ý, bác bỏ, hoặc đào sâu._", "", ...rx.map((r, i) => `${i + 1}. **${r.t}.** ${r.d}`), "");
     const D = dig({ rows }, meta && meta.handle);
-    if (D.asks.length || D.series.length || D.rising.length || D.hook.length) {
+    if (D.asks.length || D.series.length || D.rising.length || D.hook.length || D.booking.x != null || D.fans.n || D.cadence.length >= 2) {
       o.push("## D1c. Đào sâu của tool", "");
       if (D.asks.length) { o.push(`### Khán giả đang hỏi (${D.asked} câu hỏi, từ ${D.deep} clip đã đọc comment)`, "", "_Câu hỏi lặp lại = đề tài clip tiếp theo khán giả đã đặt sẵn._", "");
         D.asks.forEach(g => { o.push(`- **${g.name}** · ${g.n} câu · ${n_(g.likes)} like`); g.items.slice(0, 3).forEach(c => o.push(`  - «${c.text}» [${n_(c.likes)} like${c.answered ? " · kênh đã trả lời" : ""}] — dưới clip “${c.v.cap}” (${c.v.day})`)); }); o.push(""); }
@@ -563,6 +563,12 @@
         D.series.forEach(z => o.push(`- “${z.name}”: ` + z.parts.map(p => `P${p.part} ${n_(p.views)} (${x_(p.x)})`).join(" → ") + (z.keep != null ? (z.keep >= 1 ? ` · phần cuối gấp ${x_(z.keep).replace("×", " lần")} view phần đầu` : ` · phần cuối còn ${Math.round(z.keep * 100)}% view so với phần đầu`) : ""))); o.push(""); }
       if (D.rising.length) { o.push("### Clip cũ đang lên lại (so 2 lần quét gần nhất)", "");
         D.rising.slice(0, 5).forEach(r => o.push(`- “${r.cap}” (đăng ${r.day}, ${r.age} ngày trước): +${n_(r.gain)} view, khoảng ${n_(Math.round(r.perDay))} view/ngày${r.speed >= 1.2 ? `, nhanh gấp ${x_(r.speed).replace("×", " lần")} trước đó` : ""}${r.kind !== "ORGANIC" ? ` · ${r.kind}` : ""}`)); o.push(""); }
+      if (D.booking.x != null) { const b = D.booking, r = b.x / b.xb; o.push(`### Clip booking so với clip thường (${b.n} clip có brand, ${b.nb} clip thường, không tính clip chạy ads)`, "",
+        `- View (×TV trung vị): ${x_(b.x)} so với ${x_(b.xb)} → ${r >= 1.15 ? "booking vẫn ăn hơn" : r <= 0.85 ? "booking tụt view" : "ngang nhau"}`,
+        `- Tương tác: ${p_(b.er)} so với ${p_(b.erb)} · Share/view: ${p_(b.sh, 2)} so với ${p_(b.shb, 2)}`,
+        `- Booking ăn nhất: ` + b.best.map(v => `“${v.cap}” (${v.day}, ${x_(v.x)})`).join(" · "), `- Booking kém nhất: ` + b.worst.map(v => `“${v.cap}” (${v.day}, ${x_(v.x)})`).join(" · "), ""); }
+      if (D.fans.n) o.push(`### Fan ruột (comment ở ≥ ${D.fans.min} clip, trong ${D.fans.deep} clip đã đọc comment)`, "", `- ${D.fans.n} người / ${D.fans.users} người comment · ${Math.round(D.fans.share * 100)}% comment đến từ họ`, ...D.fans.top.map(f => `- @${f.u}: ${f.clips} clip, ${f.cm} comment`), "");
+      if (D.cadence.length >= 2) o.push(`### Nhịp đăng (khoảng cách tới clip trước · ~${String(Math.round(D.perWeek * 10) / 10).replace(".", ",")} clip/tuần trong 8 tuần gần nhất)`, "", ...D.cadence.map(g => `- ${g.name}: ${g.n} clip · ×TV trung vị ${x_(g.x)} · ${g.win} win/viral`), "");
       if (D.hook.length) { o.push(`### Công thức hook (so ×TV trung vị, ${D.base} clip organic)`, "");
         D.hook.forEach(f => o.push(`- ${f.name}: ${x_(f.ma)} (${f.na} clip) so với ${x_(f.mb)} khi không có (${f.nb} clip) → ${f.r >= 1 ? "đi cùng clip ăn hơn" : "đi cùng clip kém hơn"}`)); o.push("", "_Tương quan, chưa phải nhân quả: AI kiểm lại bằng transcript ở mục G._", ""); }
     }
@@ -762,7 +768,37 @@
       if (r >= 1.25 || r <= 0.8) hook.push({ name, r, na: A.length, nb: B.length, ma, mb, wa, wb });
     }
     hook.sort((a, b) => Math.abs(Math.log(b.r)) - Math.abs(Math.log(a.r)));
-    return { asks, asked, deep, series, rising, scans, hook: hook.slice(0, 6), base: org.length };
+    // 5. Booking có làm tụt view? So clip có brand với clip thường (bỏ clip chạy ads: view của ads là mua)
+    const pool = rows.filter(v => !v.isNew && !v.pinned && !v.gone && v.x_med != null && v.kind !== "PAID" && v.kind !== "NGHI ADS");
+    const mk = (xs, k) => med(xs.map(v => v[k]).filter(x => x != null));
+    const bA = pool.filter(v => v.brand), bB = pool.filter(v => !v.brand);
+    const brief = v => ({ id: v.id, url: v.url, cap: cap(v, 40), day: day(v), x: v.x_med, tag: (v.brand_tags || [])[0] || "" });
+    const booking = { n: bA.length, nb: bB.length };
+    if (bA.length >= 3 && bB.length >= 5) Object.assign(booking, {
+      x: mk(bA, "x_med"), xb: mk(bB, "x_med"), er: mk(bA, "er"), erb: mk(bB, "er"), sh: mk(bA, "share_r"), shb: mk(bB, "share_r"),
+      best: bA.slice().sort((a, b) => b.x_med - a.x_med).slice(0, 2).map(brief), worst: bA.slice().sort((a, b) => a.x_med - b.x_med).slice(0, 2).map(brief) });
+
+    // 6. Fan ruột: người comment ở nhiều clip khác nhau (chỉ tính trên các clip đã đọc comment)
+    const deepRows = rows.filter(v => (v.comments || []).length), fm = {}; let totC = 0;
+    for (const v of deepRows) {
+      const inClip = new Set();
+      for (const c of v.comments || []) {
+        const u = String(c.by || "").toLowerCase(); if (u === me && u) continue; totC++; if (!u) continue;
+        const f = fm[u] = fm[u] || { u, clips: 0, cm: 0, likes: 0 }; f.cm++; f.likes += c.likes || 0;
+        if (!inClip.has(u)) { inClip.add(u); f.clips++; }
+      }
+    }
+    const minC = deepRows.length >= 20 ? 3 : 2, fl = Object.values(fm).filter(f => f.clips >= minC).sort((a, b) => b.clips - a.clips || b.cm - a.cm);
+    const fans = { deep: deepRows.length, users: Object.keys(fm).length, min: minC, n: fl.length, share: totC ? fl.reduce((a, f) => a + f.cm, 0) / totC : 0, top: fl.slice(0, 5) };
+
+    // 7. Nhịp đăng: khoảng cách tới clip đăng ngay trước (tính mọi clip) ảnh hưởng view thế nào
+    const byT = rows.filter(v => v.ts).sort((a, b) => a.ts - b.ts), gapOf = {};
+    for (let i = 1; i < byT.length; i++) gapOf[byT[i].id] = (byT[i].ts - byT[i - 1].ts) / 3600;
+    const GB = [["Dưới 12 giờ", 0, 12], ["12–36 giờ", 12, 36], ["1,5–3 ngày", 36, 72], ["Trên 3 ngày", 72, 1e9]];
+    const cadence = GB.map(([name, lo, hi]) => { const vs = pool.filter(v => gapOf[v.id] != null && gapOf[v.id] >= lo && gapOf[v.id] < hi); return { name, n: vs.length, x: mk(vs, "x_med"), win: vs.filter(v => v.label === "WIN" || v.label === "VIRAL").length }; }).filter(g => g.n >= 3);
+    const perWeek = (() => { const recent = byT.filter(v => v.ts >= (byT.length ? byT[byT.length - 1].ts : 0) - 56 * 86400); return recent.length / 8; })();
+
+    return { asks, asked, deep, series, rising, scans, hook: hook.slice(0, 6), base: org.length, booking, fans, cadence, perWeek };
   }
   G.TTI = { dig, mergeItems, shareBench, analyze, buildMd, plan, snap, applyMarks, idOf, rangeBounds, rangeLabel, filterRange, RANGE_NAMES, mergeLinks, prescribe, videoFrom, kNum, idTs, cleanVtt, pickComments, NEW_DAYS };
 })(window);

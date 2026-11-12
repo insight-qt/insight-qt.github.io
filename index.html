@@ -289,7 +289,7 @@ body.shared .sharebar{display:block;margin-bottom:14px}
 .rs,.hf{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:center}.rs:first-of-type,.hf:first-of-type{border-top:0;padding-top:0}
 .rs a{color:var(--ink);text-decoration:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rs small,.hf small{grid-column:1/-1;color:var(--mute);font-size:11.5px}.rs b{color:var(--win);font-weight:650;white-space:nowrap}
 .hf b{font-weight:650;white-space:nowrap}.hf b.up{color:var(--win)}.hf b.dn{color:var(--flop)}.diff b.up{color:var(--win)}.diff b.dn{color:var(--flop)}.rs>b{color:var(--win)}
-@media (max-width:760px){.dig{grid-template-columns:1fr}}
+.dig>div:last-child:nth-child(odd){grid-column:1/-1}@media (max-width:760px){.dig{grid-template-columns:1fr}}
 .cmp{overflow:auto}.cmp table{margin:0;font-size:13px}.cmp th,.cmp td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;cursor:default}.cmp th:first-child,.cmp td:first-child{text-align:left;color:var(--mute);font-weight:500;position:sticky;left:0;background:var(--card)}
 .cmp thead th{color:var(--ink);font-weight:650;vertical-align:bottom}.cmp thead th small{display:block;color:var(--mute);font-weight:400;font-size:11.5px}.cmp td.best{color:var(--win);font-weight:650}.cmp td.best::after{content:" ★";font-size:10px}
 .cmp tr.sec2 td{color:var(--faint);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding-top:14px;border-bottom:0}
@@ -343,6 +343,9 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
 .pk-tip{margin:4px 0 6px}
 @media (max-width:600px){.pk{left:8px!important;right:8px;width:auto;top:auto!important;bottom:8px;max-height:75vh}.pk-tip{display:none}}
 .bmrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px}.bmrow .bm{margin-top:0!important}.bmver{font-size:12px;font-weight:600;color:var(--ink);line-height:1.4;max-width:260px}.bmver span{font-weight:400;color:var(--mute)}
+.dverdict{font-size:13.5px;margin:0 0 10px;line-height:1.45}.dverdict.up{color:var(--win)}.dverdict.dn{color:var(--flop)}
+.cmpr{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 14px;font-size:13px;align-items:baseline;font-variant-numeric:tabular-nums}.cmpr small{color:var(--mute);font-size:11px;text-align:right}.cmpr span:not(:nth-child(4n+1)),.cmpr b{text-align:right}.cmpr b.up{color:var(--win)}.cmpr b.dn{color:var(--flop)}.cmpr b.mid{color:var(--mute);font-weight:500}
+.rs2,.fans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px}.rs2 a,.fans a{color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rs2 a.ok{color:var(--win)}.rs2 a.bad{color:var(--flop)}.rs2 small,.fans small{color:var(--mute);font-size:12px;text-align:right}.fans{border-top:0;padding-top:0;margin:0 0 8px}
 </style>
 </head>
 <body>
@@ -717,7 +720,34 @@ function digCard(d){
     :`<div class="empty2">${D.scans<2?"Cần quét kênh ít nhất 2 lần (cách nhau vài ngày) để thấy clip cũ nào đang được đẩy lại.":"Chưa có clip cũ nào bật lên lại giữa 2 lần quét gần nhất."}</div>`;
   const a4=D.hook.length?D.hook.map(f=>`<div class="hf"><span>${esc(f.name)}</span><b class="${f.r>=1?"up":"dn"}" title="View trung vị (so với mức thường): clip có ${xx(f.ma)}, clip không ${xx(f.mb)}">${f.r>=1?"+":"−"}${Math.round(Math.abs(f.r-1)*100)}% view</b><small>${f.na} clip có · ${f.nb} clip không · ${f.r>=1?"đi cùng clip ăn hơn":"đi cùng clip kém hơn"}</small></div>`).join("")
     :`<div class="empty2">${D.base<8?`Mới có ${D.base} clip organic đủ 7 ngày, cần thêm để so.`:"Chưa thấy đặc điểm nào tách bạch clip ăn với clip kém."}</div>`;
+  // so 2 số: +X% xanh / −X% đỏ / ≈ ngang
+  const dv=(a,b,lo=.87,hi=1.15)=>a==null||!b?"–":a/b>=hi?`<b class="up">+${Math.round((a/b-1)*100)}%</b>`:a/b<=lo?`<b class="dn">−${Math.round((1-a/b)*100)}%</b>`:`<b class="mid">≈ ngang</b>`;
+  const B=D.booking, bkR=B.x!=null?B.x/B.xb:null;
+  const a5=B.x!=null?`<p class="dverdict ${bkR>=1.15?"up":bkR<=0.85?"dn":""}">${bkR>=1.15?`Clip booking vẫn ăn: view gấp ${String(Math.round(bkR*10)/10).replace(".",",")} lần clip thường.`:bkR<=0.85?`Clip booking tụt view: chỉ bằng ${Math.round(bkR*100)}% clip thường.`:"Clip booking giữ được view như clip thường."}</p>
+    <div class="cmpr"><span></span><small>booking</small><small>thường</small><small>chênh</small>
+      <span>View (×TV)</span><span>${xx(B.x)}</span><span>${xx(B.xb)}</span>${dv(B.x,B.xb)}
+      <span>Tương tác</span><span>${pct(B.er)}</span><span>${pct(B.erb)}</span>${dv(B.er,B.erb)}
+      <span>Share/view</span><span>${pct(B.sh,2)}</span><span>${pct(B.shb,2)}</span>${dv(B.sh,B.shb)}</div>
+    <div class="rs2">${B.best.map(v=>`<a class="ok" href="${esc(v.url||"#")}" target="_blank" title="${esc(v.cap)}">▲ ${esc(v.cap)}</a><small>${v.day} · ${xx(v.x)}${v.tag?" · #"+esc(v.tag):""}</small>`).join("")}${B.worst.filter(w=>!B.best.some(b=>b.id===w.id)).map(v=>`<a class="bad" href="${esc(v.url||"#")}" target="_blank" title="${esc(v.cap)}">▼ ${esc(v.cap)}</a><small>${v.day} · ${xx(v.x)}${v.tag?" · #"+esc(v.tag):""}</small>`).join("")}</div>`
+    :`<div class="empty2">${B.n?`Mới có ${B.n} clip có brand, cần từ 3 clip để so.`:"Chưa thấy clip có brand trên kênh này."} Không tính clip chạy ads.</div>`;
+  const F=D.fans;
+  const a6=F.n?`<p class="dverdict"><b>${F.n}</b> fan ruột · <b>${Math.round(F.share*100)}%</b> comment đến từ họ</p>
+    <div class="fans">${F.top.map(f=>`<a href="https://www.tiktok.com/@${esc(f.u)}" target="_blank">@${esc(f.u)}</a><small>${f.clips} clip · ${f.cm} comment</small>`).join("")}</div>
+    <div class="hint">Fan ruột = comment ở từ ${F.min} clip trở lên, trong ${F.deep} clip đã đọc comment. Đọc thêm comment thì con số chuẩn hơn.</div>`
+    :`<div class="empty2">${F.deep?`Trong ${F.deep} clip đã đọc comment chưa có ai comment ở từ ${F.min} clip trở lên.`:"Chưa đọc comment clip nào. Bấm ⚡ để tool soi comment."}</div>`;
+  const C=D.cadence, cOk=C.filter(g=>g.n>=5&&g.x!=null).sort((a,b)=>b.x-a.x), cBest=cOk[0], cWorst=cOk[cOk.length-1], cMx=Math.max(...C.map(g=>g.x||0),1);
+  const nm=g=>`<b>${g.name.toLowerCase()}</b>`;
+  const cSay=!(cOk.length>=2&&cBest.x/cWorst.x>=1.3)?"Nhịp đăng chưa tạo khác biệt rõ."
+    :cBest.x>=1.1?`Đăng cách clip trước ${nm(cBest)} ăn nhất (${vsNorm(cBest.x)})${cWorst.x<=0.85?`, ${nm(cWorst)} hụt nhất (${vsNorm(cWorst.x)})`:""}.`
+    :`Đăng cách clip trước ${nm(cWorst)} thì hụt (${vsNorm(cWorst.x)}). Các nhịp khác ngang mức thường.`;
+  const a7=C.length>=2?`<p class="dverdict">${cSay} Kênh đang đăng ~${String(Math.round(D.perWeek*10)/10).replace(".",",")} clip/tuần.</p>
+    ${C.map(g=>`<div class="gr ${xc(g.x)}" style="--lw:96px" title="${g.n} clip · ${g.win} win/viral · ${vsNorm(g.x)}"><span>${g.name}</span><span class="t"><i style="width:${Math.round((g.x||0)/cMx*100)}%"></i></span><span>${xx(g.x)}</span></div>`).join("")}
+    <div class="hint">Khoảng cách tới clip đăng ngay trước đó. Thanh = view so với mức thường.</div>`
+    :`<div class="empty2">Cần thêm clip để so nhịp đăng.</div>`;
   return `<div class="dig">
+    <div><h4>Clip booking có tụt view?</h4><p class="dsub">Clip có brand so với clip thường cùng kênh</p>${a5}</div>
+    <div><h4>Fan ruột</h4><p class="dsub">Người comment ở nhiều clip khác nhau</p>${a6}</div>
+    <div><h4>Nhịp đăng</h4><p class="dsub">Đăng dày có bị chia view không</p>${a7}</div>
     <div><h4>Khán giả đang hỏi</h4><p class="dsub">Câu hỏi lặp lại trong comment = đề tài clip tiếp theo</p>${a1}</div>
     <div><h4>Công thức hook</h4><p class="dsub">Clip có đặc điểm này được view hơn / kém clip không có bao nhiêu</p>${a4}</div>
     <div><h4>Series</h4><p class="dsub">Clip đánh số phần: phần nào giữ được người xem</p>${a2}</div>
