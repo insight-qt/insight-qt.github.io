@@ -13,8 +13,16 @@
     for (const b of BRANDS) { if (b.length >= 6 ? h.includes(b) : b.length >= 4 ? (h.startsWith(b) || h.endsWith(b)) : h === b || h === b + "vn" || h === b + "vietnam" || (PREFIX3.has(b) && h.startsWith(b))) return b; } return null; };
   // câu công bố tài trợ viết thường trong caption
   const SPONSOR_TXT = /(được|do)\s+tài\s*trợ|nội\s+dung\s+(được\s+)?tài\s*trợ|hợp\s+tác\s+(cùng|với)\s+\S|sponsored\s+by|paid\s+partnership|in\s+partnership\s+with/i;
+  // Kênh công nghệ: review sản phẩm có tên hãng là chuyện thường ngày, chưa chắc là booking.
+  // Tên hãng/sản phẩm chỉ tính là brand khi đi kèm dấu hiệu booking (lời kiểu được gửi máy, hashtag chiến dịch, tag nhà bán lẻ, tag tài khoản hãng).
+  const TOPIC = new Set(["apple","iphone","ipad","macbook","airpods","applewatch","imac","ios","samsung","galaxy","xiaomi","redmi","poco","oppo","vivo","realme","honor","huawei","google","pixel","android","windows","microsoft","surface","lenovo","thinkpad","legion","asus","rog","zenbook","vivobook","acer","predator","dell","xps","alienware","hp","lg","sony","bose","jbl","marshall","anker","baseus","ugreen","logitech","razer","intel","amd","nvidia","dyson","ecovacs","roborock","dreame","eufy","tplink","garmin","nintendo","playstation","xbox","canon","nikon","fujifilm","gopro","insta360","dji","kindle","chatgpt","openai","gemini","copilot","nothing","oneplus","tecno","infinix","msi","gigabyte","philips","panasonic","sharp","toshiba","casio","amazfit","huami","beats","sennheiser","shokz","edifier","soundpeats","tecnopro"]);
+  const TOPIC_RE = new RegExp("(?<![\\p{L}\\p{N}])(" + [...TOPIC].filter(x => x.length >= 3 && !["ios","nothing","rog","xps","hp","lg"].includes(x)).join("|") + ")(?![\\p{L}\\p{N}])", "giu");
+  // nhà bán lẻ công nghệ: tag / nhắc tên = hợp tác với nhà bán lẻ
+  const RETAIL = /^(cellphones?(vn)?|thegioididong|tgdd|fptshop|hoanghamobile|didongviet|shopdunk|dienmayxanh|nguyenkim|phongvu|gearvn|anphatpc|viettelstore|mobilecity|xtmobile|minhtuanmobile|clickbuy|bachlongmobile|topzone|ankhang)/i;
+  // lời kiểu booking hay gặp ở kênh review: được gửi máy, có dịp trải nghiệm, cảm ơn hãng, mã giảm giá…
+  const TECH_BOOK = /(c[oó] d[iị]p|[đd][uư][ợo]c m[ờo]i) (tr[ảa]i nghi[ệe]m|d[ùu]ng th[ửu]|tham d[ựu])|[đd][uư][ợo]c (h[ãa]ng|b[êe]n|team|anh em|nh[ãa]n h[àa]ng)[^.!?\n]{0,30}(g[ửu]i|t[ặa]ng|cho m[ượu]n)|tr[ảa]i nghi[ệe]m s[ớo]m|c[ảa]m [ơo]n (h[ãa]ng|b[êe]n|team|nh[ãa]n h[àa]ng)|s[ựu] ki[ệe]n ra m[ắa]t|m[ãa] gi[ảa]m gi[áa]|voucher|ư[uư] [đd][ãa]i|[đd][ặa]t tr[ưuướ][ớo]c ngay|mua (ngay )?t[ạa]i|link (trong|[ởo]) bio/i;
   // hashtag chung chung, viết hoa kiểu CamelCase nhưng không phải brand
-  const GENERIC_TAG = /^(fyp|foryou|foryoupage|xuhuong|trend|trending|viral|tiktok|tiktokawards|tiktokvietnam|capcut|learnontiktok|tiktokgiaitri|worldcup|backtoschool|tet|giangsinh|christmas|noel|halloween|valentine|trungthu)/i;
+  const GENERIC_TAG = /^(fyp|foryou|foryoupage|xuhuong|trend|trending|viral|tiktok|tiktokawards|tiktokvietnam|capcut|learnontiktok|thanhcongnghe|hoccungtiktok|edutok|tiktokgiaitri|worldcup|backtoschool|tet|giangsinh|christmas|noel|halloween|valentine|trungthu)/i;
   // comment cho thấy người xem nhận ra quảng cáo
   const AD_TALK = /qu[ảa]ng c[áa]o|\bqc\b|\bads?\b|t[àa]i tr[ợo]|sponsor|booking|nh[ậa]n bao nhi[êe]u|bao nhi[êe]u (ti[ềe]n|c[áa]t)|\bpr\b|seeding|đ[ưu][ợo]c tr[ảa] ti[ềe]n|clip (qc|pr)|l[ạa]i (qc|pr|qu[ảa]ng)/i;
   // caption kiểu bán hàng / kêu gọi mua
@@ -224,13 +232,30 @@
     rows.forEach(v => new Set((v.hashtags || []).map(h => h.toLowerCase())).forEach(h => { tagCnt[h] = (tagCnt[h] || 0) + 1; }));
     const ownCut = Math.max(6, rows.length * 0.12);
     const meN = String((rows.find(v => v.channel) || {}).channel || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    // kênh công nghệ: TikTok xếp ≥ 25% clip vào chủ đề công nghệ, hoặc ≥ 25% caption nhắc tên hãng công nghệ
+    const techShare = rows.filter(v => (v.labels || []).some(l => /tech/i.test(l))).length / rows.length;
+    const nameShare = rows.filter(v => { TOPIC_RE.lastIndex = 0; return TOPIC_RE.test(v.caption || ""); }).length / rows.length;
+    const techCh = techShare >= 0.25 || nameShare >= 0.25;
     for (const v of rows) {
       const hs = (v.hashtags || []).filter(h => !PAID_TAG.test("#" + h));
       // bỏ brand trùng tên kênh (kênh chính chủ của brand) và hashtag kênh dùng ở gần nửa số clip
       const known = [...new Set(hs.filter(h => { const b = brandOf(h); return b && !meN.includes(b) && (rows.length < 5 || (tagCnt[h.toLowerCase()] || 0) <= rows.length * 0.4); }))];
       const camp = [...new Set(hs.filter(h => !brandOf(h) && (tagCnt[h.toLowerCase()] || 0) < ownCut && h.length >= 4 && /\p{Lu}/u.test(h.slice(1)) && /\p{Ll}/u.test(h) && !GENERIC_TAG.test(h)))];
-      if (known.length) v.brand_src.push("hashtag brand " + known.slice(0, 3).map(h => "#" + h).join(" "));
+      const retail = [...new Set(hs.filter(h => RETAIL.test(h)).concat(((v.caption || "").match(/[@#]?[\p{L}\p{N}_.]+/gu) || []).map(x => x.replace(/^[@#]/, "")).filter(h => RETAIL.test(h) && h.length >= 4)))];
+      const bookTxt = ((v.caption || "") + " " + (v.ost || []).join(" ")).match(TECH_BOOK);
+      TOPIC_RE.lastIndex = 0;
+      const named = [...new Set([...((v.caption || "") + " " + (v.ost || []).join(" ")).matchAll(TOPIC_RE)].map(m => m[1].toLowerCase()))];
+      // kênh công nghệ: hashtag tên hãng/sản phẩm (#iphone, #samsung) chỉ là chủ đề, trừ khi có thêm dấu hiệu booking
+      const topicOnly = techCh ? known.filter(h => TOPIC.has(brandOf(h)) && !RETAIL.test(h)) : [];
+      const known2 = known.filter(h => !topicOnly.includes(h) && !RETAIL.test(h));
+      const cue = camp.length || retail.length || bookTxt || known2.length;
+      if (retail.length) v.brand_src.push("nhắc / tag nhà bán lẻ " + retail.slice(0, 2).join(", "));
+      if (bookTxt) v.brand_src.push("caption có lời kiểu booking «" + bookTxt[0].trim() + "»");
+      if (known2.length) v.brand_src.push("hashtag brand " + known2.slice(0, 3).map(h => "#" + h).join(" "));
+      if (topicOnly.length && cue) v.brand_src.push("hashtag hãng " + topicOnly.slice(0, 3).map(h => "#" + h).join(" "));
       if (camp.length) v.brand_src.push("hashtag kiểu chiến dịch " + camp.slice(0, 3).map(h => "#" + h).join(" "));
+      // nhắc tên hãng / sản phẩm mà không có dấu hiệu booking: ghi lại để AI soi thêm, không gắn Brand
+      v.product = cue ? [] : [...new Set(named.concat(topicOnly.map(h => h.toLowerCase())))].slice(0, 4);
       v.brand_tags = known.concat(camp);
     }
     const medErClean = median(rows.filter(v => !v.is_ad_flag && !v.declared && v.er != null).map(v => v.er)) || 0;
@@ -577,8 +602,9 @@
         if (v.declared) sig.push(v.paid_src === "bạn xác nhận" ? "người dùng tool xác nhận đã chạy ads" : v.paid_src);
         if (!v.declared) sig.push(...(v.ad_reasons || []));
         o.push(`- Loại: **${v.kind}** · dấu hiệu: ${sig.join("; ")}`);
-        if (v.brand) o.push(`- Có brand: ${v.brand_src.join("; ")}`);
       }
+      if (v.brand) o.push(`- Có brand: ${v.brand_src.join("; ")}`);
+      else if ((v.product || []).length) o.push(`- Nhắc tên hãng / sản phẩm: ${v.product.join(", ")} (chưa thấy dấu hiệu booking: AI soi transcript xem có lời cảm ơn hãng, được gửi máy, mã giảm giá…)`);
       if ((v.labels || []).length || (v.kw || []).length) o.push(`- TikTok xếp vào: ${(v.labels || []).join(", ") || "–"}${(v.kw || []).length ? " · từ khoá gợi ý: " + v.kw.join(", ") : ""}`);
       o.push(`- Caption: ${v.caption || "(trống)"}`);
       let tr = v.transcript || "";
