@@ -524,7 +524,12 @@
         n++; if (SV) SV.done.push(u);
         if (!r.error) noteMentions(r.mentions);
         send(r.error ? { type: 'error', url: u, error: r.error, of: urls.length, eta: eta() } : { type: 'video', data: r, of: urls.length, eta: eta() });
-        say('Đang đọc comment ' + n + '/' + urls.length + ' clip' + etaTxt(eta()), 0.15 + 0.85 * n / urls.length);
+        if (!r.error) { S.cmt = (S.cmt || 0) + (r.comments || []).length; if (!(r.comments || []).length && (r.comments_count || 0) > 0) S.cmtMiss = (S.cmtMiss || 0) + 1; }
+        say('Đang đọc comment ' + n + '/' + urls.length + ' clip · đã lấy ' + (S.cmt || 0).toLocaleString('vi-VN') + ' comment' + etaTxt(eta()), 0.15 + 0.85 * n / urls.length);
+        // TikTok không trả comment cho nhiều clip liền (có comment mà lấy về 0) → báo rõ thay vì im lặng
+        if (S.cmtMiss >= 5 && !S.cmt) { $n.style.display = 'block'; $n.textContent = 'TikTok đang không trả comment (đã thử ' + S.cmtMiss + ' clip). Kiểm tra đã đăng nhập TikTok chưa, hoặc bấm Dừng rồi thử lại sau ít phút.'; }
+        // chưa nối trang web: cho xem trước phần đã quét
+        if (!target) { var gb = box.querySelector('#tti-go'); if (gb.textContent !== 'Xem kết quả tới giờ →') gb.textContent = 'Xem kết quả tới giờ →'; }
         await sleep(pause + Math.random() * 900);
       }
     }
