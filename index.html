@@ -346,6 +346,8 @@ ul.qr .t-up i{background:var(--win-soft);color:var(--win)}ul.qr .t-up span b{col
 .dverdict{font-size:13.5px;margin:0 0 10px;line-height:1.45}.dverdict.up{color:var(--win)}.dverdict.dn{color:var(--flop)}
 .cmpr{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 14px;font-size:13px;align-items:baseline;font-variant-numeric:tabular-nums}.cmpr small{color:var(--mute);font-size:11px;text-align:right}.cmpr span:not(:nth-child(4n+1)),.cmpr b{text-align:right}.cmpr b.up{color:var(--win)}.cmpr b.dn{color:var(--flop)}.cmpr b.mid{color:var(--mute);font-weight:500}
 .rs2,.fans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px}.rs2 a,.fans a{color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rs2 a.ok{color:var(--win)}.rs2 a.bad{color:var(--flop)}.rs2 small,.fans small{color:var(--mute);font-size:12px;text-align:right}.fans{border-top:0;padding-top:0;margin:0 0 8px}
+.dig>div>h4{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:grab;user-select:none}.dig .grip{color:var(--faint);font-size:15px;line-height:1;padding:4px 2px 4px 8px;cursor:grab;touch-action:none;opacity:.6}.dig>div:hover .grip{opacity:1}
+.dig>div.dragging{opacity:.55;outline:2px dashed var(--accent);outline-offset:2px}body.digdrag,body.digdrag *{cursor:grabbing!important;user-select:none}
 </style>
 </head>
 <body>
@@ -657,7 +659,7 @@ window.addEventListener("message",e=>{
   if(m.type==="finished")return queue(async()=>{if(job){job.state=m.blocked?"ask":"done";job.msg=m.blocked?"TikTok tạm từ chối vì đọc nhiều quá. Dữ liệu đã lấy vẫn dùng được; thử bấm ⚡ lại sau ít phút để đọc tiếp.":m.stopped?"Đã dừng. Dữ liệu đã lấy được đã lưu.":`Xong: đã đọc comment ${job.done-job.errors.length} clip`+(job.errors.length?`, ${job.errors.length} clip lỗi`:"")}
     renderJob();await loadChannels();if(job&&job.handle){if(!cur||cur===job.handle)loadDetail(job.handle);if(!m.blocked)ocrCovers(job.handle)}});
 });
-let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if(!cur||cur===h)queue(()=>loadDetail(h,true))}}
+let _td=0;function throttleDetail(h){if(Date.now()-_td>4000){_td=Date.now();if((!cur||cur===h)&&!DRAG)queue(()=>loadDetail(h,true))}}
 function renderJob(){
   const ks=Object.keys(JOBS).filter(k=>JOBS[k]);
   $("job").innerHTML=ks.map(k=>jobCard(k,JOBS[k])).join("");
@@ -744,15 +746,16 @@ function digCard(d){
     ${C.map(g=>`<div class="gr ${xc(g.x)}" style="--lw:96px" title="${g.n} clip · ${g.win} win/viral · ${vsNorm(g.x)}"><span>${g.name}</span><span class="t"><i style="width:${Math.round((g.x||0)/cMx*100)}%"></i></span><span>${xx(g.x)}</span></div>`).join("")}
     <div class="hint">Khoảng cách tới clip đăng ngay trước đó. Thanh = view so với mức thường.</div>`
     :`<div class="empty2">Cần thêm clip để so nhịp đăng.</div>`;
-  return `<div class="dig">
-    <div><h4>Clip booking có tụt view?</h4><p class="dsub">Clip có brand so với clip thường cùng kênh</p>${a5}</div>
-    <div><h4>Fan ruột</h4><p class="dsub">Người comment ở nhiều clip khác nhau</p>${a6}</div>
-    <div><h4>Nhịp đăng</h4><p class="dsub">Đăng dày có bị chia view không</p>${a7}</div>
-    <div><h4>Khán giả đang hỏi</h4><p class="dsub">Câu hỏi lặp lại trong comment = đề tài clip tiếp theo</p>${a1}</div>
-    <div><h4>Công thức hook</h4><p class="dsub">Clip có đặc điểm này được view hơn / kém clip không có bao nhiêu</p>${a4}</div>
-    <div><h4>Series</h4><p class="dsub">Clip đánh số phần: phần nào giữ được người xem</p>${a2}</div>
-    <div><h4>Clip cũ đang lên lại</h4><p class="dsub">View tăng mạnh giữa 2 lần quét gần nhất</p>${a3}</div>
-  </div><div class="hint" style="margin-top:6px">Công thức hook là tương quan, chưa phải nhân quả. Xuất .md cho AI để kiểm lại bằng transcript.</div>`;
+  const box=(k,t,sub,body)=>[k,`<div data-k="${k}"><h4>${t}<span class="grip" title="Kéo để sắp xếp" aria-hidden="true">⠿</span></h4><p class="dsub">${sub}</p>${body}</div>`];
+  const B2=Object.fromEntries([
+    box("booking","Clip booking có tụt view?","Clip có brand so với clip thường cùng kênh",a5),
+    box("fans","Fan ruột","Người comment ở nhiều clip khác nhau",a6),
+    box("cadence","Nhịp đăng","Đăng dày có bị chia view không",a7),
+    box("asks","Khán giả đang hỏi","Câu hỏi lặp lại trong comment = đề tài clip tiếp theo",a1),
+    box("hook","Công thức hook","Clip có đặc điểm này được view hơn / kém clip không có bao nhiêu",a4),
+    box("series","Series","Clip đánh số phần: phần nào giữ được người xem",a2),
+    box("rising","Clip cũ đang lên lại","View tăng mạnh giữa 2 lần quét gần nhất",a3)]);
+  return `<div class="dig">${digOrder(Object.keys(B2)).map(k=>B2[k]).join("")}</div><div class="hint" style="margin-top:6px">Công thức hook là tương quan, chưa phải nhân quả. Xuất .md cho AI để kiểm lại bằng transcript.</div>`;
 }
 /* ---------- So sánh kênh ---------- */
 let CMP=null;
@@ -912,6 +915,28 @@ function renderDetail(){
   </section>`;
 }
 function sortDet(k){sortBy=k;renderDetail()}
+/* ---------- kéo thả sắp xếp các ô Đào sâu (nhớ thứ tự trên máy này) ---------- */
+function digOrder(def){let o=[];try{o=JSON.parse(localStorage.getItem("tti_digorder")||"[]")}catch(e){}return [...o.filter(k=>def.includes(k)),...def.filter(k=>!o.includes(k))]}
+let DRAG=null;
+document.addEventListener("pointerdown",e=>{
+  const g=e.target.closest&&e.target.closest(".dig .grip"), h=e.target.closest&&e.target.closest(".dig>div>h4");
+  if(e.button>0||!(g||(h&&e.pointerType==="mouse")))return;
+  const box=(g||h).closest(".dig>div");e.preventDefault();DRAG={box,grid:box.parentNode,sx:e.clientX,sy:e.clientY,moved:false};
+});
+document.addEventListener("pointermove",e=>{
+  if(!DRAG)return;const D=DRAG;
+  if(!D.moved){if(Math.hypot(e.clientX-D.sx,e.clientY-D.sy)<6)return;D.moved=true;D.box.classList.add("dragging");document.body.classList.add("digdrag")}
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX,e.clientY), t=el&&el.closest(".dig>div");
+  if(t&&t!==D.box&&t.parentNode===D.grid){const r=t.getBoundingClientRect(),cols=getComputedStyle(D.grid).gridTemplateColumns.split(" ").length;
+    const after=cols>1&&Math.abs(e.clientY-(r.top+r.height/2))<r.height/3?e.clientX>r.left+r.width/2:e.clientY>r.top+r.height/2;
+    D.grid.insertBefore(D.box,after?t.nextSibling:t)}
+  if(e.clientY<50)scrollBy(0,-12);else if(e.clientY>innerHeight-50)scrollBy(0,12);
+},{passive:false});
+const dragEnd=()=>{if(!DRAG)return;const D=DRAG;DRAG=null;D.box.classList.remove("dragging");document.body.classList.remove("digdrag");
+  if(D.moved){try{localStorage.setItem("tti_digorder",JSON.stringify([...D.grid.children].map(x=>x.dataset.k).filter(Boolean)))}catch(e){}toast("Đã lưu thứ tự")}};
+document.addEventListener("pointerup",dragEnd);document.addEventListener("pointercancel",dragEnd);
+
 /* ---------- soi nhanh 1 clip: chuột phải hoặc giữ lâu vào dòng ---------- */
 let pkSkip=0;
 function rowClick(i){if(Date.now()<pkSkip)return;const r=SHOWN[i];if(r)window.open(r.url,"_blank")}
@@ -1099,7 +1124,7 @@ async function exportJpg(){
     const f=document.createElement("div");f.className="snap-f";f.textContent="Tạo bằng TikTok Insight · "+location.host+location.pathname;box.appendChild(f);
     document.body.appendChild(box);
     const H=box.scrollHeight, scale=Math.max(1,Math.min(2,Math.sqrt(16e6/(W*H))));   // Safari giới hạn ~16 triệu điểm ảnh mỗi ảnh
-    const cv=await html2canvas(box,{backgroundColor:bg,scale,logging:false,useCORS:true});
+    const cv=await html2canvas(box,{backgroundColor:bg,scale,logging:false,useCORS:true,ignoreElements:el=>el.classList&&el.classList.contains("grip")});
     box.remove();
     const blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.92));
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`kham-kenh-${m.handle}-${now.toISOString().slice(0,10)}.jpg`;a.click();
