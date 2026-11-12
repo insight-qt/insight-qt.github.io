@@ -515,6 +515,18 @@
       "- " + (s.base_organic ? `Mức chuẩn ×TV và nhãn WIN/FLOP chỉ tính trên clip **ORGANIC** đã đăng ≥ ${NEW_DAYS} ngày; clip PAID / NGHI ADS được so riêng.` : "Kênh có quá ít clip organic nên mức chuẩn tính trên toàn bộ clip."), "");
     const rx = prescribe({ rows, summary: s, tables: t });
     if (rx.length) o.push("## D1b. Kê đơn của tool", "", "_Rút thẳng từ số liệu bằng luật đơn giản. AI kiểm lại bằng transcript + comment ở mục G: đồng ý, bác bỏ, hoặc đào sâu._", "", ...rx.map((r, i) => `${i + 1}. **${r.t}.** ${r.d}`), "");
+    const D = dig({ rows }, meta && meta.handle);
+    if (D.asks.length || D.series.length || D.rising.length || D.hook.length) {
+      o.push("## D1c. Đào sâu của tool", "");
+      if (D.asks.length) { o.push(`### Khán giả đang hỏi (${D.asked} câu hỏi, từ ${D.deep} clip đã đọc comment)`, "", "_Câu hỏi lặp lại = đề tài clip tiếp theo khán giả đã đặt sẵn._", "");
+        D.asks.forEach(g => { o.push(`- **${g.name}** · ${g.n} câu · ${n_(g.likes)} like`); g.items.slice(0, 3).forEach(c => o.push(`  - «${c.text}» [${n_(c.likes)} like${c.answered ? " · kênh đã trả lời" : ""}] — dưới clip “${c.v.cap}” (${c.v.day})`)); }); o.push(""); }
+      if (D.series.length) { o.push("### Series (clip có đánh số phần)", "");
+        D.series.forEach(z => o.push(`- “${z.name}”: ` + z.parts.map(p => `P${p.part} ${n_(p.views)} (${x_(p.x)})`).join(" → ") + (z.keep != null ? (z.keep >= 1 ? ` · phần cuối gấp ${x_(z.keep).replace("×", " lần")} view phần đầu` : ` · phần cuối còn ${Math.round(z.keep * 100)}% view so với phần đầu`) : ""))); o.push(""); }
+      if (D.rising.length) { o.push("### Clip cũ đang lên lại (so 2 lần quét gần nhất)", "");
+        D.rising.slice(0, 5).forEach(r => o.push(`- “${r.cap}” (đăng ${r.day}, ${r.age} ngày trước): +${n_(r.gain)} view, khoảng ${n_(Math.round(r.perDay))} view/ngày${r.speed ? `, gấp ${x_(r.speed).replace("×", " lần")} nhịp trước đó` : ""}${r.kind !== "ORGANIC" ? ` · ${r.kind}` : ""}`)); o.push(""); }
+      if (D.hook.length) { o.push(`### Công thức hook (so ×TV trung vị, ${D.base} clip organic)`, "");
+        D.hook.forEach(f => o.push(`- ${f.name}: ${x_(f.ma)} (${f.na} clip) so với ${x_(f.mb)} khi không có (${f.nb} clip) → ${f.r >= 1 ? "đi cùng clip ăn hơn" : "đi cùng clip kém hơn"}`)); o.push("", "_Tương quan, chưa phải nhân quả: AI kiểm lại bằng transcript ở mục G._", ""); }
+    }
     o.push("## D2. Bảng toàn bộ clip (mới → cũ)", "",
       "| # | Ngày | Dài | View | ×TV | Nhãn | Tương tác | Share | Save | Cmt | Hook / caption |", "|---|---|---|---|---|---|---|---|---|---|---|");
     rows.forEach((v, i) => {
@@ -595,5 +607,104 @@
     return o.join("\n").trim() + "\n";
   }
 
-  G.TTI = { mergeItems, shareBench, analyze, buildMd, plan, snap, applyMarks, idOf, rangeBounds, rangeLabel, filterRange, RANGE_NAMES, mergeLinks, prescribe, videoFrom, kNum, idTs, cleanVtt, pickComments, NEW_DAYS };
+  /* ---------- Đào sâu: câu hỏi của khán giả · series · clip đang lên lại · công thức hook ---------- */
+  function dig(a, handle) {
+    const rows = (a && a.rows) || [], me = String(handle || (rows[0] && rows[0].channel) || "").toLowerCase();
+    const X = v => (v == null ? "–" : v.toFixed(1).replace(".", ",") + "×");
+    const day = v => { if (!v.ts) return ""; const d = new Date(v.ts * 1000); return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getFullYear()).slice(2); };
+    const cap = (v, n = 48) => { const c = String(v.caption || "").replace(/#\S+/g, "").replace(/\s+/g, " ").trim() || String(v.hook || "").trim(); return c.length > n ? c.slice(0, n) + "…" : c || "(không caption)"; };
+    const lc = t => String(t || "").toLowerCase().normalize("NFC");
+
+    // 1. Khán giả đang hỏi gì → đề tài clip tiếp theo
+    const ASK = [
+      ["next", "Đòi phần tiếp", /(ph[aầ]n|t[aậ]p|part|p)\s*\d|ph[aầ]n (sau|ti[eế]p|2)|t[aậ]p (sau|ti[eế]p)|ra ti[eế]p|l[aà]m ti[eế]p|ti[eế]p đi|h[oó]ng (ph[aầ]n|t[aậ]p)|ch[oờ] (ph[aầ]n|t[aậ]p)|c[oò]n n[uữ]a (kh[oô]ng|ko|k)\b|k[eể] ti[eế]p/],
+      ["how", "Hỏi cách làm", /l[aà]m (sao|th[eế] n[aà]o|nh[uư] n[aà]o)|c[aá]ch (n[aà]o|l[aà]m)|h[uư][oớ]ng d[aẫ]n|ch[iỉ] (m[iì]nh|em|tui|t[oô]i|v[oớ]i|e|cho)|h[oọ]c [oở] đ[aâ]u|b[aắ]t đ[aầ]u (t[uừ]|nh[uư])|n[eê]n (l[aà]m|h[oọ]c|b[aắ]t đ[aầ]u)|tips?\b|b[ií] quy[eế]t/],
+      ["buy", "Hỏi mua, giá, địa chỉ", /gi[aá] (bao|nhi[eê]u|sao)|bao nhi[eê]u (ti[eề]n|k\b|1)|mua [oở] đ[aâ]u|mua (sao|kiểu g[iì])|link (mua|sp|s[aả]n)|xin link|shop (n[aà]o|g[iì])|đ[iị]a ch[iỉ]|[oở] đ[aâ]u (v[aậ]y|th[eế]|ạ|a|z)|qu[aá]n n[aà]o|ch[oỗ] n[aà]o/],
+      ["name", "Hỏi tên nhạc, đồ, app", /t[eê]n (b[aà]i|nh[aạ]c|app|s[aả]n ph[aẩ]m|m[oó]n|phim|qu[aá]n|s[aá]ch)|nh[aạ]c g[iì]|b[aà]i g[iì]|app g[iì]|[aá]o (g[iì]|n[aà]o)|son g[iì]|m[aá]y g[iì]|phim g[iì]|s[aá]ch g[iì]/],
+    ];
+    const isQ = t => /\?|\b(kh[oô]ng|ko|k|hok|h[ôo]ng|ch[uư]a|sao|g[iì]|n[aà]o|đ[aâ]u|m[aấ]y|bao gi[oờ]|khi n[aà]o|ai)\s*(v[aậ]y|th[eế]|ạ|a|ad|anh|ch[iị]|em|b[aạ]n|shop|ơi)?\s*[!.…]*$/i.test(t);
+    const groups = {}; ASK.forEach(([k, name]) => groups[k] = { k, name, n: 0, likes: 0, items: [] }); groups.other = { k: "other", name: "Câu hỏi khác", n: 0, likes: 0, items: [] };
+    const seen = new Set(); let asked = 0;
+    for (const v of rows) for (const c of v.comments || []) {
+      const by = String(c.by || "").toLowerCase(); if (me && by === me) continue;
+      const t = String(c.text || "").replace(/\s+/g, " ").trim(), l = lc(t); if (t.length < 8 || t.length > 220) continue;
+      const key = l.replace(/[^\p{L}\p{N} ]/gu, "").replace(/\s+/g, " ").trim(); if (!key || seen.has(key)) continue;
+      let g = null; for (const [k, , re] of ASK) if (re.test(l)) { g = k; break; }
+      if (!g && isQ(l) && t.split(" ").length >= 4) g = "other";
+      if (!g) continue; seen.add(key); asked++;
+      const G = groups[g]; G.n++; G.likes += c.likes || 0; G.items.push({ text: t, likes: c.likes || 0, replies: c.replies || 0, answered: (c.reply_list || []).some(r => r.by_creator), v: { id: v.id, url: v.url, cap: cap(v, 36), day: day(v) } });
+    }
+    const asks = Object.values(groups).filter(g => g.n).map(g => ({ ...g, items: g.items.sort((a, b) => b.likes - a.likes).slice(0, 5) }))
+      .sort((a, b) => (a.k === "other") - (b.k === "other") || b.likes + b.n * 3 - (a.likes + a.n * 3));
+    const deep = rows.filter(v => (v.comments || []).length).length;
+
+    // 2. Series: clip có đánh số phần (P1, Phần 2, Tập 3, Part 4, #5…)
+    const PART = /(?:^|[\s\-–|:(\[])(?:p|ph[aầ]n|t[aậ]p|part|pt|kỳ|k[iì])\s*\.?\s*(\d{1,3})(?![\d/.,:%kK])/i;
+    const ser = {};
+    for (const v of rows) {
+      const src = String(v.caption || "") + " " + (v.ost || []).join(" ") + " " + (v.ocr || "");
+      const m = src.match(PART); if (!m) continue;
+      const part = +m[1]; if (!part || part > 200) continue;
+      const before = String(v.caption || "").slice(0, Math.max(0, (v.caption || "").search(PART)));
+      let base = lc(before || v.caption || "").replace(/#\S+/g, "").replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 6).join(" ");
+      if (!base) base = lc((v.hashtags || [])[0] || "khác");
+      (ser[base] = ser[base] || []).push({ part, v });
+    }
+    // gộp các khoá series gần giống (một khoá là đầu của khoá kia)
+    const keys = Object.keys(ser).sort((a, b) => a.length - b.length);
+    for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+      const A = keys[i], B = keys[j]; if (!ser[A] || !ser[B]) continue;
+      if (A.split(" ").length >= 2 && B.startsWith(A)) { ser[A].push(...ser[B]); delete ser[B]; }
+    }
+    const series = Object.entries(ser).map(([k, list]) => {
+      const byPart = {}; list.forEach(x => { if (!byPart[x.part] || (x.v.views || 0) > (byPart[x.part].v.views || 0)) byPart[x.part] = x; });
+      const parts = Object.values(byPart).sort((a, b) => a.part - b.part).map(x => ({ part: x.part, id: x.v.id, url: x.v.url, views: x.v.views, x: x.v.x_med, label: x.v.label, day: day(x.v), isNew: !!x.v.isNew }));
+      if (parts.length < 2) return null;
+      const first = parts[0], last = parts.filter(p => !p.isNew).slice(-1)[0] || parts[parts.length - 1];
+      const keep = first.views ? last.views / first.views : null;
+      return { name: cap(list.sort((a, b) => a.part - b.part)[0].v, 44), parts, keep, avgX: parts.reduce((s, p) => s + (p.x || 0), 0) / parts.length };
+    }).filter(Boolean).sort((a, b) => b.parts.length - a.parts.length || b.avgX - a.avgX).slice(0, 5);
+
+    // 3. Clip cũ đang lên lại: view tăng mạnh giữa 2 lần quét gần nhất dù đã đăng lâu
+    const now = Date.now() / 1000, rising = [];
+    for (const v of rows) {
+      const h = (v.hist || []).filter(x => Array.isArray(x)); if (h.length < 2 || !v.ts) continue;
+      const [t1, a1] = h[h.length - 2], [t2, a2] = h[h.length - 1], dd = (t2 - t1) / 86400, age = (now - v.ts) / 86400;
+      if (age < 14 || dd < 0.5 || a2 <= a1) continue;
+      const gain = a2 - a1, perDay = gain / dd, grow = gain / Math.max(1, a1);
+      const life = (a1) / Math.max(1, (t1 - v.ts) / 86400);   // view/ngày trung bình trước đó
+      if (gain >= 1000 && grow / dd >= 0.03 && perDay >= 150) rising.push({ id: v.id, url: v.url, cap: cap(v), day: day(v), age: Math.round(age), gain, perDay, grow, speed: life ? perDay / life : null, views: a2, x: v.x_med, kind: v.kind });
+    }
+    rising.sort((a, b) => b.perDay - a.perDay);
+    const scans = Math.max(0, ...rows.map(v => (v.hist || []).length));
+
+    // 4. Công thức hook: đặc điểm nào đi cùng clip ăn view (so ×TV trung vị có / không có đặc điểm)
+    const org = rows.filter(v => v.kind === "ORGANIC" && !v.isNew && !v.pinned && v.x_med != null);
+    const med = xs => { const s = xs.slice().sort((a, b) => a - b), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
+    const hookTxt = v => String((v.transcript || "").split(/\s+/).slice(0, 25).join(" ") || (v.ost || []).join(" ") || v.ocr || v.caption || "");
+    const F = [
+      ["Có chữ trên màn hình / ảnh bìa", v => !!((v.ost || []).length || v.ocr)],
+      ["Có lời nói (phụ đề)", v => !!v.transcript],
+      ["Mở đầu bằng câu hỏi", v => { const t = hookTxt(v).trim(); return /^(t[aạ]i sao|v[iì] sao|l[aà]m sao|c[oó] ai|b[aạ]n c[oó]|bao nhi[eê]u|c[aá]i g[iì]|ai )/i.test(t) || /\?/.test(t.split(/\s+/).slice(0, 15).join(" ")); }],
+      ["Mở đầu có con số", v => /\d/.test(hookTxt(v).split(/\s+/).slice(0, 10).join(" "))],
+      ["Nói nhanh (≥ 180 từ/phút)", v => v.wpm != null && v.wpm >= 180, v => v.wpm != null],
+      ["Caption ngắn (≤ 60 ký tự)", v => String(v.caption || "").replace(/#\S+/g, "").trim().length <= 60],
+      ["Dùng nhiều hashtag (≥ 5)", v => (v.hashtags || []).length >= 5],
+      ["Dùng âm thanh gốc", v => !!v.original_sound, v => !!v.music],
+      ["Clip dưới 30 giây", v => v.duration && v.duration < 30, v => !!v.duration],
+      ["Clip trên 90 giây", v => v.duration && v.duration > 90, v => !!v.duration],
+      ["Post ảnh", v => !!v.is_photo],
+    ];
+    const hook = [];
+    for (const [name, has, ok] of F) {
+      const pool = org.filter(v => !ok || ok(v)), A = pool.filter(has), B = pool.filter(v => !has(v));
+      if (A.length < 3 || B.length < 3) continue;
+      const ma = med(A.map(v => v.x_med)), mb = med(B.map(v => v.x_med)); if (!ma || !mb) continue;
+      const r = ma / mb, wa = A.filter(v => v.label === "WIN" || v.label === "VIRAL").length / A.length, wb = B.filter(v => v.label === "WIN" || v.label === "VIRAL").length / B.length;
+      if (r >= 1.25 || r <= 0.8) hook.push({ name, r, na: A.length, nb: B.length, ma, mb, wa, wb });
+    }
+    hook.sort((a, b) => Math.abs(Math.log(b.r)) - Math.abs(Math.log(a.r)));
+    return { asks, asked, deep, series, rising, scans, hook: hook.slice(0, 6), base: org.length };
+  }
+  G.TTI = { dig, mergeItems, shareBench, analyze, buildMd, plan, snap, applyMarks, idOf, rangeBounds, rangeLabel, filterRange, RANGE_NAMES, mergeLinks, prescribe, videoFrom, kNum, idTs, cleanVtt, pickComments, NEW_DAYS };
 })(window);
